@@ -39,8 +39,8 @@ dependencies {
     // Swagger (SpringDoc OpenAPI)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
-    // Anthropic Claude API
-    implementation 'com.anthropic:anthropic-sdk-java:0.1.0'
+    // HTTP Client for Claude API
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
     // Jackson for JSON processing
     implementation 'com.fasterxml.jackson.core:jackson-databind'
