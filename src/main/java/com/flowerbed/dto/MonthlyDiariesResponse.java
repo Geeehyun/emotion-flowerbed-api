@@ -32,5 +32,7 @@ public class MonthlyDiariesResponse {
         private String flower;
         private String floriography;
         private String summary;
+        private List<EmotionPercent> emotions;
+        private String reason;
     }
 }

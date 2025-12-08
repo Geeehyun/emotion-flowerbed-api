@@ -270,6 +270,13 @@ public class DiaryService {
      * Entity -> ListItem 변환
      */
     private MonthlyDiariesResponse.DiaryListItem convertToListItem(Diary diary) {
+        List<EmotionPercent> emotions = null;
+        if (diary.getEmotionsJson() != null) {
+            emotions = diary.getEmotionsJson().stream()
+                    .map(e -> new EmotionPercent(e.getEmotion(), e.getPercent()))
+                    .collect(Collectors.toList());
+        }
+
         return MonthlyDiariesResponse.DiaryListItem.builder()
                 .id(diary.getDiaryId())
                 .date(diary.getDiaryDate())
@@ -278,6 +285,8 @@ public class DiaryService {
                 .flower(diary.getFlowerName())
                 .floriography(diary.getFlowerMeaning())
                 .summary(diary.getSummary())
+                .emotions(emotions)
+                .reason(diary.getEmotionReason())
                 .build();
     }
 }

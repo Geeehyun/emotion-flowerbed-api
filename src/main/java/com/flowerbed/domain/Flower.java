@@ -25,11 +25,35 @@ public class Flower {
     @Column(unique = true, nullable = false, length = 20)
     private String emotion;
 
-    @Column(name = "flower_name", nullable = false, length = 50)
-    private String flowerName;
+    @Column(name = "flower_name_kr", nullable = false, length = 50)
+    private String flowerNameKr;
+
+    @Column(name = "flower_name_en", length = 50)
+    private String flowerNameEn;
 
     @Column(name = "flower_meaning", nullable = false, length = 100)
     private String flowerMeaning;
+
+    @Column(name = "flower_color", length = 50)
+    private String flowerColor;
+
+    @Column(name = "flower_color_codes", length = 500)
+    private String flowerColorCodes;
+
+    @Column(name = "flower_origin", length = 100)
+    private String flowerOrigin;
+
+    @Column(name = "flower_blooming_season", length = 100)
+    private String flowerBloomingSeason;
+
+    @Column(name = "flower_fragrance", length = 50)
+    private String flowerFragrance;
+
+    @Column(name = "flower_meaning_origin", length = 1000)
+    private String flowerMeaningOrigin;
+
+    @Column(name = "flower_fun_fact", length = 1000)
+    private String flowerFunFact;
 
     @Column(name = "image_file_3d", nullable = false, length = 100)
     private String imageFile3d;
@@ -51,11 +75,11 @@ public class Flower {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Flower(String emotion, String flowerName, String flowerMeaning,
+    public Flower(String emotion, String flowerNameKr, String flowerMeaning,
                   String imageFile3d, String imageFileRealistic,
                   Boolean isPositive, Integer displayOrder) {
         this.emotion = emotion;
-        this.flowerName = flowerName;
+        this.flowerNameKr = flowerNameKr;
         this.flowerMeaning = flowerMeaning;
         this.imageFile3d = imageFile3d;
         this.imageFileRealistic = imageFileRealistic;
@@ -63,9 +87,22 @@ public class Flower {
         this.displayOrder = displayOrder;
     }
 
-    public void updateFlowerInfo(String flowerName, String flowerMeaning) {
-        this.flowerName = flowerName;
+    public void updateBasicInfo(String flowerNameKr, String flowerNameEn, String flowerMeaning) {
+        this.flowerNameKr = flowerNameKr;
+        this.flowerNameEn = flowerNameEn;
         this.flowerMeaning = flowerMeaning;
+    }
+
+    public void updateDetailInfo(String flowerColor, String flowerColorCodes, String flowerOrigin,
+                                  String flowerBloomingSeason, String flowerFragrance,
+                                  String flowerMeaningOrigin, String flowerFunFact) {
+        this.flowerColor = flowerColor;
+        this.flowerColorCodes = flowerColorCodes;
+        this.flowerOrigin = flowerOrigin;
+        this.flowerBloomingSeason = flowerBloomingSeason;
+        this.flowerFragrance = flowerFragrance;
+        this.flowerMeaningOrigin = flowerMeaningOrigin;
+        this.flowerFunFact = flowerFunFact;
     }
 
     public void updateImages(String imageFile3d, String imageFileRealistic) {
