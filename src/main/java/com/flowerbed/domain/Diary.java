@@ -58,7 +58,7 @@ public class Diary {
     private String flowerMeaning;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "emotions_json", columnDefinition = "JSON")
+    @Column(name = "emotions_json", columnDefinition = "LONGTEXT")
     private List<EmotionPercent> emotionsJson;
 
     @Column(name = "is_analyzed", nullable = false)
