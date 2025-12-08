@@ -42,16 +42,21 @@ public class MonthlyDiariesResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class FlowerDetail {
+        private String emotionCode;
+        private String emotionNameKr;
+        private String emotionNameEn;
         private String flowerNameKr;
         private String flowerNameEn;
+        private String flowerMeaning;
+        private String flowerMeaningStory;
         private String flowerColor;
         private String flowerColorCodes;
         private String flowerOrigin;
         private String flowerBloomingSeason;
         private String flowerFragrance;
-        private String flowerMeaningOrigin;
         private String flowerFunFact;
         private String imageFile3d;
         private String imageFileRealistic;
+        private Boolean isPositive;
     }
 }

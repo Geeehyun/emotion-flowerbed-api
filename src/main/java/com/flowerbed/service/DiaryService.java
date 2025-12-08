@@ -333,17 +333,22 @@ public class DiaryService {
      */
     private MonthlyDiariesResponse.FlowerDetail convertToFlowerDetail(Flower flower) {
         return MonthlyDiariesResponse.FlowerDetail.builder()
+                .emotionCode(flower.getEmotionCode())
+                .emotionNameKr(flower.getEmotionNameKr())
+                .emotionNameEn(flower.getEmotionNameEn())
                 .flowerNameKr(flower.getFlowerNameKr())
                 .flowerNameEn(flower.getFlowerNameEn())
+                .flowerMeaning(flower.getFlowerMeaning())
+                .flowerMeaningStory(flower.getFlowerMeaningStory())
                 .flowerColor(flower.getFlowerColor())
                 .flowerColorCodes(flower.getFlowerColorCodes())
                 .flowerOrigin(flower.getFlowerOrigin())
                 .flowerBloomingSeason(flower.getFlowerBloomingSeason())
                 .flowerFragrance(flower.getFlowerFragrance())
-                .flowerMeaningOrigin(flower.getFlowerMeaningOrigin())
                 .flowerFunFact(flower.getFlowerFunFact())
                 .imageFile3d(flower.getImageFile3d())
                 .imageFileRealistic(flower.getImageFileRealistic())
+                .isPositive(flower.getIsPositive())
                 .build();
     }
 }

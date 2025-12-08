@@ -18,12 +18,14 @@ import java.time.LocalDateTime;
 public class Flower {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "flower_id")
-    private Integer flowerId;
+    @Column(name = "emotion_code", length = 20)
+    private String emotionCode;
 
-    @Column(unique = true, nullable = false, length = 20)
-    private String emotion;
+    @Column(name = "emotion_name_kr", nullable = false, length = 20)
+    private String emotionNameKr;
+
+    @Column(name = "emotion_name_en", nullable = false, length = 20)
+    private String emotionNameEn;
 
     @Column(name = "flower_name_kr", nullable = false, length = 50)
     private String flowerNameKr;
@@ -34,6 +36,9 @@ public class Flower {
     @Column(name = "flower_meaning", nullable = false, length = 100)
     private String flowerMeaning;
 
+    @Column(name = "flower_meaning_story", length = 1000)
+    private String flowerMeaningStory;
+
     @Column(name = "flower_color", length = 50)
     private String flowerColor;
 
@@ -43,14 +48,11 @@ public class Flower {
     @Column(name = "flower_origin", length = 100)
     private String flowerOrigin;
 
-    @Column(name = "flower_blooming_season", length = 100)
-    private String flowerBloomingSeason;
-
     @Column(name = "flower_fragrance", length = 50)
     private String flowerFragrance;
 
-    @Column(name = "flower_meaning_origin", length = 1000)
-    private String flowerMeaningOrigin;
+    @Column(name = "flower_blooming_season", length = 100)
+    private String flowerBloomingSeason;
 
     @Column(name = "flower_fun_fact", length = 1000)
     private String flowerFunFact;
@@ -75,10 +77,13 @@ public class Flower {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Flower(String emotion, String flowerNameKr, String flowerMeaning,
+    public Flower(String emotionCode, String emotionNameKr, String emotionNameEn,
+                  String flowerNameKr, String flowerMeaning,
                   String imageFile3d, String imageFileRealistic,
                   Boolean isPositive, Integer displayOrder) {
-        this.emotion = emotion;
+        this.emotionCode = emotionCode;
+        this.emotionNameKr = emotionNameKr;
+        this.emotionNameEn = emotionNameEn;
         this.flowerNameKr = flowerNameKr;
         this.flowerMeaning = flowerMeaning;
         this.imageFile3d = imageFile3d;
@@ -87,7 +92,10 @@ public class Flower {
         this.displayOrder = displayOrder;
     }
 
-    public void updateBasicInfo(String flowerNameKr, String flowerNameEn, String flowerMeaning) {
+    public void updateBasicInfo(String emotionNameKr, String emotionNameEn,
+                                  String flowerNameKr, String flowerNameEn, String flowerMeaning) {
+        this.emotionNameKr = emotionNameKr;
+        this.emotionNameEn = emotionNameEn;
         this.flowerNameKr = flowerNameKr;
         this.flowerNameEn = flowerNameEn;
         this.flowerMeaning = flowerMeaning;
@@ -95,13 +103,13 @@ public class Flower {
 
     public void updateDetailInfo(String flowerColor, String flowerColorCodes, String flowerOrigin,
                                   String flowerBloomingSeason, String flowerFragrance,
-                                  String flowerMeaningOrigin, String flowerFunFact) {
+                                  String flowerMeaningStory, String flowerFunFact) {
         this.flowerColor = flowerColor;
         this.flowerColorCodes = flowerColorCodes;
         this.flowerOrigin = flowerOrigin;
         this.flowerBloomingSeason = flowerBloomingSeason;
         this.flowerFragrance = flowerFragrance;
-        this.flowerMeaningOrigin = flowerMeaningOrigin;
+        this.flowerMeaningStory = flowerMeaningStory;
         this.flowerFunFact = flowerFunFact;
     }
 

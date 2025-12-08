@@ -26,25 +26,26 @@
         │
         │ 1:N
         ↓
-┌─────────────────┐         ┌─────────────────┐
-│    diaries      │         │    flowers      │
-│─────────────────│         │─────────────────│
-│ diary_id (PK)   │         │ flower_id (PK)  │
-│ user_id (FK)    │ N:1     │ emotion (UQ)    │
-│ diary_date      │←────────│ flower_name     │
-│ content         │         │ flower_meaning  │
-│ summary         │         │ image_file_3d   │
-│ core_emotion────┼────────→│ image_file_real │
-│ emotion_reason  │         │ is_positive     │
-│ flower_name     │         │ display_order   │
-│ flower_meaning  │         │ created_at      │
-│ emotions_json   │         │ updated_at      │
-│ is_analyzed     │         └─────────────────┘
-│ analyzed_at     │
-│ created_at      │
-│ updated_at      │
-│ deleted_at      │
-└─────────────────┘
+┌──────────────────┐         ┌───────────────────┐
+│    diaries       │         │    emotions       │
+│──────────────────│         │───────────────────│
+│ diary_id (PK)    │         │ emotion_code (PK) │
+│ user_id (FK)     │ N:1     │ emotion_name_kr   │
+│ diary_date       │←────────│ emotion_name_en   │
+│ content          │         │ flower_name_kr    │
+│ summary          │         │ flower_name_en    │
+│ core_emotion─────┼────────→│ flower_meaning    │
+│ core_emotion_code│         │ flower_...        │
+│ emotion_reason   │         │ image_file_3d     │
+│ flower_name      │         │ image_file_real   │
+│ flower_meaning   │         │ is_positive       │
+│ emotions_json    │         │ display_order     │
+│ is_analyzed      │         │ created_at        │
+│ analyzed_at      │         │ updated_at        │
+│ created_at       │         └───────────────────┘
+│ updated_at       │
+│ deleted_at       │
+└──────────────────┘
 ```
 
 ---
@@ -84,19 +85,21 @@
 | diary_date | DATE | NOT NULL | 일기 날짜 |
 | content | TEXT | NOT NULL | 일기 내용 (최대 5000자) |
 | summary | TEXT | NULL | AI 생성 요약 |
-| core_emotion | VARCHAR(20) | NULL | 대표 감정 (20개 중 하나) |
+| core_emotion | VARCHAR(20) | NULL | 대표 감정 (한글) |
+| core_emotion_code | VARCHAR(20) | NULL | 대표 감정 코드 (영문) |
 | emotion_reason | TEXT | NULL | 대표 감정 선택 이유 |
 | flower_name | VARCHAR(50) | NULL | 꽃 이름 |
 | flower_meaning | VARCHAR(100) | NULL | 꽃말 |
-| emotions_json | JSON | NULL | 전체 감정 배열 |
+| emotions_json | LONGTEXT | NULL | 전체 감정 배열 JSON |
 | is_analyzed | BOOLEAN | DEFAULT FALSE | 분석 완료 여부 |
 | analyzed_at | DATETIME | NULL | 분석 완료 일시 |
 | created_at | DATETIME | DEFAULT NOW | 작성일시 |
 | updated_at | DATETIME | ON UPDATE NOW | 수정일시 |
 | deleted_at | DATETIME | NULL | 삭제일시 (Soft Delete) |
+| is_active | TINYINT(1) | GENERATED | deleted_at IS NULL ? 1 : NULL |
 
 **인덱스**:
-- `uk_user_date`: (user_id, diary_date) 유니크 - 하루 1개 일기만
+- `uk_user_date_active`: (user_id, diary_date, is_active) UNIQUE - 하루 1개 일기만
 - `idx_user_date`: (user_id, diary_date) - 특정 날짜 조회
 - `idx_user_created`: (user_id, created_at DESC) - 최신 일기 목록
 - `idx_core_emotion`: (core_emotion) - 감정별 통계
@@ -112,21 +115,30 @@
 ```
 
 **비즈니스 규칙**:
-- 한 사용자는 하루에 일기 1개만 작성 가능 (uk_user_date)
+- 한 사용자는 하루에 일기 1개만 작성 가능 (uk_user_date_active)
+- Soft Delete된 일기는 is_active가 NULL이 되어 UNIQUE 제약조건에서 제외됨
 - 일기 작성 직후 is_analyzed=FALSE
 - AI 분석 완료 후 is_analyzed=TRUE, analyzed_at 갱신
-- 삭제 시 deleted_at에 일시 기록
 
 ---
 
-### 3. flowers (꽃 마스터)
+### 3. emotions (감정-꽃 마스터)
 
 | 컬럼명 | 타입 | 제약조건 | 설명 |
 |--------|------|----------|------|
-| flower_id | INT | PK, AUTO_INCREMENT | 꽃 고유 ID |
-| emotion | VARCHAR(20) | UNIQUE, NOT NULL | 감정명 (20개) |
-| flower_name | VARCHAR(50) | NOT NULL | 꽃 이름 |
+| emotion_code | VARCHAR(20) | PK | 감정 코드 (영문, 예: JOY) |
+| emotion_name_kr | VARCHAR(20) | NOT NULL | 감정명 (한글, 예: 기쁨) |
+| emotion_name_en | VARCHAR(20) | NOT NULL | 감정명 (영문, 예: Joy) |
+| flower_name_kr | VARCHAR(50) | NOT NULL | 꽃 이름 (한글) |
+| flower_name_en | VARCHAR(50) | NULL | 꽃 이름 (영문) |
 | flower_meaning | VARCHAR(100) | NOT NULL | 꽃말 |
+| flower_meaning_story | VARCHAR(1000) | NULL | 꽃말 유래 |
+| flower_color | VARCHAR(50) | NULL | 꽃 색상 텍스트 |
+| flower_color_codes | VARCHAR(500) | NULL | 꽃 색상 코드 (콤마 구분) |
+| flower_origin | VARCHAR(100) | NULL | 꽃 원산지 |
+| flower_fragrance | VARCHAR(50) | NULL | 꽃 향기 설명 |
+| flower_blooming_season | VARCHAR(100) | NULL | 개화 시기 |
+| flower_fun_fact | VARCHAR(1000) | NULL | 재미있는 사실 |
 | image_file_3d | VARCHAR(100) | NOT NULL | 3D 이미지 파일명 |
 | image_file_realistic | VARCHAR(100) | NOT NULL | 실사 이미지 파일명 |
 | is_positive | BOOLEAN | NOT NULL | 긍정 감정 여부 |
@@ -134,16 +146,12 @@
 | created_at | DATETIME | DEFAULT NOW | 생성일시 |
 | updated_at | DATETIME | ON UPDATE NOW | 수정일시 |
 
-**인덱스**:
-- `idx_emotion`: 감정명으로 조회
-- `idx_display_order`: 정렬용
-
 **비즈니스 규칙**:
 - 20개 고정 데이터 (초기 데이터 INSERT)
 - 관리자 페이지에서 꽃말/이미지 수정 가능
-- emotion은 diaries.core_emotion과 매칭
+- emotion_code는 diaries.core_emotion_code와 매칭
 
-**초기 데이터**: 20개 감정 (기쁨, 행복, 감사... 지루함)
+**초기 데이터**: 20개 감정 (기쁨, 행복, 감사, 설렘, 평온, 성취, 사랑, 희망, 활력, 재미, 슬픔, 외로움, 불안, 분노, 피로, 후회, 무기력, 혼란, 실망, 지루함)
 
 ---
 
@@ -162,9 +170,10 @@ SELECT LAST_INSERT_ID();
 -- 3) AI 분석 호출 (백엔드)
 
 -- 4) 분석 결과 저장
-UPDATE diaries 
+UPDATE diaries
 SET summary = ?,
     core_emotion = ?,
+    core_emotion_code = ?,
     emotion_reason = ?,
     flower_name = ?,
     flower_meaning = ?,
@@ -174,165 +183,78 @@ SET summary = ?,
 WHERE diary_id = ?;
 ```
 
-### 2. 화단 화면 (일기 목록)
+### 2. 월별 일기 목록 (꽃 정보 포함)
 
 ```sql
--- 최근 일기 20개 (페이징)
-SELECT 
+SELECT
     d.diary_id,
     d.diary_date,
+    d.content,
     d.summary,
     d.core_emotion,
+    d.core_emotion_code,
     d.flower_name,
-    f.image_file_3d,
-    f.is_positive
+    d.flower_meaning,
+    d.emotions_json,
+    d.emotion_reason,
+    e.emotion_code,
+    e.emotion_name_kr,
+    e.emotion_name_en,
+    e.flower_name_kr,
+    e.flower_name_en,
+    e.flower_color,
+    e.flower_color_codes,
+    e.flower_origin,
+    e.flower_blooming_season,
+    e.flower_fragrance,
+    e.flower_meaning_story,
+    e.flower_fun_fact,
+    e.image_file_3d,
+    e.image_file_realistic,
+    e.is_positive
 FROM diaries d
-LEFT JOIN flowers f ON d.core_emotion = f.emotion
+LEFT JOIN emotions e ON d.flower_name = e.flower_name_kr
 WHERE d.user_id = ?
+  AND YEAR(d.diary_date) = ?
+  AND MONTH(d.diary_date) = ?
   AND d.deleted_at IS NULL
-ORDER BY d.diary_date DESC
-LIMIT 20 OFFSET ?;
+ORDER BY d.diary_date DESC;
 ```
 
-### 3. 일기 상세 조회
+### 3. 특정 날짜 일기 조회
 
 ```sql
-SELECT 
-    d.*,
-    f.image_file_realistic,
-    f.flower_meaning,
-    f.is_positive
+SELECT d.*, e.*
 FROM diaries d
-LEFT JOIN flowers f ON d.core_emotion = f.emotion
-WHERE d.diary_id = ?
-  AND d.user_id = ?
-  AND d.deleted_at IS NULL;
-```
-
-### 4. 특정 날짜 일기 조회
-
-```sql
-SELECT d.*, f.image_file_3d
-FROM diaries d
-LEFT JOIN flowers f ON d.core_emotion = f.emotion
+LEFT JOIN emotions e ON d.flower_name = e.flower_name_kr
 WHERE d.user_id = ?
   AND d.diary_date = ?
   AND d.deleted_at IS NULL;
 ```
 
-### 5. 감정 통계 (최근 30일)
+### 4. 감정 통계 (최근 30일)
 
 ```sql
-SELECT 
+SELECT
     d.core_emotion,
-    f.flower_name,
-    f.is_positive,
+    d.core_emotion_code,
+    d.flower_name,
+    e.is_positive,
     COUNT(*) as count,
     MAX(d.diary_date) as last_date
 FROM diaries d
-LEFT JOIN flowers f ON d.core_emotion = f.emotion
+LEFT JOIN emotions e ON d.flower_name = e.flower_name_kr
 WHERE d.user_id = ?
   AND d.deleted_at IS NULL
+  AND d.is_analyzed = TRUE
   AND d.diary_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-GROUP BY d.core_emotion, f.flower_name, f.is_positive
+GROUP BY d.core_emotion, d.core_emotion_code, d.flower_name, e.is_positive
 ORDER BY count DESC;
 ```
 
-### 6. 월별 감정 트렌드
-
-```sql
-SELECT 
-    DATE_FORMAT(diary_date, '%Y-%m') as year_month,
-    core_emotion,
-    COUNT(*) as count
-FROM diaries
-WHERE user_id = ?
-  AND deleted_at IS NULL
-  AND diary_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-GROUP BY year_month, core_emotion
-ORDER BY year_month DESC;
-```
-
 ---
 
-## View 정의
-
-### v_user_recent_diaries
-사용자별 최근 일기 목록 (꽃 정보 포함)
-
-```sql
-CREATE OR REPLACE VIEW v_user_recent_diaries AS
-SELECT 
-    d.diary_id,
-    d.user_id,
-    d.diary_date,
-    d.content,
-    d.summary,
-    d.core_emotion,
-    d.flower_name,
-    d.flower_meaning,
-    d.created_at,
-    f.image_file_3d,
-    f.image_file_realistic,
-    f.is_positive
-FROM diaries d
-LEFT JOIN flowers f ON d.core_emotion = f.emotion
-WHERE d.deleted_at IS NULL
-ORDER BY d.diary_date DESC;
-```
-
-### v_user_emotion_stats_30d
-사용자별 감정 통계 (최근 30일)
-
-```sql
-CREATE OR REPLACE VIEW v_user_emotion_stats_30d AS
-SELECT 
-    d.user_id,
-    d.core_emotion,
-    f.flower_name,
-    f.is_positive,
-    COUNT(*) as count,
-    MAX(d.diary_date) as last_date
-FROM diaries d
-LEFT JOIN flowers f ON d.core_emotion = f.emotion
-WHERE d.deleted_at IS NULL
-  AND d.diary_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-GROUP BY d.user_id, d.core_emotion, f.flower_name, f.is_positive;
-```
-
----
-
-## 성능 최적화
-
-### 1. 인덱스 전략
-- **복합 인덱스**: (user_id, diary_date) - 가장 빈번한 조회 패턴
-- **커버링 인덱스**: 목록 조회 시 INDEX ONLY SCAN 가능
-- **JSON 인덱스**: MariaDB 10.5+ 지원, emotions_json 검색 시 활용
-
-### 2. 파티셔닝 (대용량 데이터 시)
-```sql
--- diary_date 기준 월별 파티셔닝
-ALTER TABLE diaries 
-PARTITION BY RANGE (TO_DAYS(diary_date)) (
-    PARTITION p202501 VALUES LESS THAN (TO_DAYS('2025-02-01')),
-    PARTITION p202502 VALUES LESS THAN (TO_DAYS('2025-03-01')),
-    ...
-);
-```
-
-### 3. 캐싱 전략
-- **Redis 캐싱**:
-    - flowers 테이블 전체 (변경 거의 없음)
-    - 최근 일기 목록 (TTL: 5분)
-    - 감정 통계 (TTL: 1시간)
-
-### 4. 읽기/쓰기 분리
-- **Master**: 일기 작성, 수정, 삭제
-- **Slave**: 일기 조회, 통계
-
----
-
-## JPA Entity 예시
+## JPA Entity 매핑
 
 ### User Entity
 ```java
@@ -344,28 +266,20 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
-    
+
     @Column(unique = true, nullable = false)
     private String email;
-    
-    @Column(nullable = false)
+
     private String password;
-    
-    @Column(nullable = false, length = 50)
     private String nickname;
-    
-    @Column
     private String profileImage;
-    
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Diary> diaries = new ArrayList<>();
-    
+
     @CreatedDate
     private LocalDateTime createdAt;
-    
+
     @LastModifiedDate
     private LocalDateTime updatedAt;
-    
+
     private LocalDateTime deletedAt;
 }
 ```
@@ -380,84 +294,74 @@ public class Diary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long diaryId;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
-    
-    @Column(nullable = false)
+
     private LocalDate diaryDate;
-    
-    @Column(columnDefinition = "TEXT", nullable = false)
+
+    @Column(columnDefinition = "TEXT")
     private String content;
-    
+
     @Column(columnDefinition = "TEXT")
     private String summary;
-    
-    @Column(length = 20)
+
     private String coreEmotion;
-    
+    private String coreEmotionCode;
+
     @Column(columnDefinition = "TEXT")
     private String emotionReason;
-    
-    @Column(length = 50)
+
     private String flowerName;
-    
-    @Column(length = 100)
     private String flowerMeaning;
-    
-    @Type(JsonType.class)
+
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSON")
     private List<EmotionPercent> emotionsJson;
-    
-    @Column(nullable = false)
+
     private Boolean isAnalyzed = false;
-    
     private LocalDateTime analyzedAt;
-    
+
     @CreatedDate
     private LocalDateTime createdAt;
-    
+
     @LastModifiedDate
     private LocalDateTime updatedAt;
-    
+
     private LocalDateTime deletedAt;
 }
 ```
 
-### Flower Entity
+### Flower Entity (테이블명: emotions)
 ```java
 @Entity
-@Table(name = "flowers")
+@Table(name = "emotions")
 public class Flower {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer flowerId;
-    
-    @Column(unique = true, nullable = false, length = 20)
-    private String emotion;
-    
-    @Column(nullable = false, length = 50)
-    private String flowerName;
-    
-    @Column(nullable = false, length = 100)
+    @Column(name = "emotion_code")
+    private String emotionCode;
+
+    private String emotionNameKr;
+    private String emotionNameEn;
+    private String flowerNameKr;
+    private String flowerNameEn;
     private String flowerMeaning;
-    
-    @Column(nullable = false, length = 100)
+    private String flowerMeaningStory;
+    private String flowerColor;
+    private String flowerColorCodes;
+    private String flowerOrigin;
+    private String flowerFragrance;
+    private String flowerBloomingSeason;
+    private String flowerFunFact;
     private String imageFile3d;
-    
-    @Column(nullable = false, length = 100)
     private String imageFileRealistic;
-    
-    @Column(nullable = false)
     private Boolean isPositive;
-    
-    @Column(nullable = false)
     private Integer displayOrder;
-    
+
     @CreatedDate
     private LocalDateTime createdAt;
-    
+
     @LastModifiedDate
     private LocalDateTime updatedAt;
 }
@@ -465,124 +369,42 @@ public class Flower {
 
 ---
 
-## 마이그레이션 전략
+## 성능 최적화
 
-### 1. 초기 설치 (V1.0)
-```sql
--- schema.sql 실행
--- 초기 flowers 데이터 INSERT
-```
+### 1. 인덱스 전략
+- **복합 인덱스**: (user_id, diary_date) - 가장 빈번한 조회 패턴
+- **커버링 인덱스**: 목록 조회 시 INDEX ONLY SCAN 가능
+- **JSON 인덱스**: MariaDB 10.5+ 지원, emotions_json 검색 시 활용
 
-### 2. 향후 변경사항 예시
-
-#### V1.1: 일기 공개 기능 추가
-```sql
-ALTER TABLE diaries 
-ADD COLUMN is_public BOOLEAN DEFAULT FALSE AFTER analyzed_at,
-ADD COLUMN published_at DATETIME NULL AFTER is_public,
-ADD INDEX idx_public (is_public, published_at);
-```
-
-#### V1.2: 태그 기능 추가
-```sql
-CREATE TABLE tags (
-    tag_id INT AUTO_INCREMENT PRIMARY KEY,
-    tag_name VARCHAR(20) UNIQUE NOT NULL
-);
-
-CREATE TABLE diary_tags (
-    diary_id BIGINT NOT NULL,
-    tag_id INT NOT NULL,
-    PRIMARY KEY (diary_id, tag_id),
-    FOREIGN KEY (diary_id) REFERENCES diaries(diary_id) ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE
-);
-```
+### 2. 캐싱 전략
+- **Redis 캐싱**:
+    - emotions 테이블 전체 (변경 거의 없음)
+    - 최근 일기 목록 (TTL: 5분)
+    - 감정 통계 (TTL: 1시간)
 
 ---
 
-## 백업 전략
+## 백업 및 보안
 
 ### 1. 일일 백업
 ```bash
-# 전체 백업
 mysqldump -u root -p --single-transaction flowerbed > backup_$(date +%Y%m%d).sql
-
-# 테이블별 백업
-mysqldump -u root -p --single-transaction flowerbed diaries > diaries_$(date +%Y%m%d).sql
 ```
 
-### 2. 증분 백업
-```sql
--- Binary Log 활성화
-SET GLOBAL binlog_format = 'ROW';
-```
-
-### 3. 복구 테스트
-- 매월 1회 백업 파일로 테스트 DB 복구 테스트
-
----
-
-## 보안 고려사항
-
-### 1. 비밀번호 암호화
-- BCrypt, SCrypt 등 단방향 해시 사용
-- Salt 적용
-
-### 2. SQL Injection 방어
-- PreparedStatement 사용 (JPA 자동 처리)
-- 사용자 입력 검증
-
-### 3. 접근 권한 관리
-```sql
--- 애플리케이션 전용 계정 생성
-CREATE USER 'flowerbed_app'@'%' IDENTIFIED BY 'strong_password';
-GRANT SELECT, INSERT, UPDATE, DELETE ON flowerbed.* TO 'flowerbed_app'@'%';
-FLUSH PRIVILEGES;
-```
-
-### 4. 데이터 암호화
-- 민감 정보(이메일, 일기 내용) 암호화 고려
-- TDE (Transparent Data Encryption) 활용
-
----
-
-## 모니터링 지표
-
-### 1. 쿼리 성능
-```sql
--- Slow Query Log 활성화
-SET GLOBAL slow_query_log = 'ON';
-SET GLOBAL long_query_time = 1;  -- 1초 이상 쿼리 로깅
-```
-
-### 2. 테이블 크기 모니터링
-```sql
-SELECT 
-    table_name,
-    ROUND(((data_length + index_length) / 1024 / 1024), 2) AS "Size (MB)"
-FROM information_schema.TABLES
-WHERE table_schema = 'flowerbed'
-ORDER BY (data_length + index_length) DESC;
-```
-
-### 3. 인덱스 사용률
-```sql
-SHOW INDEX FROM diaries;
-```
+### 2. 보안
+- BCrypt 비밀번호 암호화
+- PreparedStatement 사용 (JPA 자동)
+- 애플리케이션 전용 DB 계정 사용
 
 ---
 
 ## FAQ
 
-### Q1. 왜 emotions_json을 별도 테이블로 분리하지 않았나요?
-A. 초기 단계에서는 JSON으로 충분합니다. 감정별 통계가 복잡해지면 그때 정규화하면 됩니다.
+### Q1. 왜 테이블명이 emotions인가요?
+A. 이 테이블은 감정과 꽃을 매핑하는 마스터 데이터입니다. 엔티티명은 Flower이지만, 테이블명은 emotions입니다.
 
-### Q2. 하루에 여러 일기를 쓰고 싶으면?
-A. `uk_user_date` 제약조건을 제거하고, diary_datetime으로 변경하면 됩니다.
+### Q2. core_emotion과 core_emotion_code의 차이는?
+A. core_emotion은 한글 감정명("기쁨"), core_emotion_code는 영문 코드("JOY")입니다. emotions 테이블의 emotion_code와 조인할 때 사용합니다.
 
-### Q3. 꽃 테이블 없이 Enum만 써도 되지 않나요?
-A. 가능하지만, 꽃말이나 이미지 변경 시 재배포가 필요합니다. DB로 관리하면 유연합니다.
-
-### Q4. deleted_at이 NULL이 아닌 경우는?
-A. Soft Delete로, 실제 데이터는 남아있지만 논리적으로 삭제된 상태입니다.
+### Q3. is_active 컬럼은 왜 GENERATED인가요?
+A. Soft Delete 시 UNIQUE 제약조건을 우회하기 위함입니다. deleted_at이 NULL이 아니면 is_active도 NULL이 되어 UNIQUE 체크에서 제외됩니다.

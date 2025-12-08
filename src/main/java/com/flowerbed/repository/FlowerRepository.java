@@ -7,9 +7,9 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface FlowerRepository extends JpaRepository<Flower, Integer> {
+public interface FlowerRepository extends JpaRepository<Flower, String> {
 
-    Optional<Flower> findByEmotion(String emotion);
+    Optional<Flower> findByEmotionCode(String emotionCode);
 
     Optional<Flower> findByFlowerNameKr(String flowerNameKr);
 }
