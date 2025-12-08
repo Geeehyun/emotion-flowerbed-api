@@ -1,7 +1,7 @@
 package com.flowerbed.service;
 
 import com.flowerbed.domain.Diary;
-import com.flowerbed.domain.Flower;
+import com.flowerbed.domain.Emotion;
 import com.flowerbed.domain.User;
 import com.flowerbed.dto.*;
 import com.flowerbed.exception.BusinessException;
@@ -329,26 +329,25 @@ public class DiaryService {
     }
 
     /**
-     * Flower Entity -> FlowerDetail DTO 변환
+     * Emotion Entity -> FlowerDetail DTO 변환
      */
-    private MonthlyDiariesResponse.FlowerDetail convertToFlowerDetail(Flower flower) {
+    private MonthlyDiariesResponse.FlowerDetail convertToFlowerDetail(Emotion emotion) {
         return MonthlyDiariesResponse.FlowerDetail.builder()
-                .emotionCode(flower.getEmotionCode())
-                .emotionNameKr(flower.getEmotionNameKr())
-                .emotionNameEn(flower.getEmotionNameEn())
-                .flowerNameKr(flower.getFlowerNameKr())
-                .flowerNameEn(flower.getFlowerNameEn())
-                .flowerMeaning(flower.getFlowerMeaning())
-                .flowerMeaningStory(flower.getFlowerMeaningStory())
-                .flowerColor(flower.getFlowerColor())
-                .flowerColorCodes(flower.getFlowerColorCodes())
-                .flowerOrigin(flower.getFlowerOrigin())
-                .flowerBloomingSeason(flower.getFlowerBloomingSeason())
-                .flowerFragrance(flower.getFlowerFragrance())
-                .flowerFunFact(flower.getFlowerFunFact())
-                .imageFile3d(flower.getImageFile3d())
-                .imageFileRealistic(flower.getImageFileRealistic())
-                .isPositive(flower.getIsPositive())
+                .emotionCode(emotion.getEmotionCode())
+                .emotionNameKr(emotion.getEmotionNameKr())
+                .emotionNameEn(emotion.getEmotionNameEn())
+                .flowerNameKr(emotion.getFlowerNameKr())
+                .flowerNameEn(emotion.getFlowerNameEn())
+                .flowerMeaning(emotion.getFlowerMeaning())
+                .flowerMeaningStory(emotion.getFlowerMeaningStory())
+                .flowerColor(emotion.getFlowerColor())
+                .flowerColorCodes(emotion.getFlowerColorCodes())
+                .flowerOrigin(emotion.getFlowerOrigin())
+                .flowerFragrance(emotion.getFlowerFragrance())
+                .flowerFunFact(emotion.getFlowerFunFact())
+                .imageFile3d(emotion.getImageFile3d())
+                .imageFileRealistic(emotion.getImageFileRealistic())
+                .isPositive(emotion.getIsPositive())
                 .build();
     }
 }

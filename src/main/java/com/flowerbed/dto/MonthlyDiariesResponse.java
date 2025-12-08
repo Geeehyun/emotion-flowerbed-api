@@ -52,7 +52,6 @@ public class MonthlyDiariesResponse {
         private String flowerColor;
         private String flowerColorCodes;
         private String flowerOrigin;
-        private String flowerBloomingSeason;
         private String flowerFragrance;
         private String flowerFunFact;
         private String imageFile3d;

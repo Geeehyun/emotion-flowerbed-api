@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class Flower {
+public class Emotion {
 
     @Id
     @Column(name = "emotion_code", length = 20)
@@ -51,9 +51,6 @@ public class Flower {
     @Column(name = "flower_fragrance", length = 50)
     private String flowerFragrance;
 
-    @Column(name = "flower_blooming_season", length = 100)
-    private String flowerBloomingSeason;
-
     @Column(name = "flower_fun_fact", length = 1000)
     private String flowerFunFact;
 
@@ -77,7 +74,7 @@ public class Flower {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Flower(String emotionCode, String emotionNameKr, String emotionNameEn,
+    public Emotion(String emotionCode, String emotionNameKr, String emotionNameEn,
                   String flowerNameKr, String flowerMeaning,
                   String imageFile3d, String imageFileRealistic,
                   Boolean isPositive, Integer displayOrder) {
@@ -102,12 +99,11 @@ public class Flower {
     }
 
     public void updateDetailInfo(String flowerColor, String flowerColorCodes, String flowerOrigin,
-                                  String flowerBloomingSeason, String flowerFragrance,
+                                  String flowerFragrance,
                                   String flowerMeaningStory, String flowerFunFact) {
         this.flowerColor = flowerColor;
         this.flowerColorCodes = flowerColorCodes;
         this.flowerOrigin = flowerOrigin;
-        this.flowerBloomingSeason = flowerBloomingSeason;
         this.flowerFragrance = flowerFragrance;
         this.flowerMeaningStory = flowerMeaningStory;
         this.flowerFunFact = flowerFunFact;
