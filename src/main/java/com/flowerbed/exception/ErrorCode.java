@@ -15,6 +15,7 @@ public enum ErrorCode {
 
     // 404 Not Found
     DIARY_NOT_FOUND(HttpStatus.NOT_FOUND, "DIARY_NOT_FOUND", "일기를 찾을 수 없습니다"),
+    DIARY_NOT_ANALYZED(HttpStatus.NOT_FOUND, "DIARY_NOT_ANALYZED", "일기가 아직 분석되지 않았습니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다"),
     FLOWER_NOT_FOUND(HttpStatus.NOT_FOUND, "FLOWER_NOT_FOUND", "꽃 정보를 찾을 수 없습니다"),
 

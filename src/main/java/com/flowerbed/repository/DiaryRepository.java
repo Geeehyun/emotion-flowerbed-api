@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
     // 특정 날짜 일기 조회 (하루 1개)
-    Optional<Diary> findByUserUserIdAndDiaryDate(Long userId, LocalDate diaryDate);
+    Optional<Diary> findByUserUserIdAndDiaryDateAndDeletedAtIsNull(Long userId, LocalDate diaryDate);
 
     // 월별 일기 조회
     @Query("SELECT d FROM Diary d WHERE d.user.userId = :userId " +
@@ -37,4 +37,7 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
     // 사용자의 최근 일기 조회
     List<Diary> findByUserUserIdOrderByDiaryDateDesc(Long userId);
+
+    // 사용자의 분석된 일기 조회
+    List<Diary> findByUserUserIdAndIsAnalyzed(Long userId, Boolean isAnalyzed);
 }

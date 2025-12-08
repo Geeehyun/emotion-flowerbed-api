@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface FlowerRepository extends JpaRepository<Flower, Integer> {
 
     Optional<Flower> findByEmotion(String emotion);
+
+    Optional<Flower> findByFlowerNameKr(String flowerNameKr);
 }

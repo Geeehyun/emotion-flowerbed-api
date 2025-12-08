@@ -98,15 +98,25 @@ public class DiaryEmotionTestService {
     private List<Integer> generateRandomPercentages(int count) {
         List<Integer> percentages = new ArrayList<>();
         int remaining = 100;
+        int minPercent = 10; // 각 감정의 최소 퍼센트
 
         for (int i = 0; i < count - 1; i++) {
-            int maxForThis = remaining - (count - i - 1); // 남은 항목에 최소 1%씩 보장
-            int percent = random.nextInt(maxForThis - 10) + 10; // 최소 10%
+            // 남은 항목들에게 최소 퍼센트를 보장해야 함
+            int remainingItems = count - i - 1;
+            int maxForThis = remaining - (remainingItems * minPercent);
+
+            // maxForThis가 minPercent보다 작으면 minPercent로 제한
+            if (maxForThis < minPercent) {
+                maxForThis = minPercent;
+            }
+
+            int percent = random.nextInt(maxForThis - minPercent + 1) + minPercent;
             percentages.add(percent);
             remaining -= percent;
         }
 
-        percentages.add(remaining); // 마지막은 남은 값
+        // 마지막은 남은 값 (음수가 될 수 없도록 최소값 보장)
+        percentages.add(Math.max(remaining, minPercent));
 
         return percentages;
     }

@@ -36,12 +36,15 @@ public class DiaryService {
     @Transactional
     public DiaryResponse createDiary(Long userId, DiaryCreateRequest request) {
 
+        // 일기 내용 유효성 검사
+        validateDiaryContent(request.getContent());
+
         // 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 같은 날짜에 일기가 이미 있는지 확인
-        diaryRepository.findByUserUserIdAndDiaryDate(userId, request.getDiaryDate())
+        diaryRepository.findByUserUserIdAndDiaryDateAndDeletedAtIsNull(userId, request.getDiaryDate())
                 .ifPresent(diary -> {
                     throw new BusinessException(ErrorCode.DUPLICATE_DIARY_DATE,
                             "해당 날짜에 이미 일기가 존재합니다");
@@ -158,7 +161,7 @@ public class DiaryService {
      */
     public DiaryResponse getDiaryByDate(Long userId, LocalDate date) {
 
-        Diary diary = diaryRepository.findByUserUserIdAndDiaryDate(userId, date)
+        Diary diary = diaryRepository.findByUserUserIdAndDiaryDateAndDeletedAtIsNull(userId, date)
                 .orElseThrow(DiaryNotFoundException::new);
 
         return convertToResponse(diary);
@@ -203,6 +206,9 @@ public class DiaryService {
     @Transactional
     public DiaryResponse updateDiary(Long userId, Long diaryId, DiaryUpdateRequest request) {
 
+        // 일기 내용 유효성 검사
+        validateDiaryContent(request.getContent());
+
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(DiaryNotFoundException::new);
 
@@ -236,6 +242,26 @@ public class DiaryService {
         diaryRepository.delete(diary); // Soft Delete (@SQLDelete 적용)
 
         log.info("Diary deleted: diaryId={}", diaryId);
+    }
+
+    /**
+     * 일기 내용 유효성 검사
+     */
+    private void validateDiaryContent(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_DIARY_CONTENT,
+                    "일기 내용이 비어있습니다");
+        }
+
+        if (content.length() < 10) {
+            throw new BusinessException(ErrorCode.INVALID_DIARY_CONTENT,
+                    "일기 내용이 너무 짧습니다. 최소 10자 이상 작성해주세요");
+        }
+
+        if (content.length() > 5000) {
+            throw new BusinessException(ErrorCode.INVALID_DIARY_CONTENT,
+                    "일기 내용이 너무 깁니다. 최대 5000자까지 가능합니다");
+        }
     }
 
     /**
