@@ -1,12 +1,14 @@
 package com.flowerbed.service;
 
 import com.flowerbed.domain.Diary;
+import com.flowerbed.domain.Flower;
 import com.flowerbed.domain.User;
 import com.flowerbed.dto.*;
 import com.flowerbed.exception.BusinessException;
 import com.flowerbed.exception.DiaryNotFoundException;
 import com.flowerbed.exception.ErrorCode;
 import com.flowerbed.repository.DiaryRepository;
+import com.flowerbed.repository.FlowerRepository;
 import com.flowerbed.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class DiaryService {
 
     private final DiaryRepository diaryRepository;
     private final UserRepository userRepository;
+    private final FlowerRepository flowerRepository;
     private final DiaryEmotionService emotionService;
     private final DiaryEmotionTestService emotionTestService;
 
@@ -303,6 +306,14 @@ public class DiaryService {
                     .collect(Collectors.toList());
         }
 
+        // 꽃 상세 정보 조회
+        MonthlyDiariesResponse.FlowerDetail flowerDetail = null;
+        if (diary.getFlowerName() != null) {
+            flowerDetail = flowerRepository.findByFlowerNameKr(diary.getFlowerName())
+                    .map(this::convertToFlowerDetail)
+                    .orElse(null);
+        }
+
         return MonthlyDiariesResponse.DiaryListItem.builder()
                 .id(diary.getDiaryId())
                 .date(diary.getDiaryDate())
@@ -313,6 +324,26 @@ public class DiaryService {
                 .summary(diary.getSummary())
                 .emotions(emotions)
                 .reason(diary.getEmotionReason())
+                .flowerDetail(flowerDetail)
+                .build();
+    }
+
+    /**
+     * Flower Entity -> FlowerDetail DTO 변환
+     */
+    private MonthlyDiariesResponse.FlowerDetail convertToFlowerDetail(Flower flower) {
+        return MonthlyDiariesResponse.FlowerDetail.builder()
+                .flowerNameKr(flower.getFlowerNameKr())
+                .flowerNameEn(flower.getFlowerNameEn())
+                .flowerColor(flower.getFlowerColor())
+                .flowerColorCodes(flower.getFlowerColorCodes())
+                .flowerOrigin(flower.getFlowerOrigin())
+                .flowerBloomingSeason(flower.getFlowerBloomingSeason())
+                .flowerFragrance(flower.getFlowerFragrance())
+                .flowerMeaningOrigin(flower.getFlowerMeaningOrigin())
+                .flowerFunFact(flower.getFlowerFunFact())
+                .imageFile3d(flower.getImageFile3d())
+                .imageFileRealistic(flower.getImageFileRealistic())
                 .build();
     }
 }

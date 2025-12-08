@@ -34,5 +34,24 @@ public class MonthlyDiariesResponse {
         private String summary;
         private List<EmotionPercent> emotions;
         private String reason;
+        private FlowerDetail flowerDetail;  // 꽃 상세 정보
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FlowerDetail {
+        private String flowerNameKr;
+        private String flowerNameEn;
+        private String flowerColor;
+        private String flowerColorCodes;
+        private String flowerOrigin;
+        private String flowerBloomingSeason;
+        private String flowerFragrance;
+        private String flowerMeaningOrigin;
+        private String flowerFunFact;
+        private String imageFile3d;
+        private String imageFileRealistic;
     }
 }

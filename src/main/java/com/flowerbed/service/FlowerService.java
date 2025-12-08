@@ -1,13 +1,8 @@
 package com.flowerbed.service;
 
 import com.flowerbed.domain.Diary;
-import com.flowerbed.domain.Flower;
-import com.flowerbed.dto.FlowerResponse;
 import com.flowerbed.dto.UserEmotionFlowerResponse;
-import com.flowerbed.exception.BusinessException;
-import com.flowerbed.exception.ErrorCode;
 import com.flowerbed.repository.DiaryRepository;
-import com.flowerbed.repository.FlowerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,44 +19,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FlowerService {
 
-    private final FlowerRepository flowerRepository;
     private final DiaryRepository diaryRepository;
-
-    /**
-     * 꽃 이름으로 상세 정보 조회
-     */
-    public FlowerResponse getFlowerByName(String flowerName) {
-        Flower flower = flowerRepository.findByFlowerNameKr(flowerName)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FLOWER_NOT_FOUND,
-                        "꽃을 찾을 수 없습니다: " + flowerName));
-
-        return convertToResponse(flower);
-    }
-
-    /**
-     * 일기 ID로 해당 일기의 꽃 상세 정보 조회
-     */
-    public FlowerResponse getFlowerByDiaryId(Long userId, Long diaryId) {
-        Diary diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DIARY_NOT_FOUND));
-
-        // 권한 확인
-        if (!diary.getUser().getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
-        }
-
-        // 분석되지 않은 일기인 경우
-        if (!diary.getIsAnalyzed() || diary.getFlowerName() == null) {
-            throw new BusinessException(ErrorCode.DIARY_NOT_ANALYZED,
-                    "아직 감정 분석이 완료되지 않은 일기입니다");
-        }
-
-        Flower flower = flowerRepository.findByFlowerNameKr(diary.getFlowerName())
-                .orElseThrow(() -> new BusinessException(ErrorCode.FLOWER_NOT_FOUND,
-                        "꽃 정보를 찾을 수 없습니다: " + diary.getFlowerName()));
-
-        return convertToResponse(flower);
-    }
 
     /**
      * 사용자의 감정&꽃 리스트 조회
@@ -103,32 +61,6 @@ public class FlowerService {
         return UserEmotionFlowerResponse.builder()
                 .items(items)
                 .totalCount(items.size())
-                .build();
-    }
-
-    /**
-     * Flower Entity -> FlowerResponse 변환
-     */
-    private FlowerResponse convertToResponse(Flower flower) {
-        return FlowerResponse.builder()
-                .flowerId(flower.getFlowerId())
-                .emotion(flower.getEmotion())
-                .flowerNameKr(flower.getFlowerNameKr())
-                .flowerNameEn(flower.getFlowerNameEn())
-                .flowerMeaning(flower.getFlowerMeaning())
-                .flowerColor(flower.getFlowerColor())
-                .flowerColorCodes(flower.getFlowerColorCodes())
-                .flowerOrigin(flower.getFlowerOrigin())
-                .flowerBloomingSeason(flower.getFlowerBloomingSeason())
-                .flowerFragrance(flower.getFlowerFragrance())
-                .flowerMeaningOrigin(flower.getFlowerMeaningOrigin())
-                .flowerFunFact(flower.getFlowerFunFact())
-                .imageFile3d(flower.getImageFile3d())
-                .imageFileRealistic(flower.getImageFileRealistic())
-                .isPositive(flower.getIsPositive())
-                .displayOrder(flower.getDisplayOrder())
-                .createdAt(flower.getCreatedAt())
-                .updatedAt(flower.getUpdatedAt())
                 .build();
     }
 
