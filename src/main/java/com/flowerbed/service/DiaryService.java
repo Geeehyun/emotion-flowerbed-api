@@ -91,9 +91,15 @@ public class DiaryService {
                 .map(e -> new Diary.EmotionPercent(e.getEmotion(), e.getPercent()))
                 .collect(Collectors.toList());
 
+        // 감정 코드 조회
+        String emotionCode = flowerRepository.findByEmotionNameKr(emotionResponse.getCoreEmotion())
+                .map(Emotion::getEmotionCode)
+                .orElse(null);
+
         diary.updateAnalysis(
                 emotionResponse.getSummary(),
                 emotionResponse.getCoreEmotion(),
+                emotionCode,
                 emotionResponse.getReason(),
                 emotionResponse.getFlower(),
                 emotionResponse.getFloriography(),
@@ -128,9 +134,15 @@ public class DiaryService {
                 .map(e -> new Diary.EmotionPercent(e.getEmotion(), e.getPercent()))
                 .collect(Collectors.toList());
 
+        // 감정 코드 조회
+        String emotionCode = flowerRepository.findByEmotionNameKr(emotionResponse.getCoreEmotion())
+                .map(Emotion::getEmotionCode)
+                .orElse(null);
+
         diary.updateAnalysis(
                 emotionResponse.getSummary(),
                 emotionResponse.getCoreEmotion(),
+                emotionCode,
                 emotionResponse.getReason(),
                 emotionResponse.getFlower(),
                 emotionResponse.getFloriography(),
@@ -278,12 +290,21 @@ public class DiaryService {
                     .collect(Collectors.toList());
         }
 
+        // 꽃 상세정보 조회
+        DiaryResponse.FlowerDetail flowerDetail = null;
+        if (diary.getFlowerName() != null) {
+            flowerDetail = flowerRepository.findByFlowerNameKr(diary.getFlowerName())
+                    .map(this::convertToDiaryFlowerDetail)
+                    .orElse(null);
+        }
+
         return DiaryResponse.builder()
                 .diaryId(diary.getDiaryId())
                 .diaryDate(diary.getDiaryDate())
                 .content(diary.getContent())
                 .summary(diary.getSummary())
                 .coreEmotion(diary.getCoreEmotion())
+                .coreEmotionCode(diary.getCoreEmotionCode())
                 .emotionReason(diary.getEmotionReason())
                 .flowerName(diary.getFlowerName())
                 .flowerMeaning(diary.getFlowerMeaning())
@@ -292,6 +313,30 @@ public class DiaryService {
                 .analyzedAt(diary.getAnalyzedAt())
                 .createdAt(diary.getCreatedAt())
                 .updatedAt(diary.getUpdatedAt())
+                .flowerDetail(flowerDetail)
+                .build();
+    }
+
+    /**
+     * Emotion Entity -> DiaryResponse.FlowerDetail DTO 변환
+     */
+    private DiaryResponse.FlowerDetail convertToDiaryFlowerDetail(Emotion emotion) {
+        return DiaryResponse.FlowerDetail.builder()
+                .emotionCode(emotion.getEmotionCode())
+                .emotionNameKr(emotion.getEmotionNameKr())
+                .emotionNameEn(emotion.getEmotionNameEn())
+                .flowerNameKr(emotion.getFlowerNameKr())
+                .flowerNameEn(emotion.getFlowerNameEn())
+                .flowerMeaning(emotion.getFlowerMeaning())
+                .flowerMeaningStory(emotion.getFlowerMeaningStory())
+                .flowerColor(emotion.getFlowerColor())
+                .flowerColorCodes(emotion.getFlowerColorCodes())
+                .flowerOrigin(emotion.getFlowerOrigin())
+                .flowerFragrance(emotion.getFlowerFragrance())
+                .flowerFunFact(emotion.getFlowerFunFact())
+                .imageFile3d(emotion.getImageFile3d())
+                .imageFileRealistic(emotion.getImageFileRealistic())
+                .isPositive(emotion.getIsPositive())
                 .build();
     }
 

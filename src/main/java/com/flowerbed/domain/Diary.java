@@ -48,6 +48,9 @@ public class Diary {
     @Column(name = "core_emotion", length = 20)
     private String coreEmotion;
 
+    @Column(name = "core_emotion_code", length = 20)
+    private String coreEmotionCode;
+
     @Column(name = "emotion_reason", columnDefinition = "TEXT")
     private String emotionReason;
 
@@ -91,11 +94,12 @@ public class Diary {
         this.analyzedAt = null;
     }
 
-    public void updateAnalysis(String summary, String coreEmotion, String emotionReason,
-                               String flowerName, String flowerMeaning,
+    public void updateAnalysis(String summary, String coreEmotion, String coreEmotionCode,
+                               String emotionReason, String flowerName, String flowerMeaning,
                                List<EmotionPercent> emotionsJson) {
         this.summary = summary;
         this.coreEmotion = coreEmotion;
+        this.coreEmotionCode = coreEmotionCode;
         this.emotionReason = emotionReason;
         this.flowerName = flowerName;
         this.flowerMeaning = flowerMeaning;

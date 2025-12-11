@@ -21,7 +21,7 @@ public class SwaggerConfig {
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("Flowerbed Team")
-                                .email("support@flowerbed.com")))
+                                .email("wkdwl578@google.com")))
                 .servers(List.of(
                         new Server()
                                 .url("http://localhost:8080/api")

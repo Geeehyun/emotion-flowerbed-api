@@ -1,13 +1,19 @@
 package com.flowerbed.service;
 
 import com.flowerbed.domain.Diary;
+import com.flowerbed.domain.Emotion;
+import com.flowerbed.dto.AllEmotionsResponse;
 import com.flowerbed.dto.UserEmotionFlowerResponse;
 import com.flowerbed.repository.DiaryRepository;
+import com.flowerbed.repository.FlowerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +26,10 @@ import java.util.stream.Collectors;
 public class FlowerService {
 
     private final DiaryRepository diaryRepository;
+    private final FlowerRepository flowerRepository;
 
     /**
-     * 사용자의 감정&꽃 리스트 조회
+     * 사용자의 감정&꽃 리스트 조회 (꽃 상세정보 및 날짜 목록 포함)
      */
     public UserEmotionFlowerResponse getUserEmotionFlowers(Long userId) {
         // 사용자의 분석된 일기 중 핵심 감정별로 그룹화
@@ -35,27 +42,44 @@ public class FlowerService {
                     .build();
         }
 
-        // 감정별로 카운트 (순서 유지를 위해 LinkedHashMap 사용)
+        // 감정별로 데이터 집계 (순서 유지를 위해 LinkedHashMap 사용)
         Map<String, EmotionFlowerData> emotionMap = new LinkedHashMap<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         for (Diary diary : analyzedDiaries) {
             String emotion = diary.getCoreEmotion();
+            String emotionCode = diary.getCoreEmotionCode();
             if (emotion != null) {
                 emotionMap.computeIfAbsent(emotion, k -> new EmotionFlowerData(
                         emotion,
+                        emotionCode,
                         diary.getFlowerName(),
                         diary.getFlowerMeaning()
-                )).incrementCount();
+                )).addDate(diary.getDiaryDate().format(dateFormatter));
             }
         }
 
+        // EmotionFlowerItem으로 변환
         List<UserEmotionFlowerResponse.EmotionFlowerItem> items = emotionMap.values().stream()
-                .map(data -> UserEmotionFlowerResponse.EmotionFlowerItem.builder()
-                        .emotion(data.emotion)
-                        .flowerName(data.flowerName)
-                        .flowerMeaning(data.flowerMeaning)
-                        .count(data.count)
-                        .build())
+                .map(data -> {
+                    // 꽃 상세정보 조회
+                    UserEmotionFlowerResponse.FlowerDetail flowerDetail = null;
+                    if (data.flowerName != null) {
+                        flowerDetail = flowerRepository.findByFlowerNameKr(data.flowerName)
+                                .map(this::convertToFlowerDetail)
+                                .orElse(null);
+                    }
+
+                    return UserEmotionFlowerResponse.EmotionFlowerItem.builder()
+                            .emotion(data.emotion)
+                            .emotionCode(data.emotionCode)
+                            .flowerName(data.flowerName)
+                            .flowerMeaning(data.flowerMeaning)
+                            .count(data.count)
+                            .dates(data.dates)
+                            .flowerDetail(flowerDetail)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return UserEmotionFlowerResponse.builder()
@@ -65,21 +89,81 @@ public class FlowerService {
     }
 
     /**
+     * Emotion Entity -> FlowerDetail DTO 변환
+     */
+    private UserEmotionFlowerResponse.FlowerDetail convertToFlowerDetail(Emotion emotion) {
+        return UserEmotionFlowerResponse.FlowerDetail.builder()
+                .emotionCode(emotion.getEmotionCode())
+                .emotionNameKr(emotion.getEmotionNameKr())
+                .emotionNameEn(emotion.getEmotionNameEn())
+                .flowerNameKr(emotion.getFlowerNameKr())
+                .flowerNameEn(emotion.getFlowerNameEn())
+                .flowerMeaning(emotion.getFlowerMeaning())
+                .flowerMeaningStory(emotion.getFlowerMeaningStory())
+                .flowerColor(emotion.getFlowerColor())
+                .flowerColorCodes(emotion.getFlowerColorCodes())
+                .flowerOrigin(emotion.getFlowerOrigin())
+                .flowerFragrance(emotion.getFlowerFragrance())
+                .flowerFunFact(emotion.getFlowerFunFact())
+                .imageFile3d(emotion.getImageFile3d())
+                .imageFileRealistic(emotion.getImageFileRealistic())
+                .isPositive(emotion.getIsPositive())
+                .build();
+    }
+
+    /**
+     * 전체 감정-꽃 정보 조회 (display_order 순으로 정렬)
+     */
+    public AllEmotionsResponse getAllEmotions() {
+        List<Emotion> emotions = flowerRepository.findAll(Sort.by(Sort.Direction.ASC, "displayOrder"));
+
+        List<AllEmotionsResponse.EmotionItem> items = emotions.stream()
+                .map(emotion -> AllEmotionsResponse.EmotionItem.builder()
+                        .emotionCode(emotion.getEmotionCode())
+                        .emotionNameKr(emotion.getEmotionNameKr())
+                        .emotionNameEn(emotion.getEmotionNameEn())
+                        .flowerNameKr(emotion.getFlowerNameKr())
+                        .flowerNameEn(emotion.getFlowerNameEn())
+                        .flowerMeaning(emotion.getFlowerMeaning())
+                        .flowerMeaningStory(emotion.getFlowerMeaningStory())
+                        .flowerColor(emotion.getFlowerColor())
+                        .flowerColorCodes(emotion.getFlowerColorCodes())
+                        .flowerOrigin(emotion.getFlowerOrigin())
+                        .flowerFragrance(emotion.getFlowerFragrance())
+                        .flowerFunFact(emotion.getFlowerFunFact())
+                        .imageFile3d(emotion.getImageFile3d())
+                        .imageFileRealistic(emotion.getImageFileRealistic())
+                        .isPositive(emotion.getIsPositive())
+                        .displayOrder(emotion.getDisplayOrder())
+                        .build())
+                .collect(Collectors.toList());
+
+        return AllEmotionsResponse.builder()
+                .emotions(items)
+                .totalCount(items.size())
+                .build();
+    }
+
+    /**
      * 감정별 꽃 데이터 집계용 내부 클래스
      */
     private static class EmotionFlowerData {
         String emotion;
+        String emotionCode;
         String flowerName;
         String flowerMeaning;
         int count = 0;
+        List<String> dates = new ArrayList<>();
 
-        EmotionFlowerData(String emotion, String flowerName, String flowerMeaning) {
+        EmotionFlowerData(String emotion, String emotionCode, String flowerName, String flowerMeaning) {
             this.emotion = emotion;
+            this.emotionCode = emotionCode;
             this.flowerName = flowerName;
             this.flowerMeaning = flowerMeaning;
         }
 
-        void incrementCount() {
+        void addDate(String date) {
+            this.dates.add(date);
             this.count++;
         }
     }

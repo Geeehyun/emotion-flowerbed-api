@@ -1,163 +1,49 @@
-# Database 설계 문서
+# 데이터베이스 설계 문서
 
-## 개요
-- **Database명**: flowerbed
-- **DBMS**: MariaDB 10.x
-- **문자셋**: utf8mb4_unicode_ci (이모지 지원)
-- **엔진**: InnoDB (트랜잭션 지원)
+## 1. users (회원)
 
----
+사용자 계정 정보를 관리하는 테이블입니다.
 
-## ERD (Entity Relationship Diagram)
-
-```
-┌─────────────────┐
-│     users       │
-│─────────────────│
-│ user_id (PK)    │
-│ email (UQ)      │
-│ password        │
-│ nickname        │
-│ profile_image   │
-│ created_at      │
-│ updated_at      │
-│ deleted_at      │
-└─────────────────┘
-        │
-        │ 1:N
-        ↓
-┌──────────────────┐         ┌───────────────────┐
-│    diaries       │         │    emotions       │
-│──────────────────│         │───────────────────│
-│ diary_id (PK)    │         │ emotion_code (PK) │
-│ user_id (FK)     │ N:1     │ emotion_name_kr   │
-│ diary_date       │←────────│ emotion_name_en   │
-│ content          │         │ flower_name_kr    │
-│ summary          │         │ flower_name_en    │
-│ core_emotion─────┼────────→│ flower_meaning    │
-│ core_emotion_code│         │ flower_...        │
-│ emotion_reason   │         │ image_file_3d     │
-│ flower_name      │         │ image_file_real   │
-│ flower_meaning   │         │ is_positive       │
-│ emotions_json    │         │ display_order     │
-│ is_analyzed      │         │ created_at        │
-│ analyzed_at      │         │ updated_at        │
-│ created_at       │         └───────────────────┘
-│ updated_at       │
-│ deleted_at       │
-└──────────────────┘
-```
-
----
-
-## 테이블 상세 설명
-
-### 1. users (회원)
+### 테이블 구조
 
 | 컬럼명 | 타입 | 제약조건 | 설명 |
-|--------|------|----------|------|
-| user_id | BIGINT | PK, AUTO_INCREMENT | 회원 고유 ID |
-| email | VARCHAR(255) | UNIQUE, NOT NULL | 이메일 (로그인 ID) |
-| password | VARCHAR(255) | NOT NULL | 암호화된 비밀번호 (BCrypt 등) |
-| nickname | VARCHAR(50) | NOT NULL | 닉네임 |
-| profile_image | VARCHAR(255) | NULL | 프로필 이미지 URL |
-| created_at | DATETIME | DEFAULT NOW | 가입일시 |
-| updated_at | DATETIME | ON UPDATE NOW | 최종 수정일시 |
-| deleted_at | DATETIME | NULL | 탈퇴일시 (Soft Delete) |
+|--------|------|---------|------|
+| user_id | bigint(20) | PK, AUTO_INCREMENT | 회원 고유 ID |
+| email | varchar(255) | NOT NULL, UNIQUE | 이메일 (로그인 ID) |
+| password | varchar(255) | NOT NULL | 암호화된 비밀번호 |
+| nickname | varchar(50) | NOT NULL | 닉네임 |
+| profile_image | varchar(255) | NULL | 프로필 이미지 URL |
+| created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 가입일시 |
+| updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| deleted_at | datetime | NULL | 탈퇴일시 (Soft Delete) |
 
-**인덱스**:
-- `idx_email`: 로그인 시 이메일 조회
-- `idx_created_at`: 가입일 기준 정렬
+### 인덱스
+- PRIMARY KEY: `user_id`
+- UNIQUE KEY: `email`
+- INDEX: `idx_email` (이메일 조회 최적화)
+- INDEX: `idx_created_at` (가입일 기준 조회 최적화)
 
-**비즈니스 규칙**:
-- 이메일 중복 불가
-- 탈퇴 시 deleted_at에 일시 기록 (실제 삭제 X)
-- 탈퇴 후에도 일기 데이터는 CASCADE로 삭제됨
-
----
-
-### 2. diaries (일기)
-
-| 컬럼명 | 타입 | 제약조건 | 설명 |
-|--------|------|----------|------|
-| diary_id | BIGINT | PK, AUTO_INCREMENT | 일기 고유 ID |
-| user_id | BIGINT | FK, NOT NULL | 작성자 ID |
-| diary_date | DATE | NOT NULL | 일기 날짜 |
-| content | TEXT | NOT NULL | 일기 내용 (최대 5000자) |
-| summary | TEXT | NULL | AI 생성 요약 |
-| core_emotion | VARCHAR(20) | NULL | 대표 감정 (한글) |
-| core_emotion_code | VARCHAR(20) | NULL | 대표 감정 코드 (영문) |
-| emotion_reason | TEXT | NULL | 대표 감정 선택 이유 |
-| flower_name | VARCHAR(50) | NULL | 꽃 이름 |
-| flower_meaning | VARCHAR(100) | NULL | 꽃말 |
-| emotions_json | LONGTEXT | NULL | 전체 감정 배열 JSON |
-| is_analyzed | BOOLEAN | DEFAULT FALSE | 분석 완료 여부 |
-| analyzed_at | DATETIME | NULL | 분석 완료 일시 |
-| created_at | DATETIME | DEFAULT NOW | 작성일시 |
-| updated_at | DATETIME | ON UPDATE NOW | 수정일시 |
-| deleted_at | DATETIME | NULL | 삭제일시 (Soft Delete) |
-| is_active | TINYINT(1) | GENERATED | deleted_at IS NULL ? 1 : NULL |
-
-**인덱스**:
-- `uk_user_date_active`: (user_id, diary_date, is_active) UNIQUE - 하루 1개 일기만
-- `idx_user_date`: (user_id, diary_date) - 특정 날짜 조회
-- `idx_user_created`: (user_id, created_at DESC) - 최신 일기 목록
-- `idx_core_emotion`: (core_emotion) - 감정별 통계
-- `idx_analyzed`: (is_analyzed, analyzed_at) - 분석 대기 목록
-
-**emotions_json 예시**:
-```json
-[
-  {"emotion": "기쁨", "percent": 60},
-  {"emotion": "슬픔", "percent": 30},
-  {"emotion": "혼란", "percent": 10}
-]
+### DDL
+```mysql
+-- users DDL
+CREATE TABLE `users` (
+`user_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '회원 ID',
+`email` varchar(255) NOT NULL COMMENT '이메일 (로그인 ID)',
+`password` varchar(255) NOT NULL COMMENT '암호화된 비밀번호',
+`nickname` varchar(50) NOT NULL COMMENT '닉네임',
+`profile_image` varchar(255) DEFAULT NULL COMMENT '프로필 이미지 URL',
+`created_at` datetime DEFAULT current_timestamp() COMMENT '가입일시',
+`updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+`deleted_at` datetime DEFAULT NULL COMMENT '탈퇴일시 (soft delete)',
+PRIMARY KEY (`user_id`),
+UNIQUE KEY `email` (`email`),
+KEY `idx_email` (`email`),
+KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='회원'
+;
 ```
 
-**비즈니스 규칙**:
-- 한 사용자는 하루에 일기 1개만 작성 가능 (uk_user_date_active)
-- Soft Delete된 일기는 is_active가 NULL이 되어 UNIQUE 제약조건에서 제외됨
-- 일기 작성 직후 is_analyzed=FALSE
-- AI 분석 완료 후 is_analyzed=TRUE, analyzed_at 갱신
-
----
-
-### 3. emotions (감정-꽃 마스터)
-
-| 컬럼명 | 타입 | 제약조건 | 설명 |
-|--------|------|----------|------|
-| emotion_code | VARCHAR(20) | PK | 감정 코드 (영문, 예: JOY) |
-| emotion_name_kr | VARCHAR(20) | NOT NULL | 감정명 (한글, 예: 기쁨) |
-| emotion_name_en | VARCHAR(20) | NOT NULL | 감정명 (영문, 예: Joy) |
-| flower_name_kr | VARCHAR(50) | NOT NULL | 꽃 이름 (한글) |
-| flower_name_en | VARCHAR(50) | NULL | 꽃 이름 (영문) |
-| flower_meaning | VARCHAR(100) | NOT NULL | 꽃말 |
-| flower_meaning_story | VARCHAR(1000) | NULL | 꽃말 유래 |
-| flower_color | VARCHAR(50) | NULL | 꽃 색상 텍스트 |
-| flower_color_codes | VARCHAR(500) | NULL | 꽃 색상 코드 (콤마 구분) |
-| flower_origin | VARCHAR(100) | NULL | 꽃 원산지 |
-| flower_fragrance | VARCHAR(50) | NULL | 꽃 향기 설명 |
-| flower_blooming_season | VARCHAR(100) | NULL | 개화 시기 |
-| flower_fun_fact | VARCHAR(1000) | NULL | 재미있는 사실 |
-| image_file_3d | VARCHAR(100) | NOT NULL | 3D 이미지 파일명 |
-| image_file_realistic | VARCHAR(100) | NOT NULL | 실사 이미지 파일명 |
-| is_positive | BOOLEAN | NOT NULL | 긍정 감정 여부 |
-| display_order | INT | NOT NULL | 표시 순서 |
-| created_at | DATETIME | DEFAULT NOW | 생성일시 |
-| updated_at | DATETIME | ON UPDATE NOW | 수정일시 |
-
-**비즈니스 규칙**:
-- 20개 고정 데이터 (초기 데이터 INSERT)
-- 관리자 페이지에서 꽃말/이미지 수정 가능
-- emotion_code는 diaries.core_emotion_code와 매칭
-
-**초기 데이터**: 20개 감정 (기쁨, 행복, 감사, 설렘, 평온, 성취, 사랑, 희망, 활력, 재미, 슬픔, 외로움, 불안, 분노, 피로, 후회, 무기력, 혼란, 실망, 지루함)
-
----
-
-## JPA Entity 매핑
-
-### User Entity
+### JPA Entity
 ```java
 @Entity
 @Table(name = "users")
@@ -166,146 +52,362 @@
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false, length = 50)
     private String nickname;
+
+    @Column(name = "profile_image")
     private String profileImage;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Diary> diaries = new ArrayList<>();
+
     @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 }
 ```
 
-### Diary Entity
+---
+
+## 2. diaries (일기)
+
+사용자가 작성한 일기와 AI 감정 분석 결과를 저장하는 테이블입니다.
+
+### 테이블 구조
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|---------|------|
+| diary_id | bigint(20) | PK, AUTO_INCREMENT | 일기 고유 ID |
+| user_id | bigint(20) | FK, NOT NULL | 작성자 ID (users.user_id) |
+| diary_date | date | NOT NULL | 일기 날짜 |
+| content | text | NOT NULL | 일기 내용 |
+| summary | text | NULL | AI 생성 일기 요약 |
+| core_emotion | varchar(20) | NULL | 대표 감정 (한글명) |
+| core_emotion_code | varchar(20) | NULL | 대표 감정 코드 (영문) |
+| emotion_reason | text | NULL | 대표 감정 선택 이유 |
+| flower_name | varchar(50) | NULL | 감정에 매칭되는 꽃 이름 |
+| flower_meaning | varchar(100) | NULL | 꽃말 |
+| emotions_json | longtext | NULL | 전체 감정 배열 JSON |
+| is_analyzed | tinyint(1) | DEFAULT 0 | 감정 분석 완료 여부 |
+| analyzed_at | datetime | NULL | 분석 완료 일시 |
+| created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 작성일시 |
+| updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| deleted_at | datetime | NULL | 삭제일시 (Soft Delete) |
+| is_active | tinyint(1) | GENERATED COLUMN | 활성 상태 (deleted_at IS NULL) |
+
+### 제약조건
+- **FOREIGN KEY**: `user_id` → `users.user_id` (ON DELETE CASCADE)
+- **UNIQUE KEY**: `uk_user_date_active` (user_id, diary_date, is_active)
+  - 같은 사용자가 같은 날짜에 여러 일기를 작성할 수 없도록 제한
+  - is_active를 포함하여 soft delete된 일기는 제약에서 제외
+
+### 인덱스
+- PRIMARY KEY: `diary_id`
+- UNIQUE KEY: `uk_user_date_active` (user_id, diary_date, is_active)
+- INDEX: `idx_user_date` (사용자별 날짜 조회)
+- INDEX: `idx_user_created` (사용자별 최신순 조회)
+- INDEX: `idx_core_emotion` (감정별 조회)
+- INDEX: `idx_analyzed` (분석 상태별 조회)
+
+### emotions_json 구조
+```json
+[
+  {"emotion": "기쁨", "percent": 40},
+  {"emotion": "설렘", "percent": 30},
+  {"emotion": "평온", "percent": 20},
+  {"emotion": "감사", "percent": 10}
+]
+```
+
+### DDL
+```mysql
+-- diaries DDL
+CREATE TABLE `diaries` (
+  `diary_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '일기 ID',
+  `user_id` bigint(20) NOT NULL COMMENT '작성자 ID',
+  `diary_date` date NOT NULL COMMENT '일기 날짜',
+  `content` text NOT NULL COMMENT '일기 내용',
+  `summary` text DEFAULT NULL COMMENT '일기 요약',
+  `core_emotion` varchar(20) DEFAULT NULL COMMENT '대표 감정',
+  `core_emotion_code` varchar(20) DEFAULT NULL,
+  `emotion_reason` text DEFAULT NULL COMMENT '대표 감정 선택 이유',
+  `flower_name` varchar(50) DEFAULT NULL COMMENT '꽃 이름',
+  `flower_meaning` varchar(100) DEFAULT NULL COMMENT '꽃말',
+  `emotions_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '전체 감정 배열 JSON' CHECK (json_valid(`emotions_json`)),
+  `is_analyzed` tinyint(1) DEFAULT 0 COMMENT '분석 완료 여부',
+  `analyzed_at` datetime DEFAULT NULL COMMENT '분석 완료 일시',
+  `created_at` datetime DEFAULT current_timestamp() COMMENT '작성일시',
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  `deleted_at` datetime DEFAULT NULL COMMENT '삭제일시 (soft delete)',
+  `is_active` tinyint(1) GENERATED ALWAYS AS (case when `deleted_at` is null then 1 else NULL end) STORED,
+  PRIMARY KEY (`diary_id`),
+  UNIQUE KEY `uk_user_date_active` (`user_id`,`diary_date`,`is_active`),
+  KEY `idx_user_date` (`user_id`,`diary_date`),
+  KEY `idx_user_created` (`user_id`,`created_at` DESC),
+  KEY `idx_core_emotion` (`core_emotion`),
+  KEY `idx_analyzed` (`is_analyzed`,`analyzed_at`),
+  CONSTRAINT `diaries_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='일기'
+```
+
+### JPA Entity
 ```java
 @Entity
-@Table(name = "diaries")
+@Table(name = "diaries", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_user_date", columnNames = {"user_id", "diary_date"})
+})
 @SQLDelete(sql = "UPDATE diaries SET deleted_at = NOW() WHERE diary_id = ?")
 @Where(clause = "deleted_at IS NULL")
 public class Diary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "diary_id")
     private Long diaryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "diary_date", nullable = false)
     private LocalDate diaryDate;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(name = "core_emotion", length = 20)
     private String coreEmotion;
+
+    @Column(name = "core_emotion_code", length = 20)
     private String coreEmotionCode;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "emotion_reason", columnDefinition = "TEXT")
     private String emotionReason;
 
+    @Column(name = "flower_name", length = 50)
     private String flowerName;
+
+    @Column(name = "flower_meaning", length = 100)
     private String flowerMeaning;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "JSON")
+    @Column(name = "emotions_json", columnDefinition = "LONGTEXT")
     private List<EmotionPercent> emotionsJson;
 
+    @Column(name = "is_analyzed", nullable = false)
     private Boolean isAnalyzed = false;
+
+    @Column(name = "analyzed_at")
     private LocalDateTime analyzedAt;
 
     @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 }
 ```
 
-### Flower Entity (테이블명: emotions)
+---
+
+## 3. emotions (감정-꽃 매핑)
+
+감정과 꽃을 매핑하는 마스터 데이터 테이블입니다. 각 감정별로 대응되는 꽃과 꽃말, 상세 정보를 저장합니다.
+
+### 테이블 구조
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|---------|------|
+| emotion_code | varchar(20) | PK | 감정 코드 (영문, 예: JOY, EXCITEMENT) |
+| emotion_name_kr | varchar(20) | NOT NULL | 감정명 (한글, 예: 기쁨, 설렘) |
+| emotion_name_en | varchar(20) | NOT NULL | 감정명 (영문) |
+| flower_name_kr | varchar(50) | NOT NULL | 꽃 이름 (한글) |
+| flower_name_en | varchar(50) | NULL | 꽃 이름 (영문) |
+| flower_meaning | varchar(100) | NOT NULL | 꽃말 |
+| flower_meaning_story | varchar(1000) | NULL | 꽃말 유래 |
+| flower_color | varchar(50) | NULL | 꽃 색상 텍스트 (예: 연한 분홍색) |
+| flower_color_codes | varchar(500) | NULL | 꽃 색상 HEX 코드 (,로 구분) |
+| flower_origin | varchar(100) | NULL | 꽃 원산지 |
+| flower_fragrance | varchar(50) | NULL | 꽃 향기 특성 |
+| flower_fun_fact | varchar(1000) | NULL | 꽃 관련 흥미로운 이야기 |
+| image_file_3d | varchar(100) | NOT NULL | 3D 이미지 파일명 |
+| image_file_realistic | varchar(100) | NOT NULL | 실사 이미지 파일명 |
+| is_positive | tinyint(1) | NOT NULL | 긍정 감정 여부 (1: 긍정, 0: 부정) |
+| display_order | int(11) | NOT NULL | 화면 표시 순서 |
+| created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+
+### 인덱스
+- PRIMARY KEY: `emotion_code`
+- INDEX: `idx_display_order` (순서 기반 조회)
+
+### 데이터 예시
+```sql
+INSERT INTO emotions (emotion_code, emotion_name_kr, emotion_name_en,
+                      flower_name_kr, flower_meaning,
+                      image_file_3d, image_file_realistic,
+                      is_positive, display_order)
+VALUES
+('JOY', '기쁨', 'Joy', '해바라기', '당신만을 바라봅니다',
+ 'sunflower_3d.png', 'sunflower_real.jpg', 1, 1),
+('EXCITEMENT', '설렘', 'Excitement', '튤립', '사랑의 고백',
+ 'tulip_3d.png', 'tulip_real.jpg', 1, 2);
+```
+
+### DDL
+```mysql
+CREATE TABLE `emotions` (
+  `emotion_code` varchar(20) NOT NULL COMMENT '감정 코드 (영문)',
+  `emotion_name_kr` varchar(20) NOT NULL COMMENT '감정명 (한글)',
+  `emotion_name_en` varchar(20) NOT NULL COMMENT '감정명 (영문)',
+  `flower_name_kr` varchar(50) NOT NULL COMMENT '꽃 이름',
+  `flower_name_en` varchar(50) DEFAULT NULL,
+  `flower_meaning` varchar(100) NOT NULL COMMENT '꽃말',
+  `flower_meaning_story` varchar(1000) DEFAULT NULL COMMENT '꽃말 유래',
+  `flower_color` varchar(50) DEFAULT NULL COMMENT '꽃 색상 텍스트',
+  `flower_color_codes` varchar(500) DEFAULT NULL COMMENT '꽃 색상 코드 (, 로 구분)',
+  `flower_origin` varchar(100) DEFAULT NULL COMMENT '꽃 원산지',
+  `flower_fragrance` varchar(50) DEFAULT NULL COMMENT '꽃 향기',
+  `flower_fun_fact` varchar(1000) DEFAULT NULL COMMENT '꽃과 관련된 재밌는 이야기',
+  `image_file_3d` varchar(100) NOT NULL COMMENT '3D 이미지',
+  `image_file_realistic` varchar(100) NOT NULL COMMENT '실사 이미지',
+  `is_positive` tinyint(1) NOT NULL COMMENT '긍정 여부',
+  `display_order` int(11) NOT NULL COMMENT '표시 순서',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`emotion_code`),
+  KEY `idx_display_order` (`display_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+```
+
+### JPA Entity
 ```java
 @Entity
 @Table(name = "emotions")
-public class Flower {
+public class Emotion {
     @Id
-    @Column(name = "emotion_code")
+    @Column(name = "emotion_code", length = 20)
     private String emotionCode;
 
+    @Column(name = "emotion_name_kr", nullable = false, length = 20)
     private String emotionNameKr;
+
+    @Column(name = "emotion_name_en", nullable = false, length = 20)
     private String emotionNameEn;
+
+    @Column(name = "flower_name_kr", nullable = false, length = 50)
     private String flowerNameKr;
+
+    @Column(name = "flower_name_en", length = 50)
     private String flowerNameEn;
+
+    @Column(name = "flower_meaning", nullable = false, length = 100)
     private String flowerMeaning;
+
+    @Column(name = "flower_meaning_story", length = 1000)
     private String flowerMeaningStory;
+
+    @Column(name = "flower_color", length = 50)
     private String flowerColor;
+
+    @Column(name = "flower_color_codes", length = 500)
     private String flowerColorCodes;
+
+    @Column(name = "flower_origin", length = 100)
     private String flowerOrigin;
+
+    @Column(name = "flower_fragrance", length = 50)
     private String flowerFragrance;
-    private String flowerBloomingSeason;
+
+    @Column(name = "flower_fun_fact", length = 1000)
     private String flowerFunFact;
+
+    @Column(name = "image_file_3d", nullable = false, length = 100)
     private String imageFile3d;
+
+    @Column(name = "image_file_realistic", nullable = false, length = 100)
     private String imageFileRealistic;
+
+    @Column(name = "is_positive", nullable = false)
     private Boolean isPositive;
+
+    @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
     @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
 ```
 
 ---
 
-## 성능 최적화
+## 테이블 관계도
 
-### 1. 인덱스 전략
-- **복합 인덱스**: (user_id, diary_date) - 가장 빈번한 조회 패턴
-- **커버링 인덱스**: 목록 조회 시 INDEX ONLY SCAN 가능
-- **JSON 인덱스**: MariaDB 10.5+ 지원, emotions_json 검색 시 활용
-
-### 2. 캐싱 전략
-- **Redis 캐싱**:
-    - emotions 테이블 전체 (변경 거의 없음)
-    - 최근 일기 목록 (TTL: 5분)
-    - 감정 통계 (TTL: 1시간)
-
----
-
-## 백업 및 보안
-
-### 1. 일일 백업
-```bash
-mysqldump -u root -p --single-transaction flowerbed > backup_$(date +%Y%m%d).sql
+```
+users (1) ----< (N) diaries
+               |
+               | (조회)
+               v
+           emotions (마스터 데이터)
 ```
 
-### 2. 보안
-- BCrypt 비밀번호 암호화
-- PreparedStatement 사용 (JPA 자동)
-- 애플리케이션 전용 DB 계정 사용
+### 관계 설명
+1. **users ↔ diaries**: 1:N 관계
+   - 한 사용자는 여러 일기를 작성할 수 있음
+   - FK: `diaries.user_id` → `users.user_id` (ON DELETE CASCADE)
+
+2. **diaries ↔ emotions**: 참조 관계 (FK 없음)
+   - 일기의 `core_emotion_code`가 `emotions.emotion_code`를 참조
+   - 일기의 `flower_name`이 `emotions.flower_name_kr`를 참조
+   - 마스터 데이터이므로 FK 제약조건 없이 조회만 수행
 
 ---
 
-## FAQ
+## 주요 비즈니스 로직
 
-### Q1. 왜 테이블명이 emotions인가요?
-A. 이 테이블은 감정과 꽃을 매핑하는 마스터 데이터입니다. 엔티티명은 Flower이지만, 테이블명은 emotions입니다.
+### 1. 일기 작성 플로우
+1. 사용자가 일기 내용 작성
+2. 일기 저장 (`is_analyzed = false`)
+3. Claude API 호출하여 감정 분석
+4. 분석 결과를 일기에 업데이트
+   - `summary`, `core_emotion`, `core_emotion_code`
+   - `flower_name`, `flower_meaning`
+   - `emotions_json`, `is_analyzed = true`
 
-### Q2. core_emotion과 core_emotion_code의 차이는?
-A. core_emotion은 한글 감정명("기쁨"), core_emotion_code는 영문 코드("JOY")입니다. emotions 테이블의 emotion_code와 조인할 때 사용합니다.
+### 2. 월별 일기 조회
+- 특정 연월의 모든 일기 조회
+- 각 일기의 `flower_name`으로 `emotions` 테이블 조인
+- 꽃 상세 정보 포함하여 응답
 
-### Q3. is_active 컬럼은 왜 GENERATED인가요?
-A. Soft Delete 시 UNIQUE 제약조건을 우회하기 위함입니다. deleted_at이 NULL이 아니면 is_active도 NULL이 되어 UNIQUE 체크에서 제외됩니다.
+### 3. Soft Delete 정책
+- 모든 테이블에서 `deleted_at`을 사용한 Soft Delete 적용
+- JPA `@SQLDelete`, `@Where` 애노테이션 활용
+- 실제 데이터는 삭제되지 않고 `deleted_at`에 삭제 시각 기록

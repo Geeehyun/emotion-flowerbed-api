@@ -24,15 +24,15 @@ public class DiaryController {
 
     private final DiaryService diaryService;
 
-    // TODO: 실제로는 Spring Security에서 인증된 사용자 ID를 가져와야 함
-    private static final Long TEMP_USER_ID = 1L;
+    // TODO: 회원가입/로그인 기능 추가 후 실제 인증된 사용자 ID 사용하도록 수정 필요 (Spring Security + JWT)
+    private static final Long DEFAULT_USER_ID = 1L;
 
     @PostMapping
     @Operation(summary = "일기 작성", description = "새로운 일기를 작성합니다")
     public ResponseEntity<DiaryResponse> createDiary(
             @Valid @RequestBody DiaryCreateRequest request) {
 
-        DiaryResponse response = diaryService.createDiary(TEMP_USER_ID, request);
+        DiaryResponse response = diaryService.createDiary(DEFAULT_USER_ID, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -41,7 +41,7 @@ public class DiaryController {
     public ResponseEntity<DiaryResponse> analyzeDiary(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        DiaryResponse response = diaryService.analyzeDiaryEmotion(TEMP_USER_ID, diaryId);
+        DiaryResponse response = diaryService.analyzeDiaryEmotion(DEFAULT_USER_ID, diaryId);
         return ResponseEntity.ok(response);
     }
 
@@ -51,7 +51,7 @@ public class DiaryController {
     public ResponseEntity<DiaryResponse> analyzeDiaryTest(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        DiaryResponse response = diaryService.analyzeDiaryEmotionTest(TEMP_USER_ID, diaryId);
+        DiaryResponse response = diaryService.analyzeDiaryEmotionTest(DEFAULT_USER_ID, diaryId);
         return ResponseEntity.ok(response);
     }
 
@@ -60,7 +60,7 @@ public class DiaryController {
     public ResponseEntity<DiaryResponse> getDiary(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        DiaryResponse response = diaryService.getDiary(TEMP_USER_ID, diaryId);
+        DiaryResponse response = diaryService.getDiary(DEFAULT_USER_ID, diaryId);
         return ResponseEntity.ok(response);
     }
 
@@ -70,7 +70,7 @@ public class DiaryController {
             @Parameter(description = "날짜 (YYYY-MM-DD)")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-        DiaryResponse response = diaryService.getDiaryByDate(TEMP_USER_ID, date);
+        DiaryResponse response = diaryService.getDiaryByDate(DEFAULT_USER_ID, date);
         return ResponseEntity.ok(response);
     }
 
@@ -80,7 +80,7 @@ public class DiaryController {
             @Parameter(description = "년월 (YYYY-MM)", example = "2025-12")
             @RequestParam String yearMonth) {
 
-        MonthlyDiariesResponse response = diaryService.getMonthlyDiaries(TEMP_USER_ID, yearMonth);
+        MonthlyDiariesResponse response = diaryService.getMonthlyDiaries(DEFAULT_USER_ID, yearMonth);
         return ResponseEntity.ok(response);
     }
 
@@ -90,7 +90,7 @@ public class DiaryController {
             @Parameter(description = "일기 ID") @PathVariable Long diaryId,
             @Valid @RequestBody DiaryUpdateRequest request) {
 
-        DiaryResponse response = diaryService.updateDiary(TEMP_USER_ID, diaryId, request);
+        DiaryResponse response = diaryService.updateDiary(DEFAULT_USER_ID, diaryId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -99,7 +99,7 @@ public class DiaryController {
     public ResponseEntity<Void> deleteDiary(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        diaryService.deleteDiary(TEMP_USER_ID, diaryId);
+        diaryService.deleteDiary(DEFAULT_USER_ID, diaryId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -11,5 +11,7 @@ public interface FlowerRepository extends JpaRepository<Emotion, String> {
 
     Optional<Emotion> findByEmotionCode(String emotionCode);
 
+    Optional<Emotion> findByEmotionNameKr(String emotionNameKr);
+
     Optional<Emotion> findByFlowerNameKr(String flowerNameKr);
 }
