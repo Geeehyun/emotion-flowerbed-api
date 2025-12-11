@@ -1,137 +1,176 @@
-### 일기 화단 API 테스트
-### Base URL
-@baseUrl = http://localhost:8080/api
+### Emotion Flowerbed API Test
+### Base URL: http://localhost:8080/api
 
 ### ========================================
-### 1. 일기 작성
+### 1. 일기 API (Diary)
 ### ========================================
-POST {{baseUrl}}/diaries
+
+### 1-1. 일기 작성
+POST http://localhost:8080/api/diaries
 Content-Type: application/json
 
 {
-  "diaryDate": "2025-12-04",
-  "content": "오늘은 친구들과 맛있는 저녁을 먹었다. 정말 즐거운 시간이었고 오랜만에 웃을 수 있어서 좋았다. 내일도 이런 날이었으면 좋겠다."
+  "diaryDate": "2025-12-09",
+  "content": "오늘 친구와 맛있는 저녁을 먹었다. 오랜만에 만나서 정말 즐거웠고, 대화를 나누면서 많은 위로를 받았다. 힘든 일이 있었지만 친구 덕분에 기분이 많이 좋아졌다."
 }
 
-### ========================================
-### 2. 일기 감정 분석 (테스트 모드 - Claude API 호출 없음)
-### ========================================
-POST {{baseUrl}}/diaries/1/analyze-test
+### 1-2. 일기 감정 분석 (실제 - Claude API 사용)
+POST http://localhost:8080/api/diaries/1/analyze
 Content-Type: application/json
 
-### ========================================
-### 3. 일기 감정 분석 (실제 Claude API 호출)
-### ========================================
-POST {{baseUrl}}/diaries/5/analyze
+### 1-3. 일기 감정 분석 (테스트 모드 - 랜덤 생성)
+POST http://localhost:8080/api/diaries/1/analyze-test
 Content-Type: application/json
 
-### ========================================
-### 4. 일기 상세 조회
-### ========================================
-GET {{baseUrl}}/diaries/1
+### 1-4. 일기 상세 조회
+GET http://localhost:8080/api/diaries/1
 
-### ========================================
-### 5. 특정 날짜 일기 조회
-### ========================================
-GET {{baseUrl}}/diaries/date/2025-12-05
+### 1-5. 특정 날짜 일기 조회
+GET http://localhost:8080/api/diaries/date/2025-12-09
 
-### ========================================
-### 6. 월별 일기 목록 조회
-### ========================================
-GET {{baseUrl}}/diaries?yearMonth=2025-12
+### 1-6. 월별 일기 목록 조회 (꽃 상세정보 포함)
+GET http://localhost:8080/api/diaries?yearMonth=2025-12
 
-### ========================================
-### 7. 일기 수정
-### ========================================
-PUT {{baseUrl}}/diaries/1
+### 1-7. 일기 수정
+PUT http://localhost:8080/api/diaries/1
 Content-Type: application/json
 
 {
-  "content": "오늘은 친구들과 저녁을 먹었다. 정말 즐거웠다. 수정된 내용입니다."
+  "content": "오늘 친구와 맛있는 저녁을 먹었다. 정말 행복한 하루였다. (수정됨)"
 }
 
-### ========================================
-### 8. 일기 삭제 (Soft Delete)
-### ========================================
-DELETE {{baseUrl}}/diaries/1
+### 1-8. 일기 삭제 (Soft Delete)
+DELETE http://localhost:8080/api/diaries/1
+
 
 ### ========================================
-### 테스트 시나리오: 일기 작성 → 테스트 분석 → 조회
+### 2. 꽃 정보 API (Flower)
 ### ========================================
 
-### Step 1: 일기 작성
-POST {{baseUrl}}/diaries
-Content-Type: application/json
+### 2-1. 사용자의 감정&꽃 통계 조회 (날짜 목록 + 꽃 상세정보 포함)
+GET http://localhost:8080/api/flowers/my-emotions
 
-{
-  "diaryDate": "2025-12-06",
-  "content": "오늘 회사에서 프로젝트를 성공적으로 마무리했다. 팀원들과 함께 노력한 결과가 좋은 성과로 이어져서 뿌듯하다."
-}
+### 2-2. 전체 감정-꽃 정보 조회 (display_order 순)
+GET http://localhost:8080/api/flowers/all-emotions
 
-###
-
-### Step 2: 테스트 모드로 감정 분석 (ID는 위에서 받은 값으로 변경)
-POST {{baseUrl}}/diaries/2/analyze-test
-
-###
-
-### Step 3: 분석 결과 확인
-GET {{baseUrl}}/diaries/2
-
-###
 
 ### ========================================
-### 에러 케이스 테스트
+### 3. 응답 예시
 ### ========================================
 
-### 존재하지 않는 일기 조회 (404)
-GET {{baseUrl}}/diaries/9999
+### 3-1. 일기 감정 분석 응답 예시
+# POST /api/diaries/1/analyze
+# {
+#   "diaryId": 1,
+#   "diaryDate": "2025-12-09",
+#   "content": "오늘 친구와...",
+#   "summary": "친구와 저녁을 먹으며 즐거운 시간을 보냄",
+#   "coreEmotion": "기쁨",
+#   "coreEmotionCode": "JOY",
+#   "emotionReason": "친구와의 즐거운 시간이 강조됨",
+#   "flowerName": "해바라기",
+#   "flowerMeaning": "당신을 보면 행복해요",
+#   "emotions": [
+#     {"emotion": "기쁨", "percent": 70},
+#     {"emotion": "행복", "percent": 30}
+#   ],
+#   "isAnalyzed": true,
+#   "analyzedAt": "2025-12-09T10:30:00",
+#   "flowerDetail": {
+#     "emotionCode": "JOY",
+#     "emotionNameKr": "기쁨",
+#     "emotionNameEn": "Joy",
+#     "flowerNameKr": "해바라기",
+#     "flowerNameEn": "Sunflower",
+#     "flowerMeaning": "당신을 보면 행복해요",
+#     "flowerMeaningStory": "...",
+#     "flowerColor": "노란색",
+#     "flowerColorCodes": "#FFD700,#FFA500",
+#     "flowerOrigin": "북아메리카",
+#     "flowerFragrance": "은은한 풀향기",
+#     "flowerFunFact": "...",
+#     "imageFile3d": "sunflower_3d.png",
+#     "imageFileRealistic": "sunflower_real.jpg",
+#     "isPositive": true
+#   }
+# }
 
-###
+### 3-2. 월별 일기 목록 응답 예시
+# GET /api/diaries?yearMonth=2025-12
+# {
+#   "yearMonth": "2025-12",
+#   "diaries": [
+#     {
+#       "id": 1,
+#       "date": "2025-12-09",
+#       "content": "오늘 친구와...",
+#       "coreEmotion": "기쁨",
+#       "flower": "해바라기",
+#       "floriography": "당신을 보면 행복해요",
+#       "summary": "친구와 저녁을...",
+#       "emotions": [{"emotion": "기쁨", "percent": 70}],
+#       "reason": "친구와의 즐거운 시간...",
+#       "flowerDetail": {
+#         "emotionCode": "JOY",
+#         "emotionNameKr": "기쁨",
+#         "flowerNameKr": "해바라기",
+#         "flowerColor": "노란색",
+#         "flowerColorCodes": "#FFD700,#FFA500",
+#         "imageFile3d": "sunflower_3d.png",
+#         "imageFileRealistic": "sunflower_real.jpg"
+#       }
+#     }
+#   ],
+#   "totalCount": 15,
+#   "hasNextMonth": true,
+#   "hasPrevMonth": true
+# }
 
-### 중복 날짜 일기 작성 (400)
-POST {{baseUrl}}/diaries
-Content-Type: application/json
+### 3-3. 사용자 감정&꽃 통계 응답 예시
+# GET /api/flowers/my-emotions
+# {
+#   "items": [
+#     {
+#       "emotion": "기쁨",
+#       "emotionCode": "JOY",
+#       "flowerName": "해바라기",
+#       "flowerMeaning": "당신을 보면 행복해요",
+#       "count": 5,
+#       "dates": ["2025-12-01", "2025-12-05", "2025-12-09"],
+#       "flowerDetail": {
+#         "emotionCode": "JOY",
+#         "emotionNameKr": "기쁨",
+#         "flowerNameKr": "해바라기",
+#         "flowerColor": "노란색",
+#         "imageFile3d": "sunflower_3d.png"
+#       }
+#     }
+#   ],
+#   "totalCount": 1
+# }
 
-{
-  "diaryDate": "2025-12-05",
-  "content": "같은 날짜에 또 작성"
-}
-
-###
-
-### 일기 내용이 너무 짧음 (400)
-POST {{baseUrl}}/diaries
-Content-Type: application/json
-
-{
-  "diaryDate": "2025-12-07",
-  "content": "짧음"
-}
-
-###
-
-### 일기 내용이 비어있음 (400)
-POST {{baseUrl}}/diaries
-Content-Type: application/json
-
-{
-  "diaryDate": "2025-12-08",
-  "content": ""
-}
-
-###
-
-### ========================================
-### 월별 조회 테스트
-### ========================================
-
-### 2025년 12월 일기 목록
-GET {{baseUrl}}/diaries?yearMonth=2025-12
-
-###
-
-### 2025년 11월 일기 목록 (데이터 없음)
-GET {{baseUrl}}/diaries?yearMonth=2025-11
-
-###
+### 3-4. 전체 감정-꽃 정보 응답 예시
+# GET /api/flowers/all-emotions
+# {
+#   "emotions": [
+#     {
+#       "emotionCode": "JOY",
+#       "emotionNameKr": "기쁨",
+#       "emotionNameEn": "Joy",
+#       "flowerNameKr": "해바라기",
+#       "flowerNameEn": "Sunflower",
+#       "flowerMeaning": "당신을 보면 행복해요",
+#       "flowerMeaningStory": "...",
+#       "flowerColor": "노란색",
+#       "flowerColorCodes": "#FFD700,#FFA500",
+#       "flowerOrigin": "북아메리카",
+#       "flowerFragrance": "은은한 풀향기",
+#       "flowerFunFact": "...",
+#       "imageFile3d": "sunflower_3d.png",
+#       "imageFileRealistic": "sunflower_real.jpg",
+#       "isPositive": true,
+#       "displayOrder": 1
+#     }
+#   ],
+#   "totalCount": 20
+# }
