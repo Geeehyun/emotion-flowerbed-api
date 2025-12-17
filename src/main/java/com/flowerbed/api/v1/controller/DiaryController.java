@@ -1,7 +1,10 @@
-package com.flowerbed.controller;
+package com.flowerbed.api.v1.controller;
 
-import com.flowerbed.dto.*;
-import com.flowerbed.service.DiaryService;
+import com.flowerbed.api.v1.dto.DiaryCreateRequest;
+import com.flowerbed.api.v1.dto.DiaryResponse;
+import com.flowerbed.api.v1.dto.DiaryUpdateRequest;
+import com.flowerbed.api.v1.dto.MonthlyDiariesResponse;
+import com.flowerbed.api.v1.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,20 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
-/**
- * 일기 관련 API Controller
- *
- * 일기 작성, 조회, 수정, 삭제 및 감정 분석 기능을 제공합니다.
- *
- * !! 중요 !!
- * - 현재는 DEFAULT_USER_ID(1L)를 사용하여 임시로 사용자를 식별합니다
- * - JWT 인증 구현 후에는 SecurityContext에서 실제 사용자 ID를 가져와야 합니다
- *
- * API 흐름:
- * 1. POST /diaries - 일기 작성 (내용만 저장, 감정 분석 X)
- * 2. POST /diaries/{diaryId}/analyze - AI 감정 분석 요청
- * 3. GET /diaries/{diaryId} - 일기 상세 조회 (감정 분석 결과 포함)
- */
 @Slf4j
 @RestController
 @RequestMapping("/diaries")
@@ -75,14 +64,14 @@ public class DiaryController {
     /**
      * 일기 감정 분석 (실제 Claude API 사용)
      *
-     * 작성된 일기를 Claude AI로 분석하여 감정 정보를 추출합니다.
+     * 작성된 일기를 AI로 분석하여 감정 정보를 추출합니다.
      *
      * @param diaryId 분석할 일기 ID
      * @return DiaryResponse (감정 분석 결과 포함, isAnalyzed=true)
      *
      * 비즈니스 로직:
      * 1. 일기 존재 여부 및 권한 확인
-     * 2. Claude API 호출하여 감정 분석 수행
+     * 2. Claude API or OpenAI API 호출하여 감정 분석 수행
      * 3. 분석 결과를 일기에 저장:
      *    - coreEmotionCode: 대표 감정 코드 (예: "JOYFUL")
      *    - emotionsJson: 전체 감정 리스트 [{emotion, percent}, ...]
@@ -92,7 +81,7 @@ public class DiaryController {
      * 4. isAnalyzed=true, analyzedAt=현재시각 업데이트
      *
      * !! 주의 !!
-     * - Claude API 호출 비용이 발생합니다
+     * - API 호출 비용이 발생합니다
      * - 테스트 시에는 /analyze-test 사용 권장
      */
     @PostMapping("/{diaryId}/analyze")
@@ -107,7 +96,7 @@ public class DiaryController {
     /**
      * 일기 감정 분석 (테스트 모드 - API 호출 없음)
      *
-     * Claude API를 호출하지 않고 DB의 emotions 테이블에서 랜덤하게 선택하여
+     * AI API를 호출하지 않고 DB의 emotions 테이블에서 랜덤하게 선택하여
      * 감정 분석 결과를 생성합니다. 개발/테스트 용도로 사용합니다.
      *
      * @param diaryId 분석할 일기 ID

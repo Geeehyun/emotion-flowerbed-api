@@ -1,33 +1,38 @@
-package com.flowerbed.dto;
+package com.flowerbed.api.v1.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserEmotionFlowerResponse {
+public class MonthlyDiariesResponse {
 
-    private List<EmotionFlowerItem> items;
+    private String yearMonth;
+    private List<DiaryListItem> diaries;
     private Integer totalCount;
 
     @Getter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class EmotionFlowerItem {
-        private String emotion;
-        private String emotionCode;
-        private String flowerName;
-        private String flowerMeaning;
-        private Integer count;  // 해당 감정이 나타난 횟수
-        private List<String> dates;  // 해당 감정의 일기 날짜 목록 (YYYY-MM-DD)
-        private FlowerDetail flowerDetail;  // 꽃 상세정보
+    public static class DiaryListItem {
+        private Long id;
+        private LocalDate date;
+        private String content;
+        private String coreEmotionCode;
+        private String flower;
+        private String floriography;
+        private String summary;
+        private List<EmotionPercent> emotions;
+        private String reason;
+        private FlowerDetail flowerDetail;  // 꽃 상세 정보
     }
 
     @Getter

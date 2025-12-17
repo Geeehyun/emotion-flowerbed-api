@@ -1,12 +1,11 @@
-package com.flowerbed.service;
+package com.flowerbed.api.v1.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flowerbed.domain.Emotion;
-import com.flowerbed.dto.DiaryEmotionResponse;
-import com.flowerbed.dto.EmotionPercent;
+import com.flowerbed.api.v1.domain.Emotion;
+import com.flowerbed.api.v1.dto.DiaryEmotionResponse;
+import com.flowerbed.api.v1.dto.EmotionPercent;
 import com.flowerbed.exception.InvalidDiaryContentException;
-import com.flowerbed.exception.LlmAnalysisException;
-import com.flowerbed.repository.FlowerRepository;
+import com.flowerbed.api.v1.repository.FlowerRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

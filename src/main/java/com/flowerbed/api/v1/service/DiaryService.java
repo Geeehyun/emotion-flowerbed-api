@@ -1,15 +1,15 @@
-package com.flowerbed.service;
+package com.flowerbed.api.v1.service;
 
-import com.flowerbed.domain.Diary;
-import com.flowerbed.domain.Emotion;
-import com.flowerbed.domain.User;
-import com.flowerbed.dto.*;
+import com.flowerbed.api.v1.domain.Diary;
+import com.flowerbed.api.v1.domain.Emotion;
+import com.flowerbed.api.v1.domain.User;
+import com.flowerbed.api.v1.dto.*;
 import com.flowerbed.exception.BusinessException;
 import com.flowerbed.exception.DiaryNotFoundException;
 import com.flowerbed.exception.ErrorCode;
-import com.flowerbed.repository.DiaryRepository;
-import com.flowerbed.repository.FlowerRepository;
-import com.flowerbed.repository.UserRepository;
+import com.flowerbed.api.v1.repository.DiaryRepository;
+import com.flowerbed.api.v1.repository.FlowerRepository;
+import com.flowerbed.api.v1.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;

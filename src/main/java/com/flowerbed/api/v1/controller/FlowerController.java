@@ -1,8 +1,8 @@
-package com.flowerbed.controller;
+package com.flowerbed.api.v1.controller;
 
-import com.flowerbed.dto.AllEmotionsResponse;
-import com.flowerbed.dto.UserEmotionFlowerResponse;
-import com.flowerbed.service.FlowerService;
+import com.flowerbed.api.v1.dto.AllEmotionsResponse;
+import com.flowerbed.api.v1.dto.UserEmotionFlowerResponse;
+import com.flowerbed.api.v1.service.FlowerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

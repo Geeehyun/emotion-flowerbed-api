@@ -1,4 +1,4 @@
-package com.flowerbed.domain;
+package com.flowerbed.api.v1.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

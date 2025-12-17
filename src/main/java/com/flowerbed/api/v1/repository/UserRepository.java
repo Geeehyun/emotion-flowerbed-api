@@ -1,6 +1,6 @@
-package com.flowerbed.repository;
+package com.flowerbed.api.v1.repository;
 
-import com.flowerbed.domain.User;
+import com.flowerbed.api.v1.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

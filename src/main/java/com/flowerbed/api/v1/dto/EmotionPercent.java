@@ -1,4 +1,4 @@
-package com.flowerbed.dto;
+package com.flowerbed.api.v1.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

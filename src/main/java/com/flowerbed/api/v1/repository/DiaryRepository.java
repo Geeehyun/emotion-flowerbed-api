@@ -1,6 +1,6 @@
-package com.flowerbed.repository;
+package com.flowerbed.api.v1.repository;
 
-import com.flowerbed.domain.Diary;
+import com.flowerbed.api.v1.domain.Diary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

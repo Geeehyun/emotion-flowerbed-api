@@ -1,4 +1,4 @@
-package com.flowerbed.service;
+package com.flowerbed.api.v1.service;
 
 /**
  * LLM API 클라이언트 인터페이스

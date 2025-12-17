@@ -1,11 +1,11 @@
-package com.flowerbed.service;
+package com.flowerbed.api.v1.service;
 
-import com.flowerbed.domain.Diary;
-import com.flowerbed.domain.Emotion;
-import com.flowerbed.dto.AllEmotionsResponse;
-import com.flowerbed.dto.UserEmotionFlowerResponse;
-import com.flowerbed.repository.DiaryRepository;
-import com.flowerbed.repository.FlowerRepository;
+import com.flowerbed.api.v1.domain.Diary;
+import com.flowerbed.api.v1.domain.Emotion;
+import com.flowerbed.api.v1.dto.AllEmotionsResponse;
+import com.flowerbed.api.v1.repository.DiaryRepository;
+import com.flowerbed.api.v1.repository.FlowerRepository;
+import com.flowerbed.api.v1.dto.UserEmotionFlowerResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
