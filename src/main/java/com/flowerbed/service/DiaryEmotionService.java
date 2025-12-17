@@ -1,10 +1,13 @@
 package com.flowerbed.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flowerbed.domain.Emotion;
 import com.flowerbed.dto.DiaryEmotionResponse;
 import com.flowerbed.dto.EmotionPercent;
 import com.flowerbed.exception.InvalidDiaryContentException;
 import com.flowerbed.exception.LlmAnalysisException;
+import com.flowerbed.repository.FlowerRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
@@ -15,22 +18,27 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+/**
+ * LLM API를 이용한 일기 감정 분석 서비스
+ * - 실제 LLM 호출하여 감정 분석 (Claude 또는 OpenAI)
+ * - 프롬프트 관리, 응답 파싱/검증
+ * - llm.provider 설정에 따라 사용할 LLM 자동 선택
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DiaryEmotionService {
 
-    private final ClaudeApiClient claudeApiClient;
+    private final LlmApiClient llmApiClient;  // LLM API 호출 (Claude 또는 OpenAI)
+    private final FlowerRepository flowerRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final Set<String> VALID_EMOTIONS = Set.of(
-            "JOY", "HAPPINESS", "GRATITUDE", "EXCITEMENT", "PEACE", "ACHIEVEMENT",
-            "LOVE", "HOPE", "VITALITY", "FUN", "SADNESS", "LONELINESS",
-            "ANXIETY", "ANGER", "FATIGUE", "REGRET", "LETHARGY", "CONFUSION",
-            "DISAPPOINTMENT", "BOREDOM"
-    );
+    // DB에서 조회한 유효한 감정 코드 목록 (초기화 시 캐싱)
+    private Set<String> validEmotions;
 
+    // emotion-analysis-prompt.txt 파일 로드
     private static String promptTemplate;
 
     static {
@@ -43,7 +51,19 @@ public class DiaryEmotionService {
     }
 
     /**
-     * 일기 감정 분석
+     * 서비스 초기화 시 DB에서 유효한 감정 코드 목록 조회하여 캐싱
+     */
+    @PostConstruct
+    public void init() {
+        validEmotions = flowerRepository.findAll().stream()
+                .map(Emotion::getEmotionCode)
+                .collect(Collectors.toSet());
+        log.info("Loaded {} valid emotion codes from database", validEmotions.size());
+    }
+
+    /**
+     * 일기 감정 분석 (LLM API 사용)
+     * - 프롬프트 생성 → LLM 호출 → 응답 파싱/검증
      */
     public DiaryEmotionResponse analyzeDiary(String diaryContent) {
 
@@ -53,8 +73,8 @@ public class DiaryEmotionService {
         // 2. 프롬프트 생성
         String prompt = buildPrompt(diaryContent);
 
-        // 3. Claude API 호출
-        String llmResponse = claudeApiClient.call(prompt);
+        // 3. LLM API 호출
+        String llmResponse = llmApiClient.call(prompt);
 
         // 4. 응답 파싱 및 검증
         return parseAndValidateResponse(llmResponse);
@@ -78,14 +98,14 @@ public class DiaryEmotionService {
     }
 
     /**
-     * Claude API 프롬프트 생성
+     * LLM API 프롬프트 생성
      */
     private String buildPrompt(String diaryContent) {
         return promptTemplate.replace("{DIARY_CONTENT}", diaryContent);
     }
 
     /**
-     * Claude 응답 파싱 및 검증
+     * LLM 응답 파싱 및 검증
      */
     private DiaryEmotionResponse parseAndValidateResponse(String llmResponse) {
         try {
@@ -101,7 +121,7 @@ public class DiaryEmotionService {
             }
 
             // 필수 필드 검증
-            if (response.getCoreEmotion() == null || !VALID_EMOTIONS.contains(response.getCoreEmotion())) {
+            if (response.getCoreEmotion() == null || !validEmotions.contains(response.getCoreEmotion())) {
                 log.error("Invalid emotion in LLM response: {}", response.getCoreEmotion());
                 return getDefaultResponse();
             }

@@ -27,7 +27,7 @@ public class FlowerResponse {
     private String flowerFunFact;
     private String imageFile3d;
     private String imageFileRealistic;
-    private Boolean isPositive;
+    private String area;
     private Integer displayOrder;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

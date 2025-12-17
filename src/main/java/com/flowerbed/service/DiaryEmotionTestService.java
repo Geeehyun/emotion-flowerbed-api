@@ -1,7 +1,10 @@
 package com.flowerbed.service;
 
+import com.flowerbed.domain.Emotion;
 import com.flowerbed.dto.DiaryEmotionResponse;
 import com.flowerbed.dto.EmotionPercent;
+import com.flowerbed.repository.FlowerRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,36 +12,33 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 테스트용 감정 분석 서비스 (API 비용 없음)
+ * - DB의 emotions 테이블에서 랜덤 선택
+ * - 실제 API와 동일한 응답 구조 반환
+ * - 개발/테스트 단계에서 사용
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DiaryEmotionTestService {
 
-    private static final Map<String, FlowerInfo> EMOTION_FLOWER_MAP = Map.ofEntries(
-            Map.entry("JOY", new FlowerInfo("해바라기", "당신을 보면 행복해요")),
-            Map.entry("HAPPINESS", new FlowerInfo("코스모스", "평화로운 사랑")),
-            Map.entry("GRATITUDE", new FlowerInfo("핑크 장미", "감사, 존경")),
-            Map.entry("EXCITEMENT", new FlowerInfo("프리지아", "순수한 마음")),
-            Map.entry("PEACE", new FlowerInfo("은방울꽃", "행복의 재림")),
-            Map.entry("ACHIEVEMENT", new FlowerInfo("노란 튤립", "성공, 명성")),
-            Map.entry("LOVE", new FlowerInfo("빨간 장미", "사랑, 애정")),
-            Map.entry("HOPE", new FlowerInfo("데이지", "희망, 순수")),
-            Map.entry("VITALITY", new FlowerInfo("거베라", "희망, 도전")),
-            Map.entry("FUN", new FlowerInfo("스위트피", "즐거운 추억")),
-            Map.entry("SADNESS", new FlowerInfo("파란 수국", "진심, 이해")),
-            Map.entry("LONELINESS", new FlowerInfo("물망초", "나를 잊지 말아요")),
-            Map.entry("ANXIETY", new FlowerInfo("라벤더", "침묵, 의심")),
-            Map.entry("ANGER", new FlowerInfo("노란 카네이션", "경멸, 거절")),
-            Map.entry("FATIGUE", new FlowerInfo("민트", "휴식, 상쾌함")),
-            Map.entry("REGRET", new FlowerInfo("보라색 팬지", "생각, 추억")),
-            Map.entry("LETHARGY", new FlowerInfo("백합", "순수, 재생")),
-            Map.entry("CONFUSION", new FlowerInfo("아네모네", "기대, 진실")),
-            Map.entry("DISAPPOINTMENT", new FlowerInfo("노란 수선화", "불확실한 사랑")),
-            Map.entry("BOREDOM", new FlowerInfo("흰 카모마일", "역경 속의 평온"))
-    );
-
-    private static final List<String> ALL_EMOTIONS = new ArrayList<>(EMOTION_FLOWER_MAP.keySet());
+    private final FlowerRepository flowerRepository;
     private final Random random = new Random();
+
+    // DB에서 조회한 전체 감정 코드 리스트 (초기화 시 캐싱)
+    private List<String> allEmotionCodes;
+
+    /**
+     * 서비스 초기화 시 DB에서 전체 감정 코드 조회하여 캐싱
+     */
+    @PostConstruct
+    public void init() {
+        allEmotionCodes = flowerRepository.findAll().stream()
+                .map(Emotion::getEmotionCode)
+                .collect(Collectors.toList());
+        log.info("Loaded {} emotion codes from database for test service", allEmotionCodes.size());
+    }
 
     /**
      * 테스트용 감정 분석 (Claude API 호출 없이 랜덤 생성)
@@ -66,19 +66,20 @@ public class DiaryEmotionTestService {
         emotions.sort((a, b) -> b.getPercent().compareTo(a.getPercent()));
 
         // 5. CoreEmotion: 가장 높은 퍼센트의 감정
-        String coreEmotion = emotions.get(0).getEmotion();
+        String coreEmotionCode = emotions.get(0).getEmotion();
 
-        // 6. Flower & Floriography
-        FlowerInfo flowerInfo = EMOTION_FLOWER_MAP.get(coreEmotion);
+        // 6. DB에서 감정 정보 조회
+        Emotion emotion = flowerRepository.findById(coreEmotionCode)
+                .orElseThrow(() -> new IllegalStateException("감정 코드를 찾을 수 없습니다: " + coreEmotionCode));
 
-        // 7. Response 생성
+        // 7. Response 생성 (coreEmotion은 영어 코드로 반환)
         DiaryEmotionResponse response = new DiaryEmotionResponse();
         response.setSummary(summary);
         response.setEmotions(emotions);
-        response.setCoreEmotion(coreEmotion);
+        response.setCoreEmotion(emotion.getEmotionCode());
         response.setReason("테스트 모드: 랜덤으로 생성된 감정 분석 결과입니다");
-        response.setFlower(flowerInfo.flower);
-        response.setFloriography(flowerInfo.floriography);
+        response.setFlower(emotion.getFlowerNameKr());
+        response.setFloriography(emotion.getFlowerMeaning());
 
         return response;
     }
@@ -87,7 +88,7 @@ public class DiaryEmotionTestService {
      * 랜덤하게 N개의 감정 선택
      */
     private List<String> getRandomEmotions(int count) {
-        List<String> shuffled = new ArrayList<>(ALL_EMOTIONS);
+        List<String> shuffled = new ArrayList<>(allEmotionCodes);
         Collections.shuffle(shuffled, random);
         return shuffled.stream().limit(count).collect(Collectors.toList());
     }
@@ -120,6 +121,4 @@ public class DiaryEmotionTestService {
 
         return percentages;
     }
-
-    private record FlowerInfo(String flower, String floriography) {}
 }

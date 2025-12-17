@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 꽃/감정 정보 조회 서비스
+ * - 사용자별 감정 통계 (일기 기반)
+ * - 전체 감정-꽃 매핑 정보 (마스터 데이터)
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,7 +34,9 @@ public class FlowerService {
     private final FlowerRepository flowerRepository;
 
     /**
-     * 사용자의 감정&꽃 리스트 조회 (꽃 상세정보 및 날짜 목록 포함)
+     * 사용자의 감정 통계 조회
+     * - 분석 완료된 일기들을 감정별로 그룹화
+     * - 감정별 횟수, 날짜 목록, 꽃 상세정보 반환
      */
     public UserEmotionFlowerResponse getUserEmotionFlowers(Long userId) {
         // 사용자의 분석된 일기 중 핵심 감정별로 그룹화
@@ -47,11 +54,9 @@ public class FlowerService {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         for (Diary diary : analyzedDiaries) {
-            String emotion = diary.getCoreEmotion();
             String emotionCode = diary.getCoreEmotionCode();
-            if (emotion != null) {
-                emotionMap.computeIfAbsent(emotion, k -> new EmotionFlowerData(
-                        emotion,
+            if (emotionCode != null) {
+                emotionMap.computeIfAbsent(emotionCode, k -> new EmotionFlowerData(
                         emotionCode,
                         diary.getFlowerName(),
                         diary.getFlowerMeaning()
@@ -62,16 +67,15 @@ public class FlowerService {
         // EmotionFlowerItem으로 변환
         List<UserEmotionFlowerResponse.EmotionFlowerItem> items = emotionMap.values().stream()
                 .map(data -> {
-                    // 꽃 상세정보 조회
+                    // 꽃 상세정보 조회 (emotionCode로 조회)
                     UserEmotionFlowerResponse.FlowerDetail flowerDetail = null;
-                    if (data.flowerName != null) {
-                        flowerDetail = flowerRepository.findByFlowerNameKr(data.flowerName)
+                    if (data.emotionCode != null) {
+                        flowerDetail = flowerRepository.findById(data.emotionCode)
                                 .map(this::convertToFlowerDetail)
                                 .orElse(null);
                     }
 
                     return UserEmotionFlowerResponse.EmotionFlowerItem.builder()
-                            .emotion(data.emotion)
                             .emotionCode(data.emotionCode)
                             .flowerName(data.flowerName)
                             .flowerMeaning(data.flowerMeaning)
@@ -107,12 +111,14 @@ public class FlowerService {
                 .flowerFunFact(emotion.getFlowerFunFact())
                 .imageFile3d(emotion.getImageFile3d())
                 .imageFileRealistic(emotion.getImageFileRealistic())
-                .isPositive(emotion.getIsPositive())
+                .area(emotion.getArea())
                 .build();
     }
 
     /**
-     * 전체 감정-꽃 정보 조회 (display_order 순으로 정렬)
+     * 전체 감정-꽃 매핑 정보 조회
+     * - emotions 테이블 전체 조회
+     * - display_order 순으로 정렬
      */
     public AllEmotionsResponse getAllEmotions() {
         List<Emotion> emotions = flowerRepository.findAll(Sort.by(Sort.Direction.ASC, "displayOrder"));
@@ -133,7 +139,7 @@ public class FlowerService {
                         .flowerFunFact(emotion.getFlowerFunFact())
                         .imageFile3d(emotion.getImageFile3d())
                         .imageFileRealistic(emotion.getImageFileRealistic())
-                        .isPositive(emotion.getIsPositive())
+                        .area(emotion.getArea())
                         .displayOrder(emotion.getDisplayOrder())
                         .build())
                 .collect(Collectors.toList());
@@ -148,15 +154,13 @@ public class FlowerService {
      * 감정별 꽃 데이터 집계용 내부 클래스
      */
     private static class EmotionFlowerData {
-        String emotion;
         String emotionCode;
         String flowerName;
         String flowerMeaning;
         int count = 0;
         List<String> dates = new ArrayList<>();
 
-        EmotionFlowerData(String emotion, String emotionCode, String flowerName, String flowerMeaning) {
-            this.emotion = emotion;
+        EmotionFlowerData(String emotionCode, String flowerName, String flowerMeaning) {
             this.emotionCode = emotionCode;
             this.flowerName = flowerName;
             this.flowerMeaning = flowerMeaning;

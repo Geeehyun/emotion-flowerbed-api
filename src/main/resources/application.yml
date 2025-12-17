@@ -56,6 +56,11 @@ cors:
   allow-credentials: true
   max-age: 3600
 
+# LLM Provider Configuration
+# llm.provider: claude 또는 openai (기본값: claude)
+llm:
+  provider: ${LLM_PROVIDER:claude}
+
 # Claude API Configuration
 anthropic:
   api:
@@ -63,3 +68,16 @@ anthropic:
     model: claude-3-5-haiku-20241022  # Haiku 모델 (Sonnet보다 20배 저렴!)
     max-tokens: 500  # 2000 → 500으로 축소
     temperature: 0.3  # 더 일관된 응답
+
+# OpenAI API Configuration
+openai:
+  api:
+    key: ${OPENAI_API_KEY:your-openai-api-key}
+    model: ${OPENAI_MODEL:gpt-4o-mini}  # gpt-4o-mini, gpt-4o, gpt-4-turbo 등
+    max-tokens: 500
+    temperature: 0.3
+
+# JWT Configuration
+jwt:
+  secret-key: ${JWT_SECRET_KEY:your-secret-key-min-256-bits-for-hs256-algorithm-please-change-in-production}
+  expiration: 86400000  # 24시간 (밀리초)

@@ -17,8 +17,6 @@ public class MonthlyDiariesResponse {
     private String yearMonth;
     private List<DiaryListItem> diaries;
     private Integer totalCount;
-    private Boolean hasNextMonth;
-    private Boolean hasPrevMonth;
 
     @Getter
     @Builder
@@ -28,7 +26,7 @@ public class MonthlyDiariesResponse {
         private Long id;
         private LocalDate date;
         private String content;
-        private String coreEmotion;
+        private String coreEmotionCode;
         private String flower;
         private String floriography;
         private String summary;
@@ -56,6 +54,6 @@ public class MonthlyDiariesResponse {
         private String flowerFunFact;
         private String imageFile3d;
         private String imageFileRealistic;
-        private Boolean isPositive;
+        private String area;
     }
 }

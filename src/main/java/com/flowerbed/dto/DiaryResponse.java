@@ -21,7 +21,6 @@ public class DiaryResponse {
     private LocalDate diaryDate;
     private String content;
     private String summary;
-    private String coreEmotion;
     private String coreEmotionCode;
     private String emotionReason;
     private String flowerName;
@@ -52,6 +51,6 @@ public class DiaryResponse {
         private String flowerFunFact;
         private String imageFile3d;
         private String imageFileRealistic;
-        private Boolean isPositive;
+        private String area;
     }
 }

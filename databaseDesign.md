@@ -279,28 +279,35 @@ VALUES
 
 ### DDL
 ```mysql
-CREATE TABLE `emotions` (
-  `emotion_code` varchar(20) NOT NULL COMMENT '감정 코드 (영문)',
-  `emotion_name_kr` varchar(20) NOT NULL COMMENT '감정명 (한글)',
-  `emotion_name_en` varchar(20) NOT NULL COMMENT '감정명 (영문)',
-  `flower_name_kr` varchar(50) NOT NULL COMMENT '꽃 이름',
-  `flower_name_en` varchar(50) DEFAULT NULL,
-  `flower_meaning` varchar(100) NOT NULL COMMENT '꽃말',
-  `flower_meaning_story` varchar(1000) DEFAULT NULL COMMENT '꽃말 유래',
-  `flower_color` varchar(50) DEFAULT NULL COMMENT '꽃 색상 텍스트',
-  `flower_color_codes` varchar(500) DEFAULT NULL COMMENT '꽃 색상 코드 (, 로 구분)',
-  `flower_origin` varchar(100) DEFAULT NULL COMMENT '꽃 원산지',
-  `flower_fragrance` varchar(50) DEFAULT NULL COMMENT '꽃 향기',
-  `flower_fun_fact` varchar(1000) DEFAULT NULL COMMENT '꽃과 관련된 재밌는 이야기',
-  `image_file_3d` varchar(100) NOT NULL COMMENT '3D 이미지',
-  `image_file_realistic` varchar(100) NOT NULL COMMENT '실사 이미지',
-  `is_positive` tinyint(1) NOT NULL COMMENT '긍정 여부',
-  `display_order` int(11) NOT NULL COMMENT '표시 순서',
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`emotion_code`),
-  KEY `idx_display_order` (`display_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+create table emotions
+(
+    emotion_code         varchar(20)                          not null comment '감정 코드 (영문)'
+        primary key,
+    emotion_name_kr      varchar(20)                          not null comment '감정명 (한글)',
+    emotion_name_en      varchar(20)                          not null comment '감정명 (영문)',
+    flower_name_kr       varchar(50)                          not null comment '꽃 이름',
+    flower_name_en       varchar(50)                          null,
+    flower_meaning       varchar(100)                         not null comment '꽃말',
+    flower_meaning_story varchar(1000)                        null comment '꽃말 유래',
+    flower_color         varchar(50)                          null comment '꽃 색상 텍스트',
+    flower_color_codes   varchar(500)                         null comment '꽃 색상 코드 (, 로 구분)',
+    flower_origin        varchar(100)                         null comment '꽃 원산지',
+    flower_fragrance     varchar(50)                          null comment '꽃 향기',
+    flower_fun_fact      varchar(1000)                        null comment '꽃과 관련된 재밌는 이야기',
+    image_file_3d        varchar(100)                         not null comment '3D 이미지',
+    image_file_realistic varchar(100)                         not null comment '실사 이미지',
+    area                 varchar(10)                          not null comment '영역 (red/yellow/green/blue)',
+    display_order        int                                  not null comment '표시 순서',
+    created_at           datetime default current_timestamp() null,
+    updated_at           datetime default current_timestamp() null on update current_timestamp()
+)
+    comment '감종 - 꽃 마스터 테이블' collate = utf8mb4_unicode_ci;
+
+create index idx_area
+    on emotions (area);
+
+create index idx_display_order
+    on emotions (display_order);
 ```
 
 ### JPA Entity

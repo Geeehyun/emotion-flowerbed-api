@@ -60,8 +60,8 @@ public class Emotion {
     @Column(name = "image_file_realistic", nullable = false, length = 100)
     private String imageFileRealistic;
 
-    @Column(name = "is_positive", nullable = false)
-    private Boolean isPositive;
+    @Column(name = "area", nullable = false, length = 10)
+    private String area;
 
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
@@ -77,7 +77,7 @@ public class Emotion {
     public Emotion(String emotionCode, String emotionNameKr, String emotionNameEn,
                   String flowerNameKr, String flowerMeaning,
                   String imageFile3d, String imageFileRealistic,
-                  Boolean isPositive, Integer displayOrder) {
+                  String area, Integer displayOrder) {
         this.emotionCode = emotionCode;
         this.emotionNameKr = emotionNameKr;
         this.emotionNameEn = emotionNameEn;
@@ -85,7 +85,7 @@ public class Emotion {
         this.flowerMeaning = flowerMeaning;
         this.imageFile3d = imageFile3d;
         this.imageFileRealistic = imageFileRealistic;
-        this.isPositive = isPositive;
+        this.area = area;
         this.displayOrder = displayOrder;
     }
 
