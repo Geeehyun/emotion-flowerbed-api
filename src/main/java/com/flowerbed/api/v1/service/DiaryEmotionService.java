@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flowerbed.api.v1.domain.Emotion;
 import com.flowerbed.api.v1.dto.DiaryEmotionResponse;
 import com.flowerbed.api.v1.dto.EmotionPercent;
-import com.flowerbed.exception.InvalidDiaryContentException;
+import com.flowerbed.exception.business.InvalidDiaryContentException;
 import com.flowerbed.api.v1.repository.FlowerRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

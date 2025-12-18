@@ -2,11 +2,53 @@
 ### Base URL: http://localhost:8080/api
 
 ### ========================================
-### 1. 일기 API (Diary)
+### 인증 API (Auth)
 ### ========================================
 
-### 1-1. 일기 작성
-POST http://localhost:8080/api/diaries
+### 로그인
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "userId": "student1",
+  "password": "1234"
+}
+
+> {%
+    client.test('로그인 테스트', () => {
+        if(response.status === 200) {
+            client.global.set('accessToken', response.body.accessToken);
+            client.global.set('refreshToken', response.body.refreshToken);
+            client.log(`인증 성공 : ${response.body.accessToken} / ${response.body.refreshToken}`);
+            client.assert(true);
+        } else {
+            client.log('인증 실패');
+            client.assert(false);
+            client.exit();
+        }
+    })
+%}
+
+### 로그아웃 (인증 필요)
+# @name logout
+POST http://localhost:8080/api/v1/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### Access Token 갱신
+POST http://localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### ========================================
+### 일기 API (Diary)
+### ========================================
+
+### 일기 작성
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -14,163 +56,52 @@ Content-Type: application/json
   "content": "오늘 친구와 맛있는 저녁을 먹었다. 오랜만에 만나서 정말 즐거웠고, 대화를 나누면서 많은 위로를 받았다. 힘든 일이 있었지만 친구 덕분에 기분이 많이 좋아졌다."
 }
 
-### 1-2. 일기 감정 분석 (실제 - Claude API 사용)
-POST http://localhost:8080/api/diaries/1/analyze
+### 일기 감정 분석 (실제 - Claude API 사용)
+POST http://localhost:8080/api/v1/diaries/1/analyze
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
-### 1-3. 일기 감정 분석 (테스트 모드 - 랜덤 생성)
-POST http://localhost:8080/api/diaries/1/analyze-test
+### 일기 감정 분석 (테스트 모드 - 랜덤 생성)
+POST http://localhost:8080/api/v1/diaries/1/analyze-test
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
-### 1-4. 일기 상세 조회
-GET http://localhost:8080/api/diaries/1
+### 일기 상세 조회
+GET http://localhost:8080/api/v1/diaries/60
+Authorization: Bearer {{accessToken}}
 
-### 1-5. 특정 날짜 일기 조회
-GET http://localhost:8080/api/diaries/date/2025-12-09
+### 특정 날짜 일기 조회
+GET http://localhost:8080/api/v1/diaries/date/2025-12-09
+Authorization: Bearer {{accessToken}}
 
-### 1-6. 월별 일기 목록 조회 (꽃 상세정보 포함)
-GET http://localhost:8080/api/diaries?yearMonth=2025-12
+### 월별 일기 목록 조회 (꽃 상세정보 포함)
+GET http://localhost:8080/api/v1/diaries?yearMonth=2025-12
+Authorization: Bearer {{accessToken}}
 
-### 1-7. 일기 수정
-PUT http://localhost:8080/api/diaries/1
+### 일기 수정
+# TODO 수정되면 기존 분석 내용 날려야할듯
+PUT http://localhost:8080/api/v1/diaries/60
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
   "content": "오늘 친구와 맛있는 저녁을 먹었다. 정말 행복한 하루였다. (수정됨)"
 }
 
-### 1-8. 일기 삭제 (Soft Delete)
-DELETE http://localhost:8080/api/diaries/1
+### 일기 삭제 (Soft Delete)
+# TODO response가 없다? 원래 RESTful은 그런것인가?
+DELETE http://localhost:8080/api/v1/diaries/60
+Authorization: Bearer {{accessToken}}
 
 
 ### ========================================
-### 2. 꽃 정보 API (Flower)
+### 꽃 정보 API (Flower)
 ### ========================================
 
-### 2-1. 사용자의 감정&꽃 통계 조회 (날짜 목록 + 꽃 상세정보 포함)
-GET http://localhost:8080/api/flowers/my-emotions
+### 사용자의 감정&꽃 통계 조회 (날짜 목록 + 꽃 상세정보 포함)
+GET http://localhost:8080/api/v1/flowers/my-emotions
+Authorization: Bearer {{accessToken}}
 
-### 2-2. 전체 감정-꽃 정보 조회 (display_order 순)
-GET http://localhost:8080/api/flowers/all-emotions
-
-
-### ========================================
-### 3. 응답 예시
-### ========================================
-
-### 3-1. 일기 감정 분석 응답 예시
-# POST /api/diaries/1/analyze
-# {
-#   "diaryId": 1,
-#   "diaryDate": "2025-12-09",
-#   "content": "오늘 친구와...",
-#   "summary": "친구와 저녁을 먹으며 즐거운 시간을 보냄",
-#   "coreEmotion": "기쁨",
-#   "coreEmotionCode": "JOY",
-#   "emotionReason": "친구와의 즐거운 시간이 강조됨",
-#   "flowerName": "해바라기",
-#   "flowerMeaning": "당신을 보면 행복해요",
-#   "emotions": [
-#     {"emotion": "기쁨", "percent": 70},
-#     {"emotion": "행복", "percent": 30}
-#   ],
-#   "isAnalyzed": true,
-#   "analyzedAt": "2025-12-09T10:30:00",
-#   "flowerDetail": {
-#     "emotionCode": "JOY",
-#     "emotionNameKr": "기쁨",
-#     "emotionNameEn": "Joy",
-#     "flowerNameKr": "해바라기",
-#     "flowerNameEn": "Sunflower",
-#     "flowerMeaning": "당신을 보면 행복해요",
-#     "flowerMeaningStory": "...",
-#     "flowerColor": "노란색",
-#     "flowerColorCodes": "#FFD700,#FFA500",
-#     "flowerOrigin": "북아메리카",
-#     "flowerFragrance": "은은한 풀향기",
-#     "flowerFunFact": "...",
-#     "imageFile3d": "sunflower_3d.png",
-#     "imageFileRealistic": "sunflower_real.jpg",
-#     "isPositive": true
-#   }
-# }
-
-### 3-2. 월별 일기 목록 응답 예시
-# GET /api/diaries?yearMonth=2025-12
-# {
-#   "yearMonth": "2025-12",
-#   "diaries": [
-#     {
-#       "id": 1,
-#       "date": "2025-12-09",
-#       "content": "오늘 친구와...",
-#       "coreEmotion": "기쁨",
-#       "flower": "해바라기",
-#       "floriography": "당신을 보면 행복해요",
-#       "summary": "친구와 저녁을...",
-#       "emotions": [{"emotion": "기쁨", "percent": 70}],
-#       "reason": "친구와의 즐거운 시간...",
-#       "flowerDetail": {
-#         "emotionCode": "JOY",
-#         "emotionNameKr": "기쁨",
-#         "flowerNameKr": "해바라기",
-#         "flowerColor": "노란색",
-#         "flowerColorCodes": "#FFD700,#FFA500",
-#         "imageFile3d": "sunflower_3d.png",
-#         "imageFileRealistic": "sunflower_real.jpg"
-#       }
-#     }
-#   ],
-#   "totalCount": 15,
-#   "hasNextMonth": true,
-#   "hasPrevMonth": true
-# }
-
-### 3-3. 사용자 감정&꽃 통계 응답 예시
-# GET /api/flowers/my-emotions
-# {
-#   "items": [
-#     {
-#       "emotion": "기쁨",
-#       "emotionCode": "JOY",
-#       "flowerName": "해바라기",
-#       "flowerMeaning": "당신을 보면 행복해요",
-#       "count": 5,
-#       "dates": ["2025-12-01", "2025-12-05", "2025-12-09"],
-#       "flowerDetail": {
-#         "emotionCode": "JOY",
-#         "emotionNameKr": "기쁨",
-#         "flowerNameKr": "해바라기",
-#         "flowerColor": "노란색",
-#         "imageFile3d": "sunflower_3d.png"
-#       }
-#     }
-#   ],
-#   "totalCount": 1
-# }
-
-### 3-4. 전체 감정-꽃 정보 응답 예시
-# GET /api/flowers/all-emotions
-# {
-#   "emotions": [
-#     {
-#       "emotionCode": "JOY",
-#       "emotionNameKr": "기쁨",
-#       "emotionNameEn": "Joy",
-#       "flowerNameKr": "해바라기",
-#       "flowerNameEn": "Sunflower",
-#       "flowerMeaning": "당신을 보면 행복해요",
-#       "flowerMeaningStory": "...",
-#       "flowerColor": "노란색",
-#       "flowerColorCodes": "#FFD700,#FFA500",
-#       "flowerOrigin": "북아메리카",
-#       "flowerFragrance": "은은한 풀향기",
-#       "flowerFunFact": "...",
-#       "imageFile3d": "sunflower_3d.png",
-#       "imageFileRealistic": "sunflower_real.jpg",
-#       "isPositive": true,
-#       "displayOrder": 1
-#     }
-#   ],
-#   "totalCount": 20
-# }
+### 전체 감정-꽃 정보 조회 (display_order 순)
+GET http://localhost:8080/api/v1/flowers/all-emotions
+Authorization: Bearer {{accessToken}}

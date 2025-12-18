@@ -1,6 +1,7 @@
 package com.flowerbed.exception;
 
 import com.flowerbed.api.v1.dto.ErrorResponse;
+import com.flowerbed.exception.business.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

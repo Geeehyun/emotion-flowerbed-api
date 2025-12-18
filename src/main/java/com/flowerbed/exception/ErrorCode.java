@@ -8,6 +8,10 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
+    // 401 UnAuthorized
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "유효하지 않은 토큰 입니다."),
+    INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "INVALID_PASSWORD", "비밀번호가 일치하지 않습니다"),
+
     // 400 Bad Request
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "입력 값이 올바르지 않습니다"),
     INVALID_DIARY_CONTENT(HttpStatus.BAD_REQUEST, "INVALID_DIARY_CONTENT", "일기 내용이 분석 불가능합니다"),

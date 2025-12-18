@@ -4,8 +4,8 @@ import com.flowerbed.api.v1.domain.Diary;
 import com.flowerbed.api.v1.domain.Emotion;
 import com.flowerbed.api.v1.domain.User;
 import com.flowerbed.api.v1.dto.*;
-import com.flowerbed.exception.BusinessException;
-import com.flowerbed.exception.DiaryNotFoundException;
+import com.flowerbed.exception.business.BusinessException;
+import com.flowerbed.exception.business.DiaryNotFoundException;
 import com.flowerbed.exception.ErrorCode;
 import com.flowerbed.api.v1.repository.DiaryRepository;
 import com.flowerbed.api.v1.repository.FlowerRepository;
@@ -43,17 +43,17 @@ public class DiaryService {
      * 일기 작성 (감정 분석 X, 내용만 저장)
      */
     @Transactional
-    public DiaryResponse createDiary(Long userId, DiaryCreateRequest request) {
+    public DiaryResponse createDiary(Long userSn, DiaryCreateRequest request) {
 
         // 일기 내용 유효성 검사
         validateDiaryContent(request.getContent());
 
         // 사용자 조회
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(userSn)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 같은 날짜에 일기가 이미 있는지 확인
-        diaryRepository.findByUserUserIdAndDiaryDateAndDeletedAtIsNull(userId, request.getDiaryDate())
+        diaryRepository.findByUserUserSnAndDiaryDateAndDeletedAtIsNull(userSn, request.getDiaryDate())
                 .ifPresent(diary -> {
                     throw new BusinessException(ErrorCode.DUPLICATE_DIARY_DATE,
                             "해당 날짜에 이미 일기가 존재합니다");
@@ -65,7 +65,7 @@ public class DiaryService {
         try {
             Diary savedDiary = diaryRepository.save(diary);
             log.info("Diary created: diaryId={}, userId={}, date={}",
-                    savedDiary.getDiaryId(), userId, request.getDiaryDate());
+                    savedDiary.getDiaryId(), userSn, request.getDiaryDate());
 
             return convertToResponse(savedDiary);
 
@@ -87,7 +87,7 @@ public class DiaryService {
                 .orElseThrow(DiaryNotFoundException::new);
 
         // 권한 확인
-        if (!diary.getUser().getUserId().equals(userId)) {
+        if (!diary.getUser().getUserSn().equals(userId)) {
             throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
         }
 
@@ -137,7 +137,7 @@ public class DiaryService {
                 .orElseThrow(DiaryNotFoundException::new);
 
         // 권한 확인
-        if (!diary.getUser().getUserId().equals(userId)) {
+        if (!diary.getUser().getUserSn().equals(userId)) {
             throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
         }
 
@@ -176,7 +176,7 @@ public class DiaryService {
                 .orElseThrow(DiaryNotFoundException::new);
 
         // 권한 확인
-        if (!diary.getUser().getUserId().equals(userId)) {
+        if (!diary.getUser().getUserSn().equals(userId)) {
             throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
         }
 
@@ -186,9 +186,9 @@ public class DiaryService {
     /**
      * 특정 날짜 일기 조회
      */
-    public DiaryResponse getDiaryByDate(Long userId, LocalDate date) {
+    public DiaryResponse getDiaryByDate(Long userSn, LocalDate date) {
 
-        Diary diary = diaryRepository.findByUserUserIdAndDiaryDateAndDeletedAtIsNull(userId, date)
+        Diary diary = diaryRepository.findByUserUserSnAndDiaryDateAndDeletedAtIsNull(userSn, date)
                 .orElseThrow(DiaryNotFoundException::new);
 
         return convertToResponse(diary);
@@ -197,13 +197,13 @@ public class DiaryService {
     /**
      * 월별 일기 목록 조회
      */
-    public MonthlyDiariesResponse getMonthlyDiaries(Long userId, String yearMonth) {
+    public MonthlyDiariesResponse getMonthlyDiaries(Long userSn, String yearMonth) {
 
         YearMonth ym = YearMonth.parse(yearMonth);
         int year = ym.getYear();
         int month = ym.getMonthValue();
 
-        List<Diary> diaries = diaryRepository.findByUserIdAndYearMonth(userId, year, month);
+        List<Diary> diaries = diaryRepository.findByUserSnAndYearMonth(userSn, year, month);
 
         List<MonthlyDiariesResponse.DiaryListItem> items = diaries.stream()
                 .map(this::convertToListItem)
@@ -229,7 +229,7 @@ public class DiaryService {
                 .orElseThrow(DiaryNotFoundException::new);
 
         // 권한 확인
-        if (!diary.getUser().getUserId().equals(userId)) {
+        if (!diary.getUser().getUserSn().equals(userId)) {
             throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
         }
 
@@ -251,7 +251,7 @@ public class DiaryService {
                 .orElseThrow(DiaryNotFoundException::new);
 
         // 권한 확인
-        if (!diary.getUser().getUserId().equals(userId)) {
+        if (!diary.getUser().getUserSn().equals(userId)) {
             throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
         }
 

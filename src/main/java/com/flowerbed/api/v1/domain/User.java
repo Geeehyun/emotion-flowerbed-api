@@ -25,20 +25,26 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long userId;
+    @Column(name = "user_sn")
+    private Long userSn;
 
     @Column(unique = true, nullable = false)
-    private String email;
+    private String userId;
 
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, length = 50)
-    private String nickname;
+    private String name;
 
-    @Column(name = "profile_image")
-    private String profileImage;
+    @Column(name = "school_code")
+    private String schoolCode;
+
+    @Column(name = "school_nm")
+    private String schoolNm;
+
+    @Column(name = "class_code")
+    private String classCode;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Diary> diaries = new ArrayList<>();
@@ -54,17 +60,9 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    public User(String email, String password, String nickname) {
-        this.email = email;
+    public User(String userId, String password, String name) {
+        this.userId = userId;
         this.password = password;
-        this.nickname = nickname;
-    }
-
-    public void updateNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    public void updateProfileImage(String profileImage) {
-        this.profileImage = profileImage;
+        this.name = name;
     }
 }

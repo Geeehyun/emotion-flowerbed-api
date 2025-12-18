@@ -14,30 +14,30 @@ import java.util.Optional;
 public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
     // 특정 날짜 일기 조회 (하루 1개)
-    Optional<Diary> findByUserUserIdAndDiaryDateAndDeletedAtIsNull(Long userId, LocalDate diaryDate);
+    Optional<Diary> findByUserUserSnAndDiaryDateAndDeletedAtIsNull(Long userSn, LocalDate diaryDate);
 
     // 월별 일기 조회
-    @Query("SELECT d FROM Diary d WHERE d.user.userId = :userId " +
+    @Query("SELECT d FROM Diary d WHERE d.user.userSn = :userSn " +
             "AND YEAR(d.diaryDate) = :year AND MONTH(d.diaryDate) = :month " +
             "ORDER BY d.diaryDate DESC")
-    List<Diary> findByUserIdAndYearMonth(
-            @Param("userId") Long userId,
+    List<Diary> findByUserSnAndYearMonth(
+            @Param("userSn") Long userSn,
             @Param("year") int year,
             @Param("month") int month
     );
 
     // 특정 월에 일기가 있는지 확인
-    @Query("SELECT COUNT(d) > 0 FROM Diary d WHERE d.user.userId = :userId " +
+    @Query("SELECT COUNT(d) > 0 FROM Diary d WHERE d.user.userSn = :userSn " +
             "AND YEAR(d.diaryDate) = :year AND MONTH(d.diaryDate) = :month")
-    boolean existsByUserIdAndYearMonth(
-            @Param("userId") Long userId,
+    boolean existsByUserSnAndYearMonth(
+            @Param("userSn") Long userSn,
             @Param("year") int year,
             @Param("month") int month
     );
 
     // 사용자의 최근 일기 조회
-    List<Diary> findByUserUserIdOrderByDiaryDateDesc(Long userId);
+    List<Diary> findByUserUserSnOrderByDiaryDateDesc(Long userSn);
 
     // 사용자의 분석된 일기 조회
-    List<Diary> findByUserUserIdAndIsAnalyzed(Long userId, Boolean isAnalyzed);
+    List<Diary> findByUserUserSnAndIsAnalyzed(Long userSn, Boolean isAnalyzed);
 }

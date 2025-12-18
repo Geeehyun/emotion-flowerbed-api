@@ -1,5 +1,6 @@
-package com.flowerbed.exception;
+package com.flowerbed.exception.business;
 
+import com.flowerbed.exception.ErrorCode;
 import lombok.Getter;
 
 @Getter

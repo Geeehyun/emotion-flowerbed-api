@@ -33,7 +33,7 @@ public class Diary {
     private Long diaryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_diary_user"))
+    @JoinColumn(name = "user_sn", nullable = false, foreignKey = @ForeignKey(name = "diaries_users_user_sn_fk"))
     private User user;
 
     @Column(name = "diary_date", nullable = false)

@@ -8,38 +8,42 @@
 
 | 컬럼명 | 타입 | 제약조건 | 설명 |
 |--------|------|---------|------|
-| user_id | bigint(20) | PK, AUTO_INCREMENT | 회원 고유 ID |
-| email | varchar(255) | NOT NULL, UNIQUE | 이메일 (로그인 ID) |
+| user_sn | bigint(20) | PK, AUTO_INCREMENT | 회원 일련번호 (내부 ID) |
+| user_id | varchar(255) | NOT NULL, UNIQUE | 로그인 ID |
 | password | varchar(255) | NOT NULL | 암호화된 비밀번호 |
-| nickname | varchar(50) | NOT NULL | 닉네임 |
-| profile_image | varchar(255) | NULL | 프로필 이미지 URL |
+| name | varchar(50) | NOT NULL | 이름 |
+| school_code | varchar(50) | NULL | 학교 코드 |
+| school_nm | varchar(100) | NULL | 학교명 |
+| class_code | varchar(50) | NULL | 반 코드 |
 | created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 가입일시 |
 | updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
 | deleted_at | datetime | NULL | 탈퇴일시 (Soft Delete) |
 
 ### 인덱스
-- PRIMARY KEY: `user_id`
-- UNIQUE KEY: `email`
-- INDEX: `idx_email` (이메일 조회 최적화)
+- PRIMARY KEY: `user_sn`
+- UNIQUE KEY: `user_id`
+- INDEX: `idx_user_id` (로그인 ID 조회 최적화)
 - INDEX: `idx_created_at` (가입일 기준 조회 최적화)
 
 ### DDL
 ```mysql
 -- users DDL
 CREATE TABLE `users` (
-`user_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '회원 ID',
-`email` varchar(255) NOT NULL COMMENT '이메일 (로그인 ID)',
+`user_sn` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '회원 일련번호',
+`user_id` varchar(255) NOT NULL COMMENT '로그인 ID',
 `password` varchar(255) NOT NULL COMMENT '암호화된 비밀번호',
-`nickname` varchar(50) NOT NULL COMMENT '닉네임',
-`profile_image` varchar(255) DEFAULT NULL COMMENT '프로필 이미지 URL',
+`name` varchar(50) NOT NULL COMMENT '이름',
+`school_code` varchar(50) DEFAULT NULL COMMENT '학교 코드',
+`school_nm` varchar(100) DEFAULT NULL COMMENT '학교명',
+`class_code` varchar(50) DEFAULT NULL COMMENT '반 코드',
 `created_at` datetime DEFAULT current_timestamp() COMMENT '가입일시',
 `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
 `deleted_at` datetime DEFAULT NULL COMMENT '탈퇴일시 (soft delete)',
-PRIMARY KEY (`user_id`),
-UNIQUE KEY `email` (`email`),
-KEY `idx_email` (`email`),
+PRIMARY KEY (`user_sn`),
+UNIQUE KEY `user_id` (`user_id`),
+KEY `idx_user_id` (`user_id`),
 KEY `idx_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='회원'
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='회원'
 ;
 ```
 
@@ -47,25 +51,31 @@ KEY `idx_created_at` (`created_at`)
 ```java
 @Entity
 @Table(name = "users")
-@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_id = ?")
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_sn = ?")
 @Where(clause = "deleted_at IS NULL")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long userId;
+    @Column(name = "user_sn")
+    private Long userSn;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+    @Column(name = "user_id", unique = true, nullable = false)
+    private String userId;
 
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, length = 50)
-    private String nickname;
+    private String name;
 
-    @Column(name = "profile_image")
-    private String profileImage;
+    @Column(name = "school_code", length = 50)
+    private String schoolCode;
+
+    @Column(name = "school_nm", length = 100)
+    private String schoolNm;
+
+    @Column(name = "class_code", length = 50)
+    private String classCode;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Diary> diaries = new ArrayList<>();
@@ -94,7 +104,7 @@ public class User {
 | 컬럼명 | 타입 | 제약조건 | 설명 |
 |--------|------|---------|------|
 | diary_id | bigint(20) | PK, AUTO_INCREMENT | 일기 고유 ID |
-| user_id | bigint(20) | FK, NOT NULL | 작성자 ID (users.user_id) |
+| user_sn | bigint(20) | FK, NOT NULL | 작성자 일련번호 (users.user_sn) |
 | diary_date | date | NOT NULL | 일기 날짜 |
 | content | text | NOT NULL | 일기 내용 |
 | summary | text | NULL | AI 생성 일기 요약 |
@@ -112,14 +122,14 @@ public class User {
 | is_active | tinyint(1) | GENERATED COLUMN | 활성 상태 (deleted_at IS NULL) |
 
 ### 제약조건
-- **FOREIGN KEY**: `user_id` → `users.user_id` (ON DELETE CASCADE)
-- **UNIQUE KEY**: `uk_user_date_active` (user_id, diary_date, is_active)
+- **FOREIGN KEY**: `user_sn` → `users.user_sn` (ON DELETE CASCADE)
+- **UNIQUE KEY**: `uk_user_date_active` (user_sn, diary_date, is_active)
   - 같은 사용자가 같은 날짜에 여러 일기를 작성할 수 없도록 제한
   - is_active를 포함하여 soft delete된 일기는 제약에서 제외
 
 ### 인덱스
 - PRIMARY KEY: `diary_id`
-- UNIQUE KEY: `uk_user_date_active` (user_id, diary_date, is_active)
+- UNIQUE KEY: `uk_user_date_active` (user_sn, diary_date, is_active)
 - INDEX: `idx_user_date` (사용자별 날짜 조회)
 - INDEX: `idx_user_created` (사용자별 최신순 조회)
 - INDEX: `idx_core_emotion` (감정별 조회)
@@ -140,7 +150,7 @@ public class User {
 -- diaries DDL
 CREATE TABLE `diaries` (
   `diary_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '일기 ID',
-  `user_id` bigint(20) NOT NULL COMMENT '작성자 ID',
+  `user_sn` bigint(20) NOT NULL COMMENT '작성자 일련번호',
   `diary_date` date NOT NULL COMMENT '일기 날짜',
   `content` text NOT NULL COMMENT '일기 내용',
   `summary` text DEFAULT NULL COMMENT '일기 요약',
@@ -157,12 +167,12 @@ CREATE TABLE `diaries` (
   `deleted_at` datetime DEFAULT NULL COMMENT '삭제일시 (soft delete)',
   `is_active` tinyint(1) GENERATED ALWAYS AS (case when `deleted_at` is null then 1 else NULL end) STORED,
   PRIMARY KEY (`diary_id`),
-  UNIQUE KEY `uk_user_date_active` (`user_id`,`diary_date`,`is_active`),
-  KEY `idx_user_date` (`user_id`,`diary_date`),
-  KEY `idx_user_created` (`user_id`,`created_at` DESC),
+  UNIQUE KEY `uk_user_date_active` (`user_sn`,`diary_date`,`is_active`),
+  KEY `idx_user_date` (`user_sn`,`diary_date`),
+  KEY `idx_user_created` (`user_sn`,`created_at` DESC),
   KEY `idx_core_emotion` (`core_emotion`),
   KEY `idx_analyzed` (`is_analyzed`,`analyzed_at`),
-  CONSTRAINT `diaries_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+  CONSTRAINT `diaries_ibfk_1` FOREIGN KEY (`user_sn`) REFERENCES `users` (`user_sn`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='일기'
 ```
 
@@ -389,7 +399,7 @@ users (1) ----< (N) diaries
 ### 관계 설명
 1. **users ↔ diaries**: 1:N 관계
    - 한 사용자는 여러 일기를 작성할 수 있음
-   - FK: `diaries.user_id` → `users.user_id` (ON DELETE CASCADE)
+   - FK: `diaries.user_sn` → `users.user_sn` (ON DELETE CASCADE)
 
 2. **diaries ↔ emotions**: 참조 관계 (FK 없음)
    - 일기의 `core_emotion_code`가 `emotions.emotion_code`를 참조

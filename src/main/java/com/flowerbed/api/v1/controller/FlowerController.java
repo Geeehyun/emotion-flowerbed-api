@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Tag(name = "Flower", description = "꽃 정보 API")
 @RestController
-@RequestMapping("/flowers")
+@RequestMapping("/v1/flowers")
 @RequiredArgsConstructor
 public class FlowerController {
 
@@ -34,7 +34,7 @@ public class FlowerController {
      * !! 임시 사용자 ID !!
      * TODO: JWT 인증 구현 후 SecurityContext에서 실제 userId 추출
      */
-    private static final Long DEFAULT_USER_ID = 1L;
+    private static final Long DEFAULT_USER_SN = 1L;
 
     /**
      * 사용자의 감정-꽃 통계 조회
@@ -71,7 +71,7 @@ public class FlowerController {
     @Operation(summary = "사용자의 감정&꽃 리스트 조회", description = "사용자가 작성한 일기에서 나타난 감정과 꽃 리스트를 조회합니다")
     @GetMapping("/my-emotions")
     public ResponseEntity<UserEmotionFlowerResponse> getUserEmotionFlowers() {
-        UserEmotionFlowerResponse response = flowerService.getUserEmotionFlowers(DEFAULT_USER_ID);
+        UserEmotionFlowerResponse response = flowerService.getUserEmotionFlowers(DEFAULT_USER_SN);
         return ResponseEntity.ok(response);
     }
 

@@ -3,7 +3,7 @@ package com.flowerbed.api.v1.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flowerbed.config.OpenAiConfig;
-import com.flowerbed.exception.LlmAnalysisException;
+import com.flowerbed.exception.business.LlmAnalysisException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

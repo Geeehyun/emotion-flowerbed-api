@@ -38,9 +38,9 @@ public class FlowerService {
      * - 분석 완료된 일기들을 감정별로 그룹화
      * - 감정별 횟수, 날짜 목록, 꽃 상세정보 반환
      */
-    public UserEmotionFlowerResponse getUserEmotionFlowers(Long userId) {
+    public UserEmotionFlowerResponse getUserEmotionFlowers(Long userSn) {
         // 사용자의 분석된 일기 중 핵심 감정별로 그룹화
-        List<Diary> analyzedDiaries = diaryRepository.findByUserUserIdAndIsAnalyzed(userId, true);
+        List<Diary> analyzedDiaries = diaryRepository.findByUserUserSnAndIsAnalyzed(userSn, true);
 
         if (analyzedDiaries.isEmpty()) {
             return UserEmotionFlowerResponse.builder()

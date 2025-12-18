@@ -23,6 +23,15 @@ spring:
     init:
       mode: never
 
+  data:
+    redis:
+      host1: # 각 환경 별 application-environment.yml 에서 설정
+      host2: # 각 환경 별 application-environment.yml 에서 설정
+      host3: # 각 환경 별 application-environment.yml 에서 설정
+      port: 6379
+      password: # 각 환경 별 application-environment.yml 에서 설정
+      database: 0
+
 logging:
   level:
     org.hibernate.SQL: debug
@@ -80,4 +89,3 @@ openai:
 # JWT Configuration
 jwt:
   secret-key: ${JWT_SECRET_KEY:your-secret-key-min-256-bits-for-hs256-algorithm-please-change-in-production}
-  expiration: 86400000  # 24시간 (밀리초)
