@@ -40,4 +40,24 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
 
     // 사용자의 분석된 일기 조회
     List<Diary> findByUserUserSnAndIsAnalyzed(Long userSn, Boolean isAnalyzed);
+
+    // 특정 기간의 일기 조회 (주간 리포트용)
+    @Query("SELECT d FROM Diary d WHERE d.user.userSn = :userSn " +
+            "AND d.diaryDate BETWEEN :startDate AND :endDate " +
+            "ORDER BY d.diaryDate ASC")
+    List<Diary> findByUserSnAndDateBetween(
+            @Param("userSn") Long userSn,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    // 특정 기간에 3일 이상 일기를 쓴 사용자 조회
+    @Query("SELECT d.user.userSn FROM Diary d " +
+            "WHERE d.diaryDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY d.user.userSn " +
+            "HAVING COUNT(d) >= 3")
+    List<Long> findUserSnWithMinDiaryCount(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }

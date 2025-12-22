@@ -68,6 +68,8 @@ public class AuthService {
                 .userSn(user.getUserSn())
                 .userId(user.getUserId())
                 .name(user.getName())
+                .userTypeCd(user.getUserTypeCd())
+                .emotionControlCd(user.getEmotionControlCd())
                 .build();
     }
 
