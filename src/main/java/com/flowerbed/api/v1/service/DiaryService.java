@@ -304,7 +304,13 @@ public class DiaryService {
         List<EmotionPercent> emotions = null;
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
-                    .map(e -> new EmotionPercent(e.getEmotion(), e.getPercent()))
+                    .map(e -> {
+                        // 감정 코드로 색상 조회
+                        String color = flowerRepository.findById(e.getEmotion())
+                                .map(Emotion::getColor)
+                                .orElse(null);
+                        return new EmotionPercent(e.getEmotion(), e.getPercent(), color);
+                    })
                     .collect(Collectors.toList());
         }
 
@@ -378,7 +384,13 @@ public class DiaryService {
         List<EmotionPercent> emotions = null;
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
-                    .map(e -> new EmotionPercent(e.getEmotion(), e.getPercent()))
+                    .map(e -> {
+                        // 감정 코드로 색상 조회
+                        String color = flowerRepository.findById(e.getEmotion())
+                                .map(Emotion::getColor)
+                                .orElse(null);
+                        return new EmotionPercent(e.getEmotion(), e.getPercent(), color);
+                    })
                     .collect(Collectors.toList());
         }
 

@@ -89,15 +89,28 @@ public class Diary extends BaseAuditEntity {
         this.analyzedAt = LocalDateTime.now();
     }
 
+    /**
+     * 감정 퍼센트 내부 클래스 (JSON 저장용)
+     * - emotion: 감정 코드
+     * - percent: 비율
+     * - color: 감정 색상 (HEX 코드)
+     */
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class EmotionPercent {
         private String emotion;
         private Integer percent;
+        private String color;
 
         public EmotionPercent(String emotion, Integer percent) {
             this.emotion = emotion;
             this.percent = percent;
+        }
+
+        public EmotionPercent(String emotion, Integer percent, String color) {
+            this.emotion = emotion;
+            this.percent = percent;
+            this.color = color;
         }
     }
 }
