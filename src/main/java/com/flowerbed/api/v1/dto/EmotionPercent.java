@@ -7,7 +7,7 @@ import lombok.Setter;
 
 /**
  * 감정 퍼센트 DTO
- * - 일기 분석 결과에서 각 감정의 비율과 색상 정보
+ * - 일기 분석 결과에서 각 감정의 비율, 이름, 색상 정보
  */
 @Getter
 @Setter
@@ -30,10 +30,24 @@ public class EmotionPercent {
     private String color;
 
     /**
+     * 감정 이름 (한글)
+     */
+    private String emotionNameKr;
+
+    /**
      * color 없이 생성하는 생성자 (하위 호환성)
      */
     public EmotionPercent(String emotion, Integer percent) {
         this.emotion = emotion;
         this.percent = percent;
+    }
+
+    /**
+     * color와 emotionNameKr을 포함하는 생성자
+     */
+    public EmotionPercent(String emotion, Integer percent, String color) {
+        this.emotion = emotion;
+        this.percent = percent;
+        this.color = color;
     }
 }

@@ -305,11 +305,14 @@ public class DiaryService {
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
                     .map(e -> {
-                        // 감정 코드로 색상 조회
-                        String color = flowerRepository.findById(e.getEmotion())
-                                .map(Emotion::getColor)
-                                .orElse(null);
-                        return new EmotionPercent(e.getEmotion(), e.getPercent(), color);
+                        // 감정 코드로 색상 및 이름 조회
+                        Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                        String color = emotion != null ? emotion.getColor() : null;
+                        String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
+
+                        EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
+                        ep.setEmotionNameKr(emotionNameKr);
+                        return ep;
                     })
                     .collect(Collectors.toList());
         }
@@ -385,11 +388,14 @@ public class DiaryService {
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
                     .map(e -> {
-                        // 감정 코드로 색상 조회
-                        String color = flowerRepository.findById(e.getEmotion())
-                                .map(Emotion::getColor)
-                                .orElse(null);
-                        return new EmotionPercent(e.getEmotion(), e.getPercent(), color);
+                        // 감정 코드로 색상 및 이름 조회
+                        Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                        String color = emotion != null ? emotion.getColor() : null;
+                        String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
+
+                        EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
+                        ep.setEmotionNameKr(emotionNameKr);
+                        return ep;
                     })
                     .collect(Collectors.toList());
         }

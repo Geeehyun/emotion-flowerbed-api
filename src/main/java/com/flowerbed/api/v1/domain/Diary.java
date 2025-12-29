@@ -94,6 +94,7 @@ public class Diary extends BaseAuditEntity {
      * - emotion: 감정 코드
      * - percent: 비율
      * - color: 감정 색상 (HEX 코드)
+     * - emotionNameKr: 감정 이름 (한글)
      */
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -101,6 +102,7 @@ public class Diary extends BaseAuditEntity {
         private String emotion;
         private Integer percent;
         private String color;
+        private String emotionNameKr;
 
         public EmotionPercent(String emotion, Integer percent) {
             this.emotion = emotion;
@@ -111,6 +113,13 @@ public class Diary extends BaseAuditEntity {
             this.emotion = emotion;
             this.percent = percent;
             this.color = color;
+        }
+
+        public EmotionPercent(String emotion, Integer percent, String color, String emotionNameKr) {
+            this.emotion = emotion;
+            this.percent = percent;
+            this.color = color;
+            this.emotionNameKr = emotionNameKr;
         }
     }
 }
