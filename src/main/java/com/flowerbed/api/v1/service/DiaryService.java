@@ -329,11 +329,13 @@ public class DiaryService {
         Boolean showTip = null;
         Integer consecutiveDays = null;
         String repeatedArea = null;
+        String tipCode = null;
 
         if (tipInfo != null) {
             showTip = tipInfo.isShow();
             consecutiveDays = tipInfo.getConsecutiveDays();
             repeatedArea = tipInfo.getArea();
+            tipCode = tipInfo.getTipCode();
         }
 
         return DiaryResponse.builder()
@@ -354,6 +356,7 @@ public class DiaryService {
                 .showEmotionControlTip(showTip)
                 .consecutiveSameAreaDays(consecutiveDays)
                 .repeatedEmotionArea(repeatedArea)
+                .emotionControlTipCode(tipCode)
                 .build();
     }
 
@@ -472,7 +475,7 @@ public class DiaryService {
         // 1. 현재 일기의 감정 영역 조회
         String currentArea = getEmotionArea(currentDiary.getCoreEmotionCode());
         if (currentArea == null) {
-            return new EmotionControlTipInfo(false, null, null);
+            return new EmotionControlTipInfo(false, null, null, null);
         }
 
         // 2. 최근 7일간의 분석된 일기 조회 (현재 일기 포함, 날짜 역순)
@@ -506,12 +509,14 @@ public class DiaryService {
 
         // 4. 3일 이상이면 감정 조절 팁 표시
         if (consecutiveDays >= 3) {
-            // 5일 이상이면 5로, 3~4일이면 3으로 설정
-            int tipDays = consecutiveDays >= 5 ? 5 : 3;
-            return new EmotionControlTipInfo(true, tipDays, currentArea);
+            // 실제 연속 일수를 그대로 반환 (3일, 4일, 5일, 6일... 등)
+            // 팁 코드 생성: 3~4일은 _3, 5일 이상은 _5
+            int tipLevel = consecutiveDays >= 5 ? 5 : 3;
+            String tipCode = currentArea.toUpperCase() + "_" + tipLevel;
+            return new EmotionControlTipInfo(true, consecutiveDays, currentArea, tipCode);
         }
 
-        return new EmotionControlTipInfo(false, null, null);
+        return new EmotionControlTipInfo(false, null, null, null);
     }
 
     /**
@@ -537,7 +542,8 @@ public class DiaryService {
     @AllArgsConstructor
     private static class EmotionControlTipInfo {
         private boolean show;  // 팁 표시 여부
-        private Integer consecutiveDays;  // 연속 일수 (3 또는 5)
+        private Integer consecutiveDays;  // 연속 일수 (3, 4, 5, 6... 등 실제 연속 일수)
         private String area;  // 감정 영역 (red, yellow, blue, green)
+        private String tipCode;  // 감정 조절 팁 코드 (RED_3, YELLOW_5 등)
     }
 }

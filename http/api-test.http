@@ -201,14 +201,14 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "diaryDate": "2026-01-01",
+  "diaryDate": "2026-01-05",
   "content": "오늘은 정말 화가 났다. 모든 것이 뜻대로 되지 않아서 너무 답답하고 짜증이 난다."
 }
 
 ### 오늘-2일 일기 분석 (테스트 모드 - red 영역 지정)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
 ### area=red 파라미터로 red 영역의 감정만 랜덤 선택
-POST http://localhost:8080/api/v1/diaries/132/analyze-test?area=red
+POST http://localhost:8080/api/v1/diaries/148/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 2단계: 오늘-1일 일기 작성 및 분석 (예: 2025-12-25)
@@ -240,19 +240,23 @@ Content-Type: application/json
 ### 오늘 일기 분석 (테스트 모드 - red 영역 지정)
 ### ✅ 예상 결과:
 ### - showEmotionControlTip: true
-### - consecutiveSameAreaDays: 3 (3일 연속) 또는 5 (5일 이상 연속)
+### - consecutiveSameAreaDays: 3 (실제 연속 일수, 3일/4일/5일/6일... 등)
 ### - repeatedEmotionArea: "red" (또는 연속된 area)
+### - emotionControlTipCode: "RED_3" (3~4일 연속 시) 또는 "RED_5" (5일 이상 연속 시)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
 POST http://localhost:8080/api/v1/diaries/134/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 4단계: 감정 조절 팁 코드 조회
-### Response에서 받은 repeatedEmotionArea와 consecutiveSameAreaDays를 확인하여
-### 적절한 코드를 찾습니다. (예: RED_3, YELLOW_5 등)
+### 🎯 Response에서 받은 emotionControlTipCode를 바로 사용!
+### - emotionControlTipCode: "RED_3" → GET /codes/EMOTION_CONTROL/RED_3
+### - emotionControlTipCode: "YELLOW_5" → GET /codes/EMOTION_CONTROL/YELLOW_5
+### 프론트엔드에서 별도로 코드를 조합할 필요 없이 바로 사용 가능합니다.
 GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
 Authorization: Bearer {{accessToken}}
 
 ### 특정 감정 조절 팁 코드 조회 예시 (Red 영역 3일 연속)
+### emotionControlTipCode 값을 그대로 사용
 GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL/RED_3
 Authorization: Bearer {{accessToken}}
 
@@ -278,8 +282,11 @@ Authorization: Bearer {{accessToken}}
 
 ###
 ### 📌 테스트 체크리스트:
-### ✅ 3일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 3
-### ✅ 5일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 5
+### ✅ 3일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 3, emotionControlTipCode: "RED_3"
+### ✅ 4일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 4, emotionControlTipCode: "RED_3"
+### ✅ 5일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 5, emotionControlTipCode: "RED_5"
+### ✅ 실제 연속 일수를 정확히 반환 (3, 4, 5, 6, 7... 등)
+### ✅ emotionControlTipCode를 바로 사용하여 감정 조절 팁 조회 가능
 ### ✅ 연속이 끊긴 경우 → showEmotionControlTip: false
 ### ✅ 과거 일기도 팁 표시 (날짜 무관, 연속 패턴 기준으로 판단)
 ### ✅ 감정 조절 팁 코드 조회 → code_name에 적절한 메시지 확인
@@ -288,4 +295,6 @@ Authorization: Bearer {{accessToken}}
 ### - 오늘 날짜 체크 제거: 언제 일기를 쓰든 연속 패턴 인식
 ### - 며칠치 모아서 작성해도 패턴 인식 가능
 ### - 과거 일기 작성 시에도 "그때 이런 패턴이었구나" 인식 가능
+### - consecutiveSameAreaDays에 실제 연속 일수 정확히 반환 (3, 4, 5, 6, 7... 등)
+### - emotionControlTipCode 추가: 프론트엔드에서 바로 사용 가능한 코드 제공 (RED_3, YELLOW_5 등)
 ###

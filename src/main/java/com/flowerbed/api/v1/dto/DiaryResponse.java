@@ -34,8 +34,9 @@ public class DiaryResponse {
 
     // 감정 조절 팁 관련 (분석 API에서만 제공)
     private Boolean showEmotionControlTip;  // 감정 조절 팁 표시 여부
-    private Integer consecutiveSameAreaDays;  // 연속된 같은 영역 일수 (3 또는 5)
+    private Integer consecutiveSameAreaDays;  // 연속된 같은 영역 일수 (3, 4, 5, 6... 등 실제 연속 일수)
     private String repeatedEmotionArea;  // 반복된 감정 영역 (red, yellow, blue, green)
+    private String emotionControlTipCode;  // 감정 조절 팁 코드 (RED_3, YELLOW_5 등)
 
     @Getter
     @Builder
