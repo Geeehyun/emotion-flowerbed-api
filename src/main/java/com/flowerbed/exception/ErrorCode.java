@@ -22,6 +22,7 @@ public enum ErrorCode {
     DIARY_NOT_ANALYZED(HttpStatus.NOT_FOUND, "DIARY_NOT_ANALYZED", "일기가 아직 분석되지 않았습니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다"),
     FLOWER_NOT_FOUND(HttpStatus.NOT_FOUND, "FLOWER_NOT_FOUND", "꽃 정보를 찾을 수 없습니다"),
+    CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "CODE_NOT_FOUND", "코드 정보를 찾을 수 없습니다"),
 
     // 500 Internal Server Error
     LLM_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LLM_ANALYSIS_FAILED", "AI 감정 분석에 실패했습니다"),

@@ -32,6 +32,11 @@ public class DiaryResponse {
     private LocalDateTime updatedAt;
     private FlowerDetail flowerDetail;  // 꽃 상세정보
 
+    // 감정 조절 팁 관련 (분석 API에서만 제공)
+    private Boolean showEmotionControlTip;  // 감정 조절 팁 표시 여부
+    private Integer consecutiveSameAreaDays;  // 연속된 같은 영역 일수 (3 또는 5)
+    private String repeatedEmotionArea;  // 반복된 감정 영역 (red, yellow, blue, green)
+
     @Getter
     @Builder
     @NoArgsConstructor

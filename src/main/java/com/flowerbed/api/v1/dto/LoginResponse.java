@@ -30,4 +30,10 @@ public class LoginResponse {
 
     @Schema(description = "이름", example = "홍길동")
     private String name;
+
+    @Schema(description = "사용자 유형 코드", example = "STUDENT")
+    private String userTypeCd;
+
+    @Schema(description = "감정 제어 활동 코드", example = "DEEP_BREATHING")
+    private String emotionControlCd;
 }

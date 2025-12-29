@@ -60,4 +60,15 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
+
+    // 특정 날짜 이전 최근 N일치 분석된 일기 조회 (날짜 역순, 감정 조절 팁 체크용)
+    @Query("SELECT d FROM Diary d WHERE d.user.userSn = :userSn " +
+            "AND d.diaryDate <= :baseDate " +
+            "AND d.isAnalyzed = true " +
+            "ORDER BY d.diaryDate DESC")
+    List<Diary> findRecentAnalyzedDiaries(
+            @Param("userSn") Long userSn,
+            @Param("baseDate") LocalDate baseDate,
+            org.springframework.data.domain.Pageable pageable
+    );
 }

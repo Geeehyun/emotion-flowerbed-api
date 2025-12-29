@@ -2,12 +2,12 @@ package com.flowerbed.api.v1.controller;
 
 import com.flowerbed.api.v1.domain.WeeklyReport;
 import com.flowerbed.api.v1.dto.WeeklyReportResponse;
+import com.flowerbed.security.SecurityUtil;
 import com.flowerbed.service.WeeklyReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -31,9 +31,9 @@ public class WeeklyReportController {
      */
     @GetMapping
     public ResponseEntity<WeeklyReportResponse> getWeeklyReport(
-            @AuthenticationPrincipal Long userSn,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate
     ) {
+        Long userSn = SecurityUtil.getCurrentUserSn();
         WeeklyReport report = weeklyReportService.getReport(userSn, startDate);
         return ResponseEntity.ok(WeeklyReportResponse.from(report));
     }
@@ -43,9 +43,8 @@ public class WeeklyReportController {
      * GET /api/v1/weekly-reports/all
      */
     @GetMapping("/all")
-    public ResponseEntity<List<WeeklyReportResponse>> getAllWeeklyReports(
-            @AuthenticationPrincipal Long userSn
-    ) {
+    public ResponseEntity<List<WeeklyReportResponse>> getAllWeeklyReports() {
+        Long userSn = SecurityUtil.getCurrentUserSn();
         List<WeeklyReport> reports = weeklyReportService.getAllReports(userSn);
         List<WeeklyReportResponse> response = reports.stream()
                 .map(WeeklyReportResponse::from)
@@ -59,9 +58,9 @@ public class WeeklyReportController {
      */
     @GetMapping("/recent")
     public ResponseEntity<List<WeeklyReportResponse>> getRecentWeeklyReports(
-            @AuthenticationPrincipal Long userSn,
             @RequestParam(defaultValue = "5") int limit
     ) {
+        Long userSn = SecurityUtil.getCurrentUserSn();
         List<WeeklyReport> reports = weeklyReportService.getRecentReports(userSn, limit);
         List<WeeklyReportResponse> response = reports.stream()
                 .map(WeeklyReportResponse::from)
@@ -75,10 +74,10 @@ public class WeeklyReportController {
      */
     @PostMapping("/generate")
     public ResponseEntity<WeeklyReportResponse> generateWeeklyReport(
-            @AuthenticationPrincipal Long userSn,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
+        Long userSn = SecurityUtil.getCurrentUserSn();
         WeeklyReport report = weeklyReportService.generateReport(userSn, startDate, endDate);
         return ResponseEntity.ok(WeeklyReportResponse.from(report));
     }

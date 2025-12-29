@@ -16,22 +16,37 @@ AI 기반 일기 감정 분석 및 꽃 매칭 서비스
 
 ## 주요 기능
 
-### 1. 일기 관리
+### 1. 사용자 인증 (JWT)
+- 로그인 / 로그아웃
+- Access Token (1일 유효) + Refresh Token (1년 유효)
+- Redis 기반 토큰 관리 및 블랙리스트
+
+### 2. 일기 관리
 - 일기 작성 (하루 1개 제한)
 - 일기 수정 / 삭제 (Soft Delete)
 - 특정 날짜 일기 조회
 - 월별 일기 목록 조회
 
-### 2. AI 감정 분석
+### 3. AI 감정 분석
 - Claude Haiku 모델 사용 (비용 최적화)
 - 20개 감정 분류 체계
 - 감정별 백분율 분석
 - 감정에 맞는 꽃 & 꽃말 매칭
+- **감정 조절 팁 자동 제공** (연속 3일/5일 같은 영역 감정 시)
 
-### 3. 꽃 정보 제공
+### 4. 꽃 정보 제공
 - 월별 일기 조회 시 꽃 상세정보 포함
 - 감정 코드별 꽃 데이터 (한글/영문 이름, 색상, 원산지, 향기, 재밌는 이야기 등)
 - 사용자의 감정&꽃 통계
+
+### 5. 주간 리포트
+- 주간 감정 패턴 분석
+- AI 기반 인사이트 제공
+
+### 6. 공통 코드 관리
+- 사용자 유형 코드 (학생/교사/관리자)
+- 감정 제어 활동 코드
+- 감정 조절 팁 코드 (영역별/일수별)
 
 ---
 
@@ -82,36 +97,85 @@ emotions (감정-꽃 마스터)
 
 ## API 엔드포인트
 
+**Base URL**: `/api/v1`
+
+**인증**: 로그인 제외한 모든 API는 `Authorization: Bearer {accessToken}` 헤더 필요
+
+### Auth API
+
+| Method | Endpoint | 설명 | 인증 필요 |
+|--------|----------|------|---------|
+| POST | `/auth/login` | 로그인 (Access Token + Refresh Token 발급) | ❌ |
+| POST | `/auth/logout` | 로그아웃 (토큰 무효화) | ✅ |
+| POST | `/auth/refresh` | Access Token 갱신 | ❌ |
+
 ### Diary API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| POST | `/diaries` | 일기 작성 |
-| POST | `/diaries/{id}/analyze` | 일기 감정 분석 (Claude API) |
-| POST | `/diaries/{id}/analyze-test` | 일기 감정 분석 (테스트 모드, 랜덤) |
-| GET | `/diaries/{id}` | 일기 상세 조회 |
-| GET | `/diaries/date/{date}` | 특정 날짜 일기 조회 |
-| GET | `/diaries?yearMonth=YYYY-MM` | 월별 일기 목록 조회 (꽃 상세정보 포함) |
-| PUT | `/diaries/{id}` | 일기 수정 |
-| DELETE | `/diaries/{id}` | 일기 삭제 (Soft Delete) |
-
-**참고**: 현재는 회원가입/로그인 기능이 없어 모든 요청이 userId=1로 처리됩니다.
+| Method | Endpoint | 설명 | 인증 필요 |
+|--------|----------|------|---------|
+| POST | `/diaries` | 일기 작성 | ✅ |
+| POST | `/diaries/{id}/analyze` | 일기 감정 분석 (Claude API) | ✅ |
+| POST | `/diaries/{id}/analyze-test` | 일기 감정 분석 (테스트 모드, 랜덤) | ✅ |
+| GET | `/diaries/{id}` | 일기 상세 조회 | ✅ |
+| GET | `/diaries/date/{date}` | 특정 날짜 일기 조회 | ✅ |
+| GET | `/diaries?yearMonth=YYYY-MM` | 월별 일기 목록 조회 (꽃 상세정보 포함) | ✅ |
+| PUT | `/diaries/{id}` | 일기 수정 | ✅ |
+| DELETE | `/diaries/{id}` | 일기 삭제 (Soft Delete) | ✅ |
 
 ### Flower API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| GET | `/flowers/my-emotions` | 사용자의 감정&꽃 통계 (날짜 목록 + 꽃 상세정보 포함) |
-| GET | `/flowers/all-emotions` | 전체 감정-꽃 정보 조회 (display_order 순) |
+| Method | Endpoint | 설명 | 인증 필요 |
+|--------|----------|------|---------|
+| GET | `/flowers/my-emotions` | 사용자의 감정&꽃 통계 (날짜 목록 + 꽃 상세정보 포함) | ✅ |
+| GET | `/flowers/all-emotions` | 전체 감정-꽃 정보 조회 (display_order 순) | ✅ |
+
+### Code API
+
+| Method | Endpoint | 설명 | 인증 필요 |
+|--------|----------|------|---------|
+| GET | `/codes/groups` | 모든 코드 그룹 조회 (코드 포함) | ✅ |
+| GET | `/codes/groups/{groupCode}` | 특정 코드 그룹 조회 | ✅ |
+| GET | `/codes/{groupCode}` | 특정 그룹의 코드 목록 조회 | ✅ |
+| GET | `/codes/{groupCode}/{code}` | 특정 코드 상세 조회 | ✅ |
+
+### Weekly Report API
+
+| Method | Endpoint | 설명 | 인증 필요 |
+|--------|----------|------|---------|
+| GET | `/weekly-reports?startDate=YYYY-MM-DD` | 특정 주의 리포트 조회 | ✅ |
+| GET | `/weekly-reports/all` | 모든 주간 리포트 조회 (최신순) | ✅ |
+| GET | `/weekly-reports/recent?limit=5` | 최근 N개 주간 리포트 조회 | ✅ |
+| POST | `/weekly-reports/generate` | 수동 주간 리포트 생성 (테스트용) | ✅ |
 
 ---
 
 ## 주요 기능 설명
 
-### 1. 일기 작성
+### 1. 로그인
 ```json
-POST /api/diaries
-Header: X-User-Id: 1
+POST /api/v1/auth/login
+
+{
+  "userId": "student1",
+  "password": "1234"
+}
+
+Response:
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "userSn": 1,
+  "userId": "student1",
+  "name": "홍길동",
+  "userTypeCd": "STUDENT",
+  "emotionControlCd": "DEEP_BREATHING"
+}
+```
+
+### 2. 일기 작성
+```json
+POST /api/v1/diaries
+Authorization: Bearer {accessToken}
 
 {
   "diaryDate": "2025-12-08",
@@ -124,38 +188,48 @@ Header: X-User-Id: 1
 - 최대 5000자 이하
 - 하루 1개 일기만 작성 가능
 
-### 2. 감정 분석
+### 3. 감정 분석
 ```json
-POST /api/diaries/1/analyze
-Header: X-User-Id: 1
+POST /api/v1/diaries/1/analyze
+Authorization: Bearer {accessToken}
 
 Response:
 {
   "diaryId": 1,
   "summary": "친구와 저녁을 먹으며 즐거운 시간을 보냄",
-  "coreEmotion": "기쁨",
   "coreEmotionCode": "JOY",
   "emotionReason": "친구와의 즐거운 시간이 강조됨",
   "flowerName": "해바라기",
   "flowerMeaning": "당신을 보면 행복해요",
   "emotions": [
-    {"emotion": "기쁨", "percent": 70},
-    {"emotion": "행복", "percent": 30}
+    {"emotion": "JOY", "percent": 70},
+    {"emotion": "HAPPY", "percent": 30}
   ],
   "isAnalyzed": true,
-  "analyzedAt": "2025-12-08T10:30:00"
+  "analyzedAt": "2025-12-08T10:30:00",
+  "showEmotionControlTip": true,
+  "consecutiveSameAreaDays": 3,
+  "repeatedEmotionArea": "green"
 }
 ```
+
+**감정 조절 팁**:
+- 오늘 날짜의 일기 분석 시, 연속 3일/5일 같은 영역의 감정이 나타나면 자동으로 팁 제공
+- `showEmotionControlTip`: 팁 표시 여부
+- `consecutiveSameAreaDays`: 연속 일수 (3 또는 5)
+- `repeatedEmotionArea`: 반복된 영역 (red, yellow, blue, green)
+- Front에서 `GET /v1/codes/EMOTION_CONTROL/{AREA}_{DAYS}` 호출하여 팁 메시지 조회
+  - 예: `GET /v1/codes/EMOTION_CONTROL/RED_3` → "3일 연속 강한 감정이 감지되었어요..."
 
 **비용 최적화**:
 - Claude Haiku 모델 사용 (Sonnet 대비 20배 저렴)
 - max_tokens: 500으로 제한
 - temperature: 0.3 (일관된 결과)
 
-### 3. 월별 일기 목록 (꽃 상세정보 포함)
+### 4. 월별 일기 목록 (꽃 상세정보 포함)
 ```json
-GET /api/diaries?yearMonth=2025-12
-Header: X-User-Id: 1
+GET /api/v1/diaries?yearMonth=2025-12
+Authorization: Bearer {accessToken}
 
 Response:
 {
@@ -208,38 +282,68 @@ emotion-flowerbed-api/
 │   ├── config/
 │   │   ├── AnthropicConfig.java          # Claude API 설정
 │   │   ├── JpaConfig.java                # JPA Auditing 설정
+│   │   ├── JwtConfig.java                # JWT 설정
+│   │   ├── RedisConfig.java              # Redis 설정
+│   │   ├── SecurityConfig.java           # Spring Security 설정
 │   │   ├── SwaggerConfig.java            # Swagger 설정
-│   │   └── WebConfig.java                # CORS 설정 (application.yml 기반)
+│   │   ├── CacheConfig.java              # 캐시 설정
+│   │   └── WebConfig.java                # CORS 설정
+│   ├── security/
+│   │   ├── JwtUtil.java                  # JWT 토큰 생성/검증
+│   │   └── SecurityUtil.java             # 현재 인증 사용자 정보 조회
+│   ├── filter/
+│   │   └── JwtAuthenticationFilter.java  # JWT 인증 필터
 │   ├── controller/
+│   │   ├── AuthController.java           # 인증 API (로그인/로그아웃/토큰갱신)
 │   │   ├── DiaryController.java          # 일기 API
-│   │   └── FlowerController.java         # 꽃 정보 API
+│   │   ├── FlowerController.java         # 꽃 정보 API
+│   │   ├── CodeController.java           # 공통 코드 API
+│   │   └── WeeklyReportController.java   # 주간 리포트 API
 │   ├── service/
+│   │   ├── AuthService.java              # 인증 서비스
+│   │   ├── RedisService.java             # Redis 서비스 (토큰 관리)
 │   │   ├── DiaryService.java             # 일기 비즈니스 로직
 │   │   ├── DiaryEmotionService.java      # 감정 분석 (Claude API)
 │   │   ├── DiaryEmotionTestService.java  # 테스트 모드 (랜덤)
 │   │   ├── FlowerService.java            # 꽃 정보 서비스
+│   │   ├── CodeService.java              # 공통 코드 서비스
+│   │   ├── WeeklyReportService.java      # 주간 리포트 서비스
 │   │   └── ClaudeApiClient.java          # Claude API 클라이언트
 │   ├── domain/
 │   │   ├── User.java                     # 회원 엔티티
 │   │   ├── Diary.java                    # 일기 엔티티
-│   │   └── Emotion.java                  # 감정-꽃 엔티티 (테이블명: emotions)
+│   │   ├── Emotion.java                  # 감정-꽃 엔티티
+│   │   ├── CodeGroup.java                # 코드 그룹 엔티티
+│   │   ├── Code.java                     # 코드 엔티티
+│   │   ├── WeeklyReport.java             # 주간 리포트 엔티티
+│   │   └── BaseAuditEntity.java          # 공통 Audit 엔티티
 │   ├── dto/
+│   │   ├── LoginRequest.java
+│   │   ├── LoginResponse.java
+│   │   ├── RefreshRequest.java
 │   │   ├── DiaryCreateRequest.java
 │   │   ├── DiaryUpdateRequest.java
 │   │   ├── DiaryResponse.java
 │   │   ├── DiaryEmotionResponse.java
 │   │   ├── MonthlyDiariesResponse.java
-│   │   ├── AllEmotionsResponse.java      # 전체 감정-꽃 정보 응답
+│   │   ├── AllEmotionsResponse.java
 │   │   ├── UserEmotionFlowerResponse.java
+│   │   ├── CodeGroupResponse.java
+│   │   ├── CodeResponse.java
+│   │   ├── WeeklyReportResponse.java
 │   │   └── EmotionPercent.java
 │   ├── repository/
 │   │   ├── UserRepository.java
 │   │   ├── DiaryRepository.java
-│   │   └── FlowerRepository.java
+│   │   ├── FlowerRepository.java
+│   │   ├── CodeGroupRepository.java
+│   │   ├── CodeRepository.java
+│   │   └── WeeklyReportRepository.java
 │   └── exception/
 │       ├── ErrorCode.java
 │       ├── BusinessException.java
 │       ├── DiaryNotFoundException.java
+│       ├── InvalidTokenExceptionCustom.java
 │       └── GlobalExceptionHandler.java
 ├── src/main/resources/
 │   ├── application.yml                   # 기본 설정 (CORS, DB, API 기본값)
@@ -376,10 +480,16 @@ anthropic:
 ### ✅ 완료된 기능
 - [x] Spring Boot 프로젝트 초기 설정
 - [x] MariaDB 연동 및 Entity 설계
+- [x] **JWT 기반 인증/인가 시스템** (Access Token + Refresh Token)
+- [x] **Redis 기반 토큰 관리** (블랙리스트, RefreshToken 저장)
+- [x] **SecurityUtil을 통한 인증 정보 조회**
 - [x] 일기 CRUD API 구현
 - [x] Claude API 감정 분석 (실제 + 테스트 모드)
+- [x] **감정 조절 팁 자동 제공** (연속 3일/5일 같은 영역 감정 시)
 - [x] 월별 일기 목록 조회 (꽃 상세정보 포함)
 - [x] 감정&꽃 통계 API
+- [x] **주간 리포트 기능** (AI 기반 인사이트)
+- [x] **공통 코드 관리 시스템** (코드 그룹/코드)
 - [x] 예외 처리 및 에러 핸들링
 - [x] Swagger UI 설정
 - [x] 유효성 검사 (최소/최대 길이)
@@ -388,13 +498,12 @@ anthropic:
 ### 📝 추후 개선 사항
 
 **인프라 & 보안**
-- [ ] 사용자 인증/인가 (Spring Security + JWT)
 - [ ] Rate Limiting (API 호출 제한)
 - [ ] 감정 통계 시각화 데이터
+- [ ] 프로필 이미지 업로드 및 관리
 
 **신규 기능**
 - [ ] 감정 관리 미션 시스템
-  - 감정 패턴 분석 (예: 부정 감정 3일 연속 시 자동 감지)
   - 감정별 맞춤 관리 미션 자동 생성 및 추천
   - 미션 진행 상태 추적 (진행중, 완료, 포기)
   - 미션 완료 시 리워드 시스템
@@ -402,9 +511,6 @@ anthropic:
   - 과거 미션 이행 기록 조회
   - 미션별 성공/실패 통계
   - 미션 달성률 및 성과 분석
-- [ ] 주간 감정 분석 레터
-  - 주간 감정 패턴 분석 및 요약
-  - AI 기반 감정 인사이트 제공
 
 
 ---

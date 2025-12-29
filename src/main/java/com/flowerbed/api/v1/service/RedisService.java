@@ -1,4 +1,4 @@
-package com.flowerbed.service;
+package com.flowerbed.api.v1.service;
 
 import com.flowerbed.config.JwtConfig;
 import lombok.RequiredArgsConstructor;

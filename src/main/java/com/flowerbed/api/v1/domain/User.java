@@ -6,11 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,10 +14,9 @@ import java.util.List;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
-@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_id = ?")
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_sn = ?")
 @Where(clause = "deleted_at IS NULL")
-public class User {
+public class User extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +32,9 @@ public class User {
     @Column(nullable = false, length = 50)
     private String name;
 
+    @Column(name = "user_type_cd", length = 50)
+    private String userTypeCd;
+
     @Column(name = "school_code")
     private String schoolCode;
 
@@ -46,23 +44,22 @@ public class User {
     @Column(name = "class_code")
     private String classCode;
 
+    @Column(name = "emotion_control_cd")
+    private String emotionControlCd;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Diary> diaries = new ArrayList<>();
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
     public User(String userId, String password, String name) {
         this.userId = userId;
         this.password = password;
         this.name = name;
+    }
+
+    public User(String userId, String password, String name, String userTypeCd) {
+        this.userId = userId;
+        this.password = password;
+        this.name = name;
+        this.userTypeCd = userTypeCd;
     }
 }

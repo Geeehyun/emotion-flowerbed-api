@@ -9,7 +9,7 @@ import com.flowerbed.api.v1.repository.UserRepository;
 import com.flowerbed.exception.ErrorCode;
 import com.flowerbed.exception.auth.InvalidTokenExceptionCustom;
 import com.flowerbed.security.JwtUtil;
-import com.flowerbed.service.RedisService;
+import com.flowerbed.api.v1.service.RedisService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -8,9 +8,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,14 +15,13 @@ import java.util.List;
 
 @Entity
 @Table(name = "diaries", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_user_date", columnNames = {"user_id", "diary_date"})
+        @UniqueConstraint(name = "uk_user_date", columnNames = {"user_sn", "diary_date"})
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE diaries SET deleted_at = NOW() WHERE diary_id = ?")
 @Where(clause = "deleted_at IS NULL")
-public class Diary {
+public class Diary extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,17 +62,6 @@ public class Diary {
 
     @Column(name = "analyzed_at")
     private LocalDateTime analyzedAt;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
     public Diary(User user, LocalDate diaryDate, String content) {
         this.user = user;

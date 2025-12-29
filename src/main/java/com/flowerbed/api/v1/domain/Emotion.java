@@ -4,18 +4,12 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "emotions")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
-public class Emotion {
+public class Emotion extends BaseAuditEntity {
 
     @Id
     @Column(name = "emotion_code", length = 20)
@@ -65,14 +59,6 @@ public class Emotion {
 
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
-
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     public Emotion(String emotionCode, String emotionNameKr, String emotionNameEn,
                   String flowerNameKr, String flowerMeaning,

@@ -10,7 +10,7 @@ POST http://localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "userId": "student1",
+  "userId": "student2",
   "password": "1234"
 }
 
@@ -105,3 +105,142 @@ Authorization: Bearer {{accessToken}}
 ### 전체 감정-꽃 정보 조회 (display_order 순)
 GET http://localhost:8080/api/v1/flowers/all-emotions
 Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 공통 코드 API (Code)
+### ========================================
+
+### 모든 코드 그룹 조회 (코드 포함)
+GET http://localhost:8080/api/v1/codes/groups
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 그룹 조회 (USER_TYPE)
+GET http://localhost:8080/api/v1/codes/groups/USER_TYPE
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 그룹 조회 (EMOTION_CONTROL)
+GET http://localhost:8080/api/v1/codes/groups/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### USER_TYPE 코드 목록 조회
+GET http://localhost:8080/api/v1/codes/USER_TYPE
+Authorization: Bearer {{accessToken}}
+
+### EMOTION_CONTROL 코드 목록 조회
+GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 조회 (USER_TYPE/STUDENT)
+GET http://localhost:8080/api/v1/codes/USER_TYPE/STUDENT
+Authorization: Bearer {{accessToken}}
+
+### 사용자 유형 코드 목록 (단축 URL)
+GET http://localhost:8080/api/v1/codes/user-types
+Authorization: Bearer {{accessToken}}
+
+### 감정 제어 활동 코드 목록 (단축 URL)
+GET http://localhost:8080/api/v1/codes/emotion-controls
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 감정 조절 팁 기능 테스트
+### ========================================
+### 테스트 시나리오:
+### 1. 오늘 날짜로 연속 3일 일기 작성 (같은 area)
+### 2. 각 일기를 분석하여 연속 체크
+### 3. 3일째 일기 분석 시 showEmotionControlTip=true 확인
+### 4. 감정 조절 팁 코드 조회하여 적절한 메시지 확인
+###
+### ⚠️ 주의: 테스트 전 날짜를 오늘 날짜로 수정하고,
+### 이전 2일치 일기도 같은 area로 분석되어야 합니다.
+
+### 1단계: 오늘-2일 일기 작성 및 분석 (예: 2025-12-24)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2025-12-24",
+  "content": "오늘은 정말 화가 났다. 모든 것이 뜻대로 되지 않아서 너무 답답하고 짜증이 난다."
+}
+
+### 오늘-2일 일기 분석 (테스트 모드)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+POST http://localhost:8080/api/v1/diaries/129/analyze-test
+Authorization: Bearer {{accessToken}}
+
+### 2단계: 오늘-1일 일기 작성 및 분석 (예: 2025-12-25)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2025-12-25",
+  "content": "어제에 이어 오늘도 기분이 안 좋다. 계속 화가 나고 모든 게 싫다."
+}
+
+### 오늘-1일 일기 분석 (테스트 모드)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+POST http://localhost:8080/api/v1/diaries/130/analyze-test
+Authorization: Bearer {{accessToken}}
+
+### 3단계: 오늘 일기 작성 및 분석 (예: 2025-12-26)
+### 🎯 이 일기 분석 시 감정 조절 팁이 표시되어야 함
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2025-12-26",
+  "content": "3일째 계속 화가 난다. 이 감정을 어떻게 다스려야 할지 모르겠다."
+}
+
+### 오늘 일기 분석 (테스트 모드)
+### ✅ 예상 결과:
+### - showEmotionControlTip: true
+### - consecutiveSameAreaDays: 3 (3일 연속) 또는 5 (5일 이상 연속)
+### - repeatedEmotionArea: "red" (또는 연속된 area)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+POST http://localhost:8080/api/v1/diaries/131/analyze-test
+Authorization: Bearer {{accessToken}}
+
+### 4단계: 감정 조절 팁 코드 조회
+### Response에서 받은 repeatedEmotionArea와 consecutiveSameAreaDays를 확인하여
+### 적절한 코드를 찾습니다. (예: RED_3, YELLOW_5 등)
+GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### 특정 감정 조절 팁 코드 조회 예시 (Red 영역 3일 연속)
+GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL/RED_3
+Authorization: Bearer {{accessToken}}
+
+### 5단계: 연속이 끊긴 경우 테스트
+### 다른 area의 일기를 작성하면 연속이 끊김
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2025-12-27",
+  "content": "오늘은 기분이 좋다. 친구들과 즐거운 시간을 보냈다."
+}
+
+### 연속이 끊긴 일기 분석
+### ✅ 예상 결과:
+### - showEmotionControlTip: false
+### - consecutiveSameAreaDays: null
+### - repeatedEmotionArea: null
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+POST http://localhost:8080/api/v1/diaries/104/analyze-test
+Authorization: Bearer {{accessToken}}
+
+###
+### 📌 테스트 체크리스트:
+### ✅ 3일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 3
+### ✅ 5일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 5
+### ✅ 연속이 끊긴 경우 → showEmotionControlTip: false
+### ✅ 오늘이 아닌 날짜 → showEmotionControlTip: false (과거 일기는 팁 표시 안함)
+### ✅ 감정 조절 팁 코드 조회 → code_name에 적절한 메시지 확인
+###

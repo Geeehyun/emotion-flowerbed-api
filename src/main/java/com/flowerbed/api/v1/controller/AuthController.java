@@ -1,18 +1,16 @@
 package com.flowerbed.api.v1.controller;
 
-import com.flowerbed.api.v1.domain.User;
 import com.flowerbed.api.v1.dto.LoginRequest;
 import com.flowerbed.api.v1.dto.LoginResponse;
 import com.flowerbed.api.v1.dto.RefreshRequest;
-import com.flowerbed.service.AuthService;
+import com.flowerbed.api.v1.service.AuthService;
+import com.flowerbed.security.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -53,6 +51,8 @@ public class AuthController {
      * - userSn: 사용자 일련번호
      * - userId: 로그인 ID
      * - name: 이름
+     * - userTypeCd: 사용자 유형 코드 (STUDENT/TEACHER/ADMIN)
+     * - emotionControlCd: 감정 제어 활동 코드 (DEEP_BREATHING/WALK/DRAW/TALK)
      *
      * 비즈니스 로직:
      * 1. userId로 사용자 조회
@@ -93,7 +93,7 @@ public class AuthController {
      *
      * 비즈니스 로직:
      * 1. Authorization 헤더에서 AccessToken 추출
-     * 2. AccessToken에서 userId 추출
+     * 2. SecurityContext에서 인증된 사용자 정보 조회
      * 3. AccessToken을 블랙리스트에 추가 (만료 시간까지)
      * 4. RefreshToken을 Redis에서 삭제
      *
@@ -115,11 +115,8 @@ public class AuthController {
         // Bearer 토큰 추출
         String accessToken = authorization.substring(7);
 
-        // AccessToken에서 userId 추출 (JwtUtil 사용)
-        // TODO: SecurityContext에서 인증된 사용자 정보를 가져오는 방식으로 개선 가능
-        com.flowerbed.security.JwtUtil jwtUtil = new com.flowerbed.security.JwtUtil(null);
-        io.jsonwebtoken.Claims claims = jwtUtil.extractClaims(accessToken);
-        String userSn = claims.getSubject();
+        // SecurityContext에서 인증된 사용자 정보 조회
+        String userSn = String.valueOf(SecurityUtil.getCurrentUserSn());
 
         // 로그아웃 처리
         authService.logout(accessToken, userSn);

@@ -10,6 +10,8 @@ import com.flowerbed.exception.ErrorCode;
 import com.flowerbed.api.v1.repository.DiaryRepository;
 import com.flowerbed.api.v1.repository.FlowerRepository;
 import com.flowerbed.api.v1.repository.UserRepository;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,6 +22,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 
 /**
  * 일기 비즈니스 로직 처리
@@ -122,7 +125,10 @@ public class DiaryService {
         log.info("Diary emotion analyzed: diaryId={}, coreEmotionCode={}",
                 diaryId, emotionResponse.getCoreEmotion());
 
-        return convertToResponse(diary);
+        // 감정 조절 팁 체크 (오늘 날짜이고 연속 3일 이상인 경우)
+        EmotionControlTipInfo tipInfo = checkEmotionControlTip(userId, diary);
+
+        return convertToResponse(diary, tipInfo);
     }
 
     /**
@@ -164,7 +170,10 @@ public class DiaryService {
         log.info("Diary emotion analyzed (TEST MODE): diaryId={}, coreEmotionCode={}",
                 diaryId, emotionCode);
 
-        return convertToResponse(diary);
+        // 감정 조절 팁 체크 (오늘 날짜이고 연속 3일 이상인 경우)
+        EmotionControlTipInfo tipInfo = checkEmotionControlTip(userId, diary);
+
+        return convertToResponse(diary, tipInfo);
     }
 
     /**
@@ -281,9 +290,16 @@ public class DiaryService {
     }
 
     /**
-     * Entity -> Response 변환
+     * Entity -> Response 변환 (조회 API용 - 감정 조절 팁 정보 없음)
      */
     private DiaryResponse convertToResponse(Diary diary) {
+        return convertToResponse(diary, null);
+    }
+
+    /**
+     * Entity -> Response 변환 (분석 API용 - 감정 조절 팁 정보 포함 가능)
+     */
+    private DiaryResponse convertToResponse(Diary diary, EmotionControlTipInfo tipInfo) {
         List<EmotionPercent> emotions = null;
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
@@ -297,6 +313,17 @@ public class DiaryService {
             flowerDetail = flowerRepository.findById(diary.getCoreEmotionCode())
                     .map(this::convertToDiaryFlowerDetail)
                     .orElse(null);
+        }
+
+        // 감정 조절 팁 정보 설정 (분석 API에서만 제공)
+        Boolean showTip = null;
+        Integer consecutiveDays = null;
+        String repeatedArea = null;
+
+        if (tipInfo != null) {
+            showTip = tipInfo.isShow();
+            consecutiveDays = tipInfo.getConsecutiveDays();
+            repeatedArea = tipInfo.getArea();
         }
 
         return DiaryResponse.builder()
@@ -314,6 +341,9 @@ public class DiaryService {
                 .createdAt(diary.getCreatedAt())
                 .updatedAt(diary.getUpdatedAt())
                 .flowerDetail(flowerDetail)
+                .showEmotionControlTip(showTip)
+                .consecutiveSameAreaDays(consecutiveDays)
+                .repeatedEmotionArea(repeatedArea)
                 .build();
     }
 
@@ -394,5 +424,100 @@ public class DiaryService {
                 .imageFileRealistic(emotion.getImageFileRealistic())
                 .area(emotion.getArea())
                 .build();
+    }
+
+    /**
+     * 감정 조절 팁 표시 여부 체크
+     *
+     * 비즈니스 로직:
+     * 1. 오늘 날짜가 아니면 체크 안함
+     * 2. 최근 7일간의 분석된 일기 조회
+     * 3. 연속으로 같은 감정 영역(area)이 나온 일수 체크
+     * 4. 3일 이상 또는 5일 이상이면 감정 조절 팁 표시
+     *
+     * 주의:
+     * - 날짜가 연속이어야 함 (하루라도 끊기면 연속 중단)
+     * - area가 같아야 함 (red, yellow, blue, green)
+     *
+     * @param userSn 사용자 일련번호
+     * @param currentDiary 현재 분석한 일기
+     * @return EmotionControlTipInfo (표시 여부, 연속 일수, 영역)
+     */
+    private EmotionControlTipInfo checkEmotionControlTip(Long userSn, Diary currentDiary) {
+        // 1. 오늘 날짜가 아니면 체크 안함
+        if (!currentDiary.getDiaryDate().equals(LocalDate.now())) {
+            return new EmotionControlTipInfo(false, null, null);
+        }
+
+        // 2. 현재 일기의 감정 영역 조회
+        String currentArea = getEmotionArea(currentDiary.getCoreEmotionCode());
+        if (currentArea == null) {
+            return new EmotionControlTipInfo(false, null, null);
+        }
+
+        // 3. 최근 7일간의 분석된 일기 조회 (현재 일기 포함, 날짜 역순)
+        List<Diary> recentDiaries = diaryRepository.findRecentAnalyzedDiaries(
+                userSn,
+                currentDiary.getDiaryDate(),
+                PageRequest.of(0, 7)
+        );
+
+        // 4. 연속된 같은 영역 일수 체크
+        int consecutiveDays = 1;  // 현재 일기 포함
+
+        for (int i = 1; i < recentDiaries.size(); i++) {
+            Diary prevDiary = recentDiaries.get(i - 1);
+            Diary currDiary = recentDiaries.get(i);
+
+            // 날짜가 연속인지 확인 (하루 차이)
+            LocalDate expectedDate = prevDiary.getDiaryDate().minusDays(1);
+            if (!expectedDate.equals(currDiary.getDiaryDate())) {
+                break;  // 연속 끊김
+            }
+
+            // area가 같은지 확인
+            String area = getEmotionArea(currDiary.getCoreEmotionCode());
+            if (area == null || !area.equals(currentArea)) {
+                break;  // area 다름
+            }
+
+            consecutiveDays++;
+        }
+
+        // 5. 3일 이상이면 감정 조절 팁 표시
+        if (consecutiveDays >= 3) {
+            // 5일 이상이면 5로, 3~4일이면 3으로 설정
+            int tipDays = consecutiveDays >= 5 ? 5 : 3;
+            return new EmotionControlTipInfo(true, tipDays, currentArea);
+        }
+
+        return new EmotionControlTipInfo(false, null, null);
+    }
+
+    /**
+     * 감정 코드로부터 영역(area) 조회
+     *
+     * @param emotionCode 감정 코드
+     * @return area (red, yellow, blue, green) 또는 null
+     */
+    private String getEmotionArea(String emotionCode) {
+        if (emotionCode == null) {
+            return null;
+        }
+
+        return flowerRepository.findById(emotionCode)
+                .map(Emotion::getArea)
+                .orElse(null);
+    }
+
+    /**
+     * 감정 조절 팁 정보를 담는 내부 클래스
+     */
+    @Getter
+    @AllArgsConstructor
+    private static class EmotionControlTipInfo {
+        private boolean show;  // 팁 표시 여부
+        private Integer consecutiveDays;  // 연속 일수 (3 또는 5)
+        private String area;  // 감정 영역 (red, yellow, blue, green)
     }
 }

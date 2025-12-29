@@ -1,4 +1,4 @@
-package com.flowerbed.service;
+package com.flowerbed.api.v1.service;
 
 import com.flowerbed.api.v1.domain.User;
 import com.flowerbed.api.v1.dto.LoginRequest;
@@ -14,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.Map;
 
 /**

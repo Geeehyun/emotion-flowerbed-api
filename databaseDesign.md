@@ -12,12 +12,17 @@
 | user_id | varchar(255) | NOT NULL, UNIQUE | 로그인 ID |
 | password | varchar(255) | NOT NULL | 암호화된 비밀번호 |
 | name | varchar(50) | NOT NULL | 이름 |
+| user_type_cd | varchar(50) | NULL | 사용자 유형 코드 (codes.USER_TYPE) |
 | school_code | varchar(50) | NULL | 학교 코드 |
 | school_nm | varchar(100) | NULL | 학교명 |
 | class_code | varchar(50) | NULL | 반 코드 |
+| emotion_control_cd | varchar(50) | NULL | 감정 제어 활동 코드 (codes.EMOTION_CONTROL) |
 | created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 가입일시 |
+| created_by | varchar(255) | NULL | 생성자 사용자 ID |
 | updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| updated_by | varchar(255) | NULL | 수정자 사용자 ID |
 | deleted_at | datetime | NULL | 탈퇴일시 (Soft Delete) |
+| deleted_by | varchar(255) | NULL | 삭제자 사용자 ID |
 
 ### 인덱스
 - PRIMARY KEY: `user_sn`
@@ -33,12 +38,17 @@ CREATE TABLE `users` (
 `user_id` varchar(255) NOT NULL COMMENT '로그인 ID',
 `password` varchar(255) NOT NULL COMMENT '암호화된 비밀번호',
 `name` varchar(50) NOT NULL COMMENT '이름',
+`user_type_cd` varchar(50) DEFAULT NULL COMMENT '사용자 유형 코드',
 `school_code` varchar(50) DEFAULT NULL COMMENT '학교 코드',
 `school_nm` varchar(100) DEFAULT NULL COMMENT '학교명',
 `class_code` varchar(50) DEFAULT NULL COMMENT '반 코드',
+`emotion_control_cd` varchar(50) DEFAULT NULL COMMENT '감정 제어 활동 코드',
 `created_at` datetime DEFAULT current_timestamp() COMMENT '가입일시',
+`created_by` varchar(255) DEFAULT NULL COMMENT '생성자 사용자 ID',
 `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+`updated_by` varchar(255) DEFAULT NULL COMMENT '수정자 사용자 ID',
 `deleted_at` datetime DEFAULT NULL COMMENT '탈퇴일시 (soft delete)',
+`deleted_by` varchar(255) DEFAULT NULL COMMENT '삭제자 사용자 ID',
 PRIMARY KEY (`user_sn`),
 UNIQUE KEY `user_id` (`user_id`),
 KEY `idx_user_id` (`user_id`),
@@ -53,7 +63,7 @@ KEY `idx_created_at` (`created_at`)
 @Table(name = "users")
 @SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE user_sn = ?")
 @Where(clause = "deleted_at IS NULL")
-public class User {
+public class User extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_sn")
@@ -68,6 +78,9 @@ public class User {
     @Column(nullable = false, length = 50)
     private String name;
 
+    @Column(name = "user_type_cd", length = 50)
+    private String userTypeCd;
+
     @Column(name = "school_code", length = 50)
     private String schoolCode;
 
@@ -77,19 +90,14 @@ public class User {
     @Column(name = "class_code", length = 50)
     private String classCode;
 
+    @Column(name = "emotion_control_cd", length = 50)
+    private String emotionControlCd;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Diary> diaries = new ArrayList<>();
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    // Audit 정보 (created_at, created_by, updated_at, updated_by, deleted_at, deleted_by)는
+    // BaseAuditEntity에서 상속
 }
 ```
 
@@ -117,8 +125,11 @@ public class User {
 | is_analyzed | tinyint(1) | DEFAULT 0 | 감정 분석 완료 여부 |
 | analyzed_at | datetime | NULL | 분석 완료 일시 |
 | created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 작성일시 |
+| created_by | varchar(255) | NULL | 생성자 사용자 ID |
 | updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| updated_by | varchar(255) | NULL | 수정자 사용자 ID |
 | deleted_at | datetime | NULL | 삭제일시 (Soft Delete) |
+| deleted_by | varchar(255) | NULL | 삭제자 사용자 ID |
 | is_active | tinyint(1) | GENERATED COLUMN | 활성 상태 (deleted_at IS NULL) |
 
 ### 제약조건
@@ -163,8 +174,11 @@ CREATE TABLE `diaries` (
   `is_analyzed` tinyint(1) DEFAULT 0 COMMENT '분석 완료 여부',
   `analyzed_at` datetime DEFAULT NULL COMMENT '분석 완료 일시',
   `created_at` datetime DEFAULT current_timestamp() COMMENT '작성일시',
+  `created_by` varchar(255) DEFAULT NULL COMMENT '생성자 사용자 ID',
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정일시',
+  `updated_by` varchar(255) DEFAULT NULL COMMENT '수정자 사용자 ID',
   `deleted_at` datetime DEFAULT NULL COMMENT '삭제일시 (soft delete)',
+  `deleted_by` varchar(255) DEFAULT NULL COMMENT '삭제자 사용자 ID',
   `is_active` tinyint(1) GENERATED ALWAYS AS (case when `deleted_at` is null then 1 else NULL end) STORED,
   PRIMARY KEY (`diary_id`),
   UNIQUE KEY `uk_user_date_active` (`user_sn`,`diary_date`,`is_active`),
@@ -180,18 +194,18 @@ CREATE TABLE `diaries` (
 ```java
 @Entity
 @Table(name = "diaries", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_user_date", columnNames = {"user_id", "diary_date"})
+    @UniqueConstraint(name = "uk_user_date", columnNames = {"user_sn", "diary_date"})
 })
 @SQLDelete(sql = "UPDATE diaries SET deleted_at = NOW() WHERE diary_id = ?")
 @Where(clause = "deleted_at IS NULL")
-public class Diary {
+public class Diary extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "diary_id")
     private Long diaryId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_sn", nullable = false)
     private User user;
 
     @Column(name = "diary_date", nullable = false)
@@ -202,9 +216,6 @@ public class Diary {
 
     @Column(columnDefinition = "TEXT")
     private String summary;
-
-    @Column(name = "core_emotion", length = 20)
-    private String coreEmotion;
 
     @Column(name = "core_emotion_code", length = 20)
     private String coreEmotionCode;
@@ -228,16 +239,8 @@ public class Diary {
     @Column(name = "analyzed_at")
     private LocalDateTime analyzedAt;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    // Audit 정보 (created_at, created_by, updated_at, updated_by, deleted_at, deleted_by)는
+    // BaseAuditEntity에서 상속
 }
 ```
 
@@ -265,10 +268,12 @@ public class Diary {
 | flower_fun_fact | varchar(1000) | NULL | 꽃 관련 흥미로운 이야기 |
 | image_file_3d | varchar(100) | NOT NULL | 3D 이미지 파일명 |
 | image_file_realistic | varchar(100) | NOT NULL | 실사 이미지 파일명 |
-| is_positive | tinyint(1) | NOT NULL | 긍정 감정 여부 (1: 긍정, 0: 부정) |
+| area | varchar(10) | NOT NULL | 영역 (red/yellow/green/blue) |
 | display_order | int(11) | NOT NULL | 화면 표시 순서 |
 | created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| created_by | varchar(255) | NULL | 생성자 사용자 ID |
 | updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| updated_by | varchar(255) | NULL | 수정자 사용자 ID |
 
 ### 인덱스
 - PRIMARY KEY: `emotion_code`
@@ -309,7 +314,9 @@ create table emotions
     area                 varchar(10)                          not null comment '영역 (red/yellow/green/blue)',
     display_order        int                                  not null comment '표시 순서',
     created_at           datetime default current_timestamp() null,
-    updated_at           datetime default current_timestamp() null on update current_timestamp()
+    created_by           varchar(255)                         null comment '생성자 사용자 ID',
+    updated_at           datetime default current_timestamp() null on update current_timestamp(),
+    updated_by           varchar(255)                         null comment '수정자 사용자 ID'
 )
     comment '감종 - 꽃 마스터 테이블' collate = utf8mb4_unicode_ci;
 
@@ -324,7 +331,7 @@ create index idx_display_order
 ```java
 @Entity
 @Table(name = "emotions")
-public class Emotion {
+public class Emotion extends BaseAuditEntity {
     @Id
     @Column(name = "emotion_code", length = 20)
     private String emotionCode;
@@ -368,19 +375,15 @@ public class Emotion {
     @Column(name = "image_file_realistic", nullable = false, length = 100)
     private String imageFileRealistic;
 
-    @Column(name = "is_positive", nullable = false)
-    private Boolean isPositive;
+    @Column(name = "area", nullable = false, length = 10)
+    private String area;
 
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    // Audit 정보 (created_at, created_by, updated_at, updated_by)는
+    // BaseAuditEntity에서 상속
+    // emotions 테이블은 soft delete가 없으므로 deleted_at, deleted_by는 사용하지 않음
 }
 ```
 
@@ -428,3 +431,258 @@ users (1) ----< (N) diaries
 - 모든 테이블에서 `deleted_at`을 사용한 Soft Delete 적용
 - JPA `@SQLDelete`, `@Where` 애노테이션 활용
 - 실제 데이터는 삭제되지 않고 `deleted_at`에 삭제 시각 기록
+
+---
+
+## 4. code_groups (코드 그룹)
+
+공통 코드의 그룹을 관리하는 테이블입니다.
+
+### 테이블 구조
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|---------|------|
+| group_code | varchar(50) | PK | 그룹 코드 |
+| group_name | varchar(100) | NOT NULL | 그룹명 |
+| description | varchar(500) | NULL | 설명 |
+| is_editable | tinyint(1) | DEFAULT 1 | 수정 가능 여부 (시스템 코드는 0) |
+| display_order | int(11) | NOT NULL | 표시 순서 |
+| created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| created_by | varchar(255) | NULL | 생성자 사용자 ID |
+| updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| updated_by | varchar(255) | NULL | 수정자 사용자 ID |
+
+### 인덱스
+- PRIMARY KEY: `group_code`
+- INDEX: `idx_display_order` (순서 기반 조회)
+
+### 데이터 예시
+```sql
+INSERT INTO code_groups (group_code, group_name, description, is_editable, display_order)
+VALUES
+('USER_TYPE', '사용자 유형', '사용자 유형 구분 (학생/교사/관리자)', 0, 1),
+('EMOTION_CONTROL', '감정 제어 활동', '감정 조절을 위한 활동 유형', 1, 2);
+```
+
+### DDL
+```mysql
+CREATE TABLE `code_groups` (
+    `group_code` VARCHAR(50) NOT NULL COMMENT '그룹 코드 (PK)',
+    `group_name` VARCHAR(100) NOT NULL COMMENT '그룹명',
+    `description` VARCHAR(500) DEFAULT NULL COMMENT '설명',
+    `is_editable` TINYINT(1) DEFAULT 1 COMMENT '수정 가능 여부 (시스템 코드는 0)',
+    `display_order` INT NOT NULL COMMENT '표시 순서',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP() COMMENT '생성일시',
+    `created_by` VARCHAR(255) DEFAULT NULL COMMENT '생성자 사용자 ID',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    `updated_by` VARCHAR(255) DEFAULT NULL COMMENT '수정자 사용자 ID',
+    PRIMARY KEY (`group_code`),
+    KEY `idx_display_order` (`display_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='코드 그룹';
+```
+
+### JPA Entity
+```java
+@Entity
+@Table(name = "code_groups")
+public class CodeGroup extends BaseAuditEntity {
+    @Id
+    @Column(name = "group_code", length = 50)
+    private String groupCode;
+
+    @Column(name = "group_name", nullable = false, length = 100)
+    private String groupName;
+
+    @Column(length = 500)
+    private String description;
+
+    @Column(name = "is_editable", nullable = false)
+    private Boolean isEditable = true;
+
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
+
+    @OneToMany(mappedBy = "codeGroup", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Code> codes = new ArrayList<>();
+
+    // Audit 정보는 BaseAuditEntity에서 상속
+}
+```
+
+---
+
+## 5. codes (코드)
+
+실제 코드 데이터를 관리하는 테이블입니다.
+
+### 테이블 구조
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|---------|------|
+| code_id | bigint(20) | PK, AUTO_INCREMENT | 코드 ID |
+| group_code | varchar(50) | FK, NOT NULL | 그룹 코드 (code_groups.group_code) |
+| code | varchar(50) | NOT NULL | 코드값 |
+| code_name | varchar(100) | NOT NULL | 코드명 |
+| description | varchar(500) | NULL | 설명 |
+| is_active | tinyint(1) | DEFAULT 1 | 활성 여부 |
+| display_order | int(11) | NOT NULL | 표시 순서 |
+| extra_value1 | varchar(200) | NULL | 확장 필드1 |
+| extra_value2 | varchar(200) | NULL | 확장 필드2 |
+| extra_value3 | varchar(200) | NULL | 확장 필드3 |
+| created_at | datetime | DEFAULT CURRENT_TIMESTAMP | 생성일시 |
+| created_by | varchar(255) | NULL | 생성자 사용자 ID |
+| updated_at | datetime | ON UPDATE CURRENT_TIMESTAMP | 수정일시 |
+| updated_by | varchar(255) | NULL | 수정자 사용자 ID |
+| deleted_at | datetime | NULL | 삭제일시 (Soft Delete) |
+| deleted_by | varchar(255) | NULL | 삭제자 사용자 ID |
+
+### 제약조건
+- **FOREIGN KEY**: `group_code` → `code_groups.group_code`
+- **UNIQUE KEY**: `uk_group_code` (group_code, code)
+
+### 인덱스
+- PRIMARY KEY: `code_id`
+- UNIQUE KEY: `uk_group_code` (group_code, code)
+- INDEX: `idx_group_code` (그룹별 조회)
+- INDEX: `idx_is_active` (활성 상태 조회)
+- INDEX: `idx_display_order` (순서 기반 조회)
+
+### 데이터 예시
+```sql
+-- USER_TYPE 코드
+INSERT INTO codes (group_code, code, code_name, description, is_active, display_order)
+VALUES
+('USER_TYPE', 'STUDENT', '학생', '일반 학생 사용자', 1, 1),
+('USER_TYPE', 'TEACHER', '교사', '교사 사용자 (학생 관리 가능)', 1, 2),
+('USER_TYPE', 'ADMIN', '관리자', '시스템 관리자 (모든 권한)', 1, 3);
+
+-- EMOTION_CONTROL 코드 (extra_value 활용)
+INSERT INTO codes (group_code, code, code_name, description, is_active, display_order,
+                   extra_value1, extra_value2, extra_value3)
+VALUES
+('EMOTION_CONTROL', 'DEEP_BREATHING', '심호흡하기', '깊게 숨을 들이마시고 천천히 내쉬며 마음을 진정시킵니다',
+ 1, 1, '5', 'easy', 'mental'),
+('EMOTION_CONTROL', 'WALK', '산책하기', '주변을 천천히 걸으며 생각을 정리합니다',
+ 1, 2, '15', 'easy', 'physical');
+```
+
+### extra_value 활용 예시 (EMOTION_CONTROL)
+- `extra_value1`: 권장 소요 시간 (분)
+- `extra_value2`: 난이도 (easy, medium, hard)
+- `extra_value3`: 카테고리 (physical, mental, creative, social)
+
+### DDL
+```mysql
+CREATE TABLE `codes` (
+    `code_id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '코드 ID (PK)',
+    `group_code` VARCHAR(50) NOT NULL COMMENT '그룹 코드 (FK)',
+    `code` VARCHAR(50) NOT NULL COMMENT '코드값',
+    `code_name` VARCHAR(100) NOT NULL COMMENT '코드명',
+    `description` VARCHAR(500) DEFAULT NULL COMMENT '설명',
+    `is_active` TINYINT(1) DEFAULT 1 COMMENT '활성 여부',
+    `display_order` INT NOT NULL COMMENT '표시 순서',
+    `extra_value1` VARCHAR(200) DEFAULT NULL COMMENT '확장 필드1',
+    `extra_value2` VARCHAR(200) DEFAULT NULL COMMENT '확장 필드2',
+    `extra_value3` VARCHAR(200) DEFAULT NULL COMMENT '확장 필드3',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP() COMMENT '생성일시',
+    `created_by` VARCHAR(255) DEFAULT NULL COMMENT '생성자 사용자 ID',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP() COMMENT '수정일시',
+    `updated_by` VARCHAR(255) DEFAULT NULL COMMENT '수정자 사용자 ID',
+    `deleted_at` DATETIME DEFAULT NULL COMMENT '삭제일시 (soft delete)',
+    `deleted_by` VARCHAR(255) DEFAULT NULL COMMENT '삭제자 사용자 ID',
+    PRIMARY KEY (`code_id`),
+    UNIQUE KEY `uk_group_code` (`group_code`, `code`),
+    KEY `idx_group_code` (`group_code`),
+    KEY `idx_is_active` (`is_active`),
+    KEY `idx_display_order` (`display_order`),
+    CONSTRAINT `fk_codes_group` FOREIGN KEY (`group_code`) REFERENCES `code_groups` (`group_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='코드';
+```
+
+### JPA Entity
+```java
+@Entity
+@Table(name = "codes", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_group_code", columnNames = {"group_code", "code"})
+})
+@SQLDelete(sql = "UPDATE codes SET deleted_at = NOW() WHERE code_id = ?")
+@Where(clause = "deleted_at IS NULL")
+public class Code extends BaseAuditEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "code_id")
+    private Long codeId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_code", nullable = false)
+    private CodeGroup codeGroup;
+
+    @Column(nullable = false, length = 50)
+    private String code;
+
+    @Column(name = "code_name", nullable = false, length = 100)
+    private String codeName;
+
+    @Column(length = 500)
+    private String description;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
+
+    @Column(name = "extra_value1", length = 200)
+    private String extraValue1;
+
+    @Column(name = "extra_value2", length = 200)
+    private String extraValue2;
+
+    @Column(name = "extra_value3", length = 200)
+    private String extraValue3;
+
+    // Audit 정보는 BaseAuditEntity에서 상속
+}
+```
+
+---
+
+## 테이블 관계도 (업데이트)
+
+```
+users (1) ----< (N) diaries
+  |            |
+  |            | (조회)
+  |            v
+  |        emotions (마스터 데이터)
+  |
+  | (참조)
+  v
+codes (USER_TYPE)
+  |
+  | (FK)
+  v
+code_groups
+```
+
+### 관계 설명
+1. **users ↔ diaries**: 1:N 관계
+   - 한 사용자는 여러 일기를 작성할 수 있음
+   - FK: `diaries.user_sn` → `users.user_sn` (ON DELETE CASCADE)
+
+2. **users ↔ codes**: 참조 관계 (FK 없음)
+   - 사용자의 `user_type_cd`가 `codes.code` (USER_TYPE 그룹)를 참조
+   - 사용자의 `emotion_control_cd`가 `codes.code` (EMOTION_CONTROL 그룹)를 참조
+   - 코드 테이블이므로 FK 제약조건 없이 조회만 수행
+   - 예시:
+     - user_type_cd = 'STUDENT' → codes.code = 'STUDENT' (group_code = 'USER_TYPE')
+     - emotion_control_cd = 'DEEP_BREATHING' → codes.code = 'DEEP_BREATHING' (group_code = 'EMOTION_CONTROL')
+
+3. **diaries ↔ emotions**: 참조 관계 (FK 없음)
+   - 일기의 `core_emotion_code`가 `emotions.emotion_code`를 참조
+   - 일기의 `flower_name`이 `emotions.flower_name_kr`를 참조
+   - 마스터 데이터이므로 FK 제약조건 없이 조회만 수행
+
+4. **code_groups ↔ codes**: 1:N 관계
+   - 하나의 코드 그룹은 여러 코드를 가질 수 있음
+   - FK: `codes.group_code` → `code_groups.group_code`

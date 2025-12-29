@@ -3,6 +3,7 @@ package com.flowerbed.api.v1.controller;
 import com.flowerbed.api.v1.dto.AllEmotionsResponse;
 import com.flowerbed.api.v1.dto.UserEmotionFlowerResponse;
 import com.flowerbed.api.v1.service.FlowerService;
+import com.flowerbed.security.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,6 @@ import org.springframework.web.bind.annotation.*;
  * API 종류:
  * 1. /my-emotions - 사용자가 작성한 일기에서 나타난 감정 통계 (개인화 데이터)
  * 2. /all-emotions - 전체 감정-꽃 매핑 정보 (마스터 데이터)
- *
- * !! 주의 !!
- * - 현재는 DEFAULT_USER_ID를 사용하지만 JWT 인증 구현 후 실제 userId 사용 필요
  */
 @Tag(name = "Flower", description = "꽃 정보 API")
 @RestController
@@ -29,12 +27,6 @@ import org.springframework.web.bind.annotation.*;
 public class FlowerController {
 
     private final FlowerService flowerService;
-
-    /**
-     * !! 임시 사용자 ID !!
-     * TODO: JWT 인증 구현 후 SecurityContext에서 실제 userId 추출
-     */
-    private static final Long DEFAULT_USER_SN = 1L;
 
     /**
      * 사용자의 감정-꽃 통계 조회
@@ -64,14 +56,12 @@ public class FlowerController {
      * - 감정 통계 대시보드
      * - 내가 느낀 감정 분포 시각화
      * - 꽃 컬렉션 표시
-     *
-     * !! 수정 필요 !!
-     * - JWT 인증 구현 후 @AuthenticationPrincipal로 실제 userId 받기
      */
     @Operation(summary = "사용자의 감정&꽃 리스트 조회", description = "사용자가 작성한 일기에서 나타난 감정과 꽃 리스트를 조회합니다")
     @GetMapping("/my-emotions")
     public ResponseEntity<UserEmotionFlowerResponse> getUserEmotionFlowers() {
-        UserEmotionFlowerResponse response = flowerService.getUserEmotionFlowers(DEFAULT_USER_SN);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        UserEmotionFlowerResponse response = flowerService.getUserEmotionFlowers(userSn);
         return ResponseEntity.ok(response);
     }
 

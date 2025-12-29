@@ -5,15 +5,15 @@
 -- 1. 코드 그룹 데이터
 INSERT INTO code_groups (group_code, group_name, description, is_editable, display_order, created_by)
 VALUES
-    ('ROLE', '권한/역할', '사용자 권한 및 역할 구분', 0, 1, 'SYSTEM'),
+    ('USER_TYPE', '사용자 유형', '사용자 유형 구분 (학생/교사/관리자)', 0, 1, 'SYSTEM'),
     ('EMOTION_CONTROL', '감정 제어 활동', '감정 조절을 위한 활동 유형', 1, 2, 'SYSTEM');
 
--- 2. ROLE 코드 데이터
+-- 2. USER_TYPE 코드 데이터
 INSERT INTO codes (group_code, code, code_name, description, is_active, display_order, created_by)
 VALUES
-    ('ROLE', 'STUDENT', '학생', '일반 학생 사용자', 1, 1, 'SYSTEM'),
-    ('ROLE', 'TEACHER', '교사', '교사 사용자 (학생 관리 가능)', 1, 2, 'SYSTEM'),
-    ('ROLE', 'ADMIN', '관리자', '시스템 관리자 (모든 권한)', 1, 3, 'SYSTEM');
+    ('USER_TYPE', 'STUDENT', '학생', '일반 학생 사용자', 1, 1, 'SYSTEM'),
+    ('USER_TYPE', 'TEACHER', '교사', '교사 사용자 (학생 관리 가능)', 1, 2, 'SYSTEM'),
+    ('USER_TYPE', 'ADMIN', '관리자', '시스템 관리자 (모든 권한)', 1, 3, 'SYSTEM');
 
 -- 3. EMOTION_CONTROL 코드 데이터
 -- extra_value1: 권장 소요 시간 (분)
@@ -30,5 +30,5 @@ VALUES
 -- 적용 후 확인
 -- ========================================
 -- SELECT * FROM code_groups ORDER BY display_order;
--- SELECT * FROM codes WHERE group_code = 'ROLE' ORDER BY display_order;
+-- SELECT * FROM codes WHERE group_code = 'USER_TYPE' ORDER BY display_order;
 -- SELECT * FROM codes WHERE group_code = 'EMOTION_CONTROL' ORDER BY display_order;

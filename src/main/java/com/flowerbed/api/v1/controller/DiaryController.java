@@ -5,6 +5,7 @@ import com.flowerbed.api.v1.dto.DiaryResponse;
 import com.flowerbed.api.v1.dto.DiaryUpdateRequest;
 import com.flowerbed.api.v1.dto.MonthlyDiariesResponse;
 import com.flowerbed.api.v1.service.DiaryService;
+import com.flowerbed.security.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,14 +29,6 @@ public class DiaryController {
     private final DiaryService diaryService;
 
     /**
-     * !! 임시 사용자 ID !!
-     * TODO: JWT 인증 구현 후 제거 필요
-     * - @AuthenticationPrincipal 또는 SecurityContextHolder에서 실제 userId 추출
-     * - 예: Long userId = ((UserDetails) authentication.getPrincipal()).getId();
-     */
-    private static final Long DEFAULT_USER_SN = 1L;
-
-    /**
      * 일기 작성
      *
      * 새로운 일기를 작성합니다. 이 시점에는 일기 내용만 저장되고 감정 분석은 수행되지 않습니다.
@@ -45,19 +38,18 @@ public class DiaryController {
      * @return DiaryResponse (생성된 일기 정보, isAnalyzed=false 상태)
      *
      * 비즈니스 로직:
-     * 1. 같은 날짜에 이미 일기가 있는지 확인 (하루에 하나만 작성 가능)
-     * 2. 일기 내용 유효성 검증 (10자 이상, 5000자 이하)
-     * 3. DB에 저장 (isAnalyzed=false, 감정 정보 null)
-     *
-     * !! 수정 필요 !!
-     * - JWT 인증 구현 시 DEFAULT_USER_ID를 실제 로그인한 사용자 ID로 교체
+     * 1. JWT 토큰에서 인증된 사용자 정보 조회
+     * 2. 같은 날짜에 이미 일기가 있는지 확인 (하루에 하나만 작성 가능)
+     * 3. 일기 내용 유효성 검증 (10자 이상, 5000자 이하)
+     * 4. DB에 저장 (isAnalyzed=false, 감정 정보 null)
      */
     @PostMapping
     @Operation(summary = "일기 작성", description = "새로운 일기를 작성합니다")
     public ResponseEntity<DiaryResponse> createDiary(
             @Valid @RequestBody DiaryCreateRequest request) {
 
-        DiaryResponse response = diaryService.createDiary(DEFAULT_USER_SN, request);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        DiaryResponse response = diaryService.createDiary(userSn, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -89,7 +81,8 @@ public class DiaryController {
     public ResponseEntity<DiaryResponse> analyzeDiary(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        DiaryResponse response = diaryService.analyzeDiaryEmotion(DEFAULT_USER_SN, diaryId);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        DiaryResponse response = diaryService.analyzeDiaryEmotion(userSn, diaryId);
         return ResponseEntity.ok(response);
     }
 
@@ -119,7 +112,8 @@ public class DiaryController {
     public ResponseEntity<DiaryResponse> analyzeDiaryTest(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        DiaryResponse response = diaryService.analyzeDiaryEmotionTest(DEFAULT_USER_SN, diaryId);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        DiaryResponse response = diaryService.analyzeDiaryEmotionTest(userSn, diaryId);
         return ResponseEntity.ok(response);
     }
 
@@ -146,7 +140,8 @@ public class DiaryController {
     public ResponseEntity<DiaryResponse> getDiary(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        DiaryResponse response = diaryService.getDiary(DEFAULT_USER_SN, diaryId);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        DiaryResponse response = diaryService.getDiary(userSn, diaryId);
         return ResponseEntity.ok(response);
     }
 
@@ -173,7 +168,8 @@ public class DiaryController {
             @Parameter(description = "날짜 (YYYY-MM-DD)")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-        DiaryResponse response = diaryService.getDiaryByDate(DEFAULT_USER_SN, date);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        DiaryResponse response = diaryService.getDiaryByDate(userSn, date);
         return ResponseEntity.ok(response);
     }
 
@@ -204,7 +200,8 @@ public class DiaryController {
             @Parameter(description = "년월 (YYYY-MM)", example = "2025-12")
             @RequestParam String yearMonth) {
 
-        MonthlyDiariesResponse response = diaryService.getMonthlyDiaries(DEFAULT_USER_SN, yearMonth);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        MonthlyDiariesResponse response = diaryService.getMonthlyDiaries(userSn, yearMonth);
         return ResponseEntity.ok(response);
     }
 
@@ -235,7 +232,8 @@ public class DiaryController {
             @Parameter(description = "일기 ID") @PathVariable Long diaryId,
             @Valid @RequestBody DiaryUpdateRequest request) {
 
-        DiaryResponse response = diaryService.updateDiary(DEFAULT_USER_SN, diaryId, request);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        DiaryResponse response = diaryService.updateDiary(userSn, diaryId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -266,7 +264,8 @@ public class DiaryController {
     public ResponseEntity<Void> deleteDiary(
             @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
 
-        diaryService.deleteDiary(DEFAULT_USER_SN, diaryId);
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        diaryService.deleteDiary(userSn, diaryId);
         return ResponseEntity.noContent().build();
     }
 }
