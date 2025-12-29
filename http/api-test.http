@@ -66,6 +66,13 @@ POST http://localhost:8080/api/v1/diaries/1/analyze-test
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
+### 일기 감정 분석 (테스트 모드 - 특정 영역 지정)
+### area 파라미터로 red/yellow/blue/green 중 하나 지정 가능
+### 연속 감정 팁 테스트 시 동일한 영역의 감정을 받고 싶을 때 유용
+POST http://localhost:8080/api/v1/diaries/1/analyze-test?area=red
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
 ### 일기 상세 조회
 GET http://localhost:8080/api/v1/diaries/60
 Authorization: Bearer {{accessToken}}
@@ -166,9 +173,10 @@ Content-Type: application/json
   "content": "오늘은 정말 화가 났다. 모든 것이 뜻대로 되지 않아서 너무 답답하고 짜증이 난다."
 }
 
-### 오늘-2일 일기 분석 (테스트 모드)
+### 오늘-2일 일기 분석 (테스트 모드 - red 영역 지정)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/129/analyze-test
+### area=red 파라미터로 red 영역의 감정만 랜덤 선택
+POST http://localhost:8080/api/v1/diaries/129/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 2단계: 오늘-1일 일기 작성 및 분석 (예: 2025-12-25)
@@ -181,9 +189,9 @@ Content-Type: application/json
   "content": "어제에 이어 오늘도 기분이 안 좋다. 계속 화가 나고 모든 게 싫다."
 }
 
-### 오늘-1일 일기 분석 (테스트 모드)
+### 오늘-1일 일기 분석 (테스트 모드 - red 영역 지정)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/130/analyze-test
+POST http://localhost:8080/api/v1/diaries/130/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 3단계: 오늘 일기 작성 및 분석 (예: 2025-12-26)
@@ -197,13 +205,13 @@ Content-Type: application/json
   "content": "3일째 계속 화가 난다. 이 감정을 어떻게 다스려야 할지 모르겠다."
 }
 
-### 오늘 일기 분석 (테스트 모드)
+### 오늘 일기 분석 (테스트 모드 - red 영역 지정)
 ### ✅ 예상 결과:
 ### - showEmotionControlTip: true
 ### - consecutiveSameAreaDays: 3 (3일 연속) 또는 5 (5일 이상 연속)
 ### - repeatedEmotionArea: "red" (또는 연속된 area)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/131/analyze-test
+POST http://localhost:8080/api/v1/diaries/131/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 4단계: 감정 조절 팁 코드 조회

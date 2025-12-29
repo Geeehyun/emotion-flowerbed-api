@@ -93,10 +93,11 @@ public class DiaryController {
      * 감정 분석 결과를 생성합니다. 개발/테스트 용도로 사용합니다.
      *
      * @param diaryId 분석할 일기 ID
+     * @param area 감정 영역 지정 (선택적, red/yellow/blue/green)
      * @return DiaryResponse (랜덤 생성된 감정 분석 결과)
      *
      * 비즈니스 로직:
-     * 1. DB에서 3개의 랜덤 감정 선택
+     * 1. DB에서 3개의 랜덤 감정 선택 (area 지정 시 해당 영역만)
      * 2. 랜덤 퍼센트 생성 (합계 100%)
      * 3. 가장 높은 퍼센트의 감정을 대표 감정으로 설정
      * 4. 대표 감정에 매칭되는 꽃 정보 조회
@@ -105,15 +106,18 @@ public class DiaryController {
      * - API 호출 비용 없음
      * - 빠른 테스트 가능
      * - 실제 데이터 구조와 동일한 결과 반환
+     * - area 지정으로 특정 감정 영역 테스트 가능 (연속 감정 팁 테스트 시 유용)
      */
     @PostMapping("/{diaryId}/analyze-test")
     @Operation(summary = "일기 감정 분석 (테스트)",
                description = "Claude API 호출 없이 랜덤으로 감정 분석 결과를 생성합니다 (테스트용)")
     public ResponseEntity<DiaryResponse> analyzeDiaryTest(
-            @Parameter(description = "일기 ID") @PathVariable Long diaryId) {
+            @Parameter(description = "일기 ID") @PathVariable Long diaryId,
+            @Parameter(description = "감정 영역 (red/yellow/blue/green, 선택적)")
+            @RequestParam(required = false) String area) {
 
         Long userSn = SecurityUtil.getCurrentUserSn();
-        DiaryResponse response = diaryService.analyzeDiaryEmotionTest(userSn, diaryId);
+        DiaryResponse response = diaryService.analyzeDiaryEmotionTest(userSn, diaryId, area);
         return ResponseEntity.ok(response);
     }
 

@@ -135,9 +135,10 @@ public class DiaryService {
      * 일기 감정 분석 (테스트 모드 - API 비용 없음)
      * - emotionTestService.analyzeForTest() 호출하여 랜덤 생성
      * - DB의 emotions 테이블에서 랜덤 선택
+     * - area 파라미터로 특정 감정 영역 지정 가능 (연속 감정 팁 테스트 시 유용)
      */
     @Transactional
-    public DiaryResponse analyzeDiaryEmotionTest(Long userId, Long diaryId) {
+    public DiaryResponse analyzeDiaryEmotionTest(Long userId, Long diaryId, String area) {
 
         Diary diary = diaryRepository.findById(diaryId)
                 .orElseThrow(DiaryNotFoundException::new);
@@ -147,8 +148,8 @@ public class DiaryService {
             throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
         }
 
-        // 테스트 모드 감정 분석 (랜덤 생성)
-        DiaryEmotionResponse emotionResponse = emotionTestService.analyzeForTest(diary.getContent());
+        // 테스트 모드 감정 분석 (랜덤 생성, area 지정 가능)
+        DiaryEmotionResponse emotionResponse = emotionTestService.analyzeForTest(diary.getContent(), area);
 
         // 분석 결과 저장
         List<Diary.EmotionPercent> emotionsJson = emotionResponse.getEmotions().stream()
@@ -167,8 +168,8 @@ public class DiaryService {
                 emotionsJson
         );
 
-        log.info("Diary emotion analyzed (TEST MODE): diaryId={}, coreEmotionCode={}",
-                diaryId, emotionCode);
+        log.info("Diary emotion analyzed (TEST MODE): diaryId={}, coreEmotionCode={}, area={}",
+                diaryId, emotionCode, area);
 
         // 감정 조절 팁 체크 (오늘 날짜이고 연속 3일 이상인 경우)
         EmotionControlTipInfo tipInfo = checkEmotionControlTip(userId, diary);

@@ -29,31 +29,51 @@ public class DiaryEmotionTestService {
     // DB에서 조회한 전체 감정 코드 리스트 (초기화 시 캐싱)
     private List<String> allEmotionCodes;
 
+    // area별 감정 코드 리스트 (초기화 시 캐싱)
+    private Map<String, List<String>> emotionCodesByArea;
+
     /**
      * 서비스 초기화 시 DB에서 전체 감정 코드 조회하여 캐싱
      */
     @PostConstruct
     public void init() {
-        allEmotionCodes = flowerRepository.findAll().stream()
+        List<Emotion> allEmotions = flowerRepository.findAll();
+
+        // 전체 감정 코드 리스트
+        allEmotionCodes = allEmotions.stream()
                 .map(Emotion::getEmotionCode)
                 .collect(Collectors.toList());
+
+        // area별 감정 코드 맵
+        emotionCodesByArea = allEmotions.stream()
+                .filter(e -> e.getArea() != null)
+                .collect(Collectors.groupingBy(
+                        Emotion::getArea,
+                        Collectors.mapping(Emotion::getEmotionCode, Collectors.toList())
+                ));
+
         log.info("Loaded {} emotion codes from database for test service", allEmotionCodes.size());
+        log.info("Emotion codes by area: {}", emotionCodesByArea.keySet());
     }
 
     /**
      * 테스트용 감정 분석 (Claude API 호출 없이 랜덤 생성)
+     *
+     * @param diaryContent 일기 내용
+     * @param area 감정 영역 (red/yellow/blue/green, null이면 전체)
+     * @return 랜덤 생성된 감정 분석 결과
      */
-    public DiaryEmotionResponse analyzeForTest(String diaryContent) {
+    public DiaryEmotionResponse analyzeForTest(String diaryContent, String area) {
 
-        log.info("Test mode: Generating random emotion analysis");
+        log.info("Test mode: Generating random emotion analysis (area={})", area);
 
         // 1. Summary: 일기 내용 앞 10글자
         String summary = diaryContent.length() > 10
                 ? diaryContent.substring(0, 10) + "..."
                 : diaryContent;
 
-        // 2. 랜덤하게 3개 감정 선택
-        List<String> selectedEmotions = getRandomEmotions(3);
+        // 2. 랜덤하게 3개 감정 선택 (area 지정 시 해당 영역만)
+        List<String> selectedEmotions = getRandomEmotions(3, area);
 
         // 3. 랜덤 퍼센트 생성 (합계 100)
         List<Integer> percentages = generateRandomPercentages(3);
@@ -77,7 +97,9 @@ public class DiaryEmotionTestService {
         response.setSummary(summary);
         response.setEmotions(emotions);
         response.setCoreEmotion(emotion.getEmotionCode());
-        response.setReason("테스트 모드: 랜덤으로 생성된 감정 분석 결과입니다");
+        response.setReason(area != null
+                ? "테스트 모드: " + area + " 영역에서 랜덤으로 생성된 감정 분석 결과입니다"
+                : "테스트 모드: 랜덤으로 생성된 감정 분석 결과입니다");
         response.setFlower(emotion.getFlowerNameKr());
         response.setFloriography(emotion.getFlowerMeaning());
 
@@ -86,9 +108,29 @@ public class DiaryEmotionTestService {
 
     /**
      * 랜덤하게 N개의 감정 선택
+     *
+     * @param count 선택할 감정 개수
+     * @param area 감정 영역 (null이면 전체에서 선택)
+     * @return 랜덤 선택된 감정 코드 리스트
      */
-    private List<String> getRandomEmotions(int count) {
-        List<String> shuffled = new ArrayList<>(allEmotionCodes);
+    private List<String> getRandomEmotions(int count, String area) {
+        List<String> targetList;
+
+        if (area != null && emotionCodesByArea.containsKey(area)) {
+            // area가 지정되면 해당 영역의 감정만 선택
+            targetList = emotionCodesByArea.get(area);
+            log.debug("Selecting {} emotions from area: {} (total {} emotions)",
+                    count, area, targetList.size());
+        } else {
+            // area가 없거나 유효하지 않으면 전체에서 선택
+            targetList = allEmotionCodes;
+            if (area != null) {
+                log.warn("Invalid area: {}, falling back to all emotions", area);
+            }
+        }
+
+        // 랜덤 선택
+        List<String> shuffled = new ArrayList<>(targetList);
         Collections.shuffle(shuffled, random);
         return shuffled.stream().limit(count).collect(Collectors.toList());
     }
