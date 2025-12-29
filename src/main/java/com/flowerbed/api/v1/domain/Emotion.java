@@ -60,6 +60,12 @@ public class Emotion extends BaseAuditEntity {
     @Column(name = "color", length = 8)
     private String color;  // 감정 색상 (HEX 코드, 예: #FF5733)
 
+    @Column(name = "x")
+    private Integer x;  // 감정 무드미터 그래프 X 좌표
+
+    @Column(name = "y")
+    private Integer y;  // 감정 무드미터 그래프 Y 좌표
+
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
