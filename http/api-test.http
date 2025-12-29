@@ -34,13 +34,31 @@ Content-Type: application/json
 POST http://localhost:8080/api/v1/auth/logout
 Authorization: Bearer {{accessToken}}
 
-### Access Token 갱신
+### Access Token 갱신 (Refresh Token Rotation)
+### !! 중요: RefreshToken도 함께 재발급됩니다 (보안 강화)
+### 기존 RefreshToken은 사용 후 무효화되므로 새로 발급된 RefreshToken을 저장해야 합니다
 POST http://localhost:8080/api/v1/auth/refresh
 Content-Type: application/json
 
 {
   "refreshToken": "{{refreshToken}}"
 }
+
+> {%
+    client.test('토큰 갱신 테스트', () => {
+        if(response.status === 200) {
+            client.global.set('accessToken', response.body.accessToken);
+            client.global.set('refreshToken', response.body.refreshToken);
+            client.log(`토큰 갱신 성공 (Refresh Token Rotation)`);
+            client.log(`새로운 AccessToken: ${response.body.accessToken}`);
+            client.log(`새로운 RefreshToken: ${response.body.refreshToken}`);
+            client.assert(true);
+        } else {
+            client.log('토큰 갱신 실패');
+            client.assert(false);
+        }
+    })
+%}
 
 ### ========================================
 ### 일기 API (Diary)
@@ -169,14 +187,14 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "diaryDate": "2025-12-24",
+  "diaryDate": "2026-01-01",
   "content": "오늘은 정말 화가 났다. 모든 것이 뜻대로 되지 않아서 너무 답답하고 짜증이 난다."
 }
 
 ### 오늘-2일 일기 분석 (테스트 모드 - red 영역 지정)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
 ### area=red 파라미터로 red 영역의 감정만 랜덤 선택
-POST http://localhost:8080/api/v1/diaries/129/analyze-test?area=red
+POST http://localhost:8080/api/v1/diaries/132/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 2단계: 오늘-1일 일기 작성 및 분석 (예: 2025-12-25)
@@ -185,13 +203,13 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "diaryDate": "2025-12-25",
+  "diaryDate": "2026-01-02",
   "content": "어제에 이어 오늘도 기분이 안 좋다. 계속 화가 나고 모든 게 싫다."
 }
 
 ### 오늘-1일 일기 분석 (테스트 모드 - red 영역 지정)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/130/analyze-test?area=red
+POST http://localhost:8080/api/v1/diaries/133/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 3단계: 오늘 일기 작성 및 분석 (예: 2025-12-26)
@@ -201,7 +219,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "diaryDate": "2025-12-26",
+  "diaryDate": "2026-01-03",
   "content": "3일째 계속 화가 난다. 이 감정을 어떻게 다스려야 할지 모르겠다."
 }
 
@@ -211,7 +229,7 @@ Content-Type: application/json
 ### - consecutiveSameAreaDays: 3 (3일 연속) 또는 5 (5일 이상 연속)
 ### - repeatedEmotionArea: "red" (또는 연속된 area)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/131/analyze-test?area=red
+POST http://localhost:8080/api/v1/diaries/134/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
 ### 4단계: 감정 조절 팁 코드 조회

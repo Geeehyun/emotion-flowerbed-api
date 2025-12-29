@@ -93,12 +93,17 @@ public class AuthService {
     }
 
     /**
-     * Access Token 갱신
+     * Access Token 갱신 (Refresh Token Rotation 방식)
      * - RefreshToken 검증
      * - Redis에 저장된 RefreshToken과 비교
-     * - 새로운 AccessToken 발급
+     * - 새로운 AccessToken + RefreshToken 발급
+     * - 기존 RefreshToken 무효화 및 새로운 RefreshToken 저장
+     *
+     * 보안 강화:
+     * - RefreshToken도 함께 재발급하여 일회용으로 만듦
+     * - 탈취된 RefreshToken은 한 번만 사용 가능
      */
-    public String refreshAccessToken(String refreshToken) {
+    public Map<String, String> refreshAccessToken(String refreshToken) {
         // 1. RefreshToken 유효성 검증
         if (!jwtUtil.isTokenValid(refreshToken)) {
             throw new BusinessException(ErrorCode.INVALID_TOKEN, "유효하지 않은 Refresh Token입니다");
@@ -118,11 +123,20 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_TOKEN, "유효하지 않은 Refresh Token입니다");
         }
 
-        // 5. 새로운 AccessToken 발급
-        String newAccessToken = jwtUtil.createAccessToken(userSn);
+        // 5. 새로운 AccessToken + RefreshToken 발급
+        Map<String, String> newTokens = jwtUtil.generateToken(userSn);
+        String newAccessToken = newTokens.get("accessToken");
+        String newRefreshToken = newTokens.get("refreshToken");
 
-        log.info("Access token refreshed: userId={}", user.getUserId());
+        // 6. 기존 RefreshToken 삭제 후 새로운 RefreshToken 저장 (Rotation)
+        redisService.deleteRefreshToken(user.getUserId());
+        redisService.saveRefreshToken(user.getUserId(), newRefreshToken);
 
-        return newAccessToken;
+        log.info("Tokens refreshed (Refresh Token Rotation): userId={}", user.getUserId());
+
+        return Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRefreshToken
+        );
     }
 }

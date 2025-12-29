@@ -125,22 +125,24 @@ public class AuthController {
     }
 
     /**
-     * Access Token 갱신
+     * Access Token 갱신 (Refresh Token Rotation)
      *
-     * RefreshToken을 사용하여 새로운 AccessToken을 발급합니다.
+     * RefreshToken을 사용하여 새로운 AccessToken과 RefreshToken을 발급합니다.
      * AccessToken 만료 시 호출하여 재인증 없이 토큰을 갱신할 수 있습니다.
      *
      * @param request RefreshToken
-     * @return 새로운 AccessToken
+     * @return 새로운 AccessToken + RefreshToken
      *
      * Response 구조:
      * - accessToken: 새로 발급된 AccessToken
+     * - refreshToken: 새로 발급된 RefreshToken (보안 강화)
      *
      * 비즈니스 로직:
      * 1. RefreshToken 유효성 검증
      * 2. RefreshToken에서 userSn 추출
      * 3. Redis에 저장된 RefreshToken과 비교
-     * 4. 일치하면 새로운 AccessToken 발급
+     * 4. 일치하면 새로운 AccessToken + RefreshToken 발급
+     * 5. 기존 RefreshToken 무효화 (일회용)
      *
      * 사용 예시:
      * ```
@@ -150,14 +152,17 @@ public class AuthController {
      * }
      * ```
      *
-     * !! 주의 !!
+     * !! 중요 !!
+     * - Refresh Token Rotation 방식으로 보안 강화
+     * - 기존 RefreshToken은 사용 후 무효화됨 (한 번만 사용 가능)
+     * - 새로 발급된 RefreshToken을 반드시 저장해야 함
      * - RefreshToken이 만료되었거나 Redis에 없으면 실패합니다
      * - 로그아웃한 사용자는 RefreshToken이 삭제되어 갱신할 수 없습니다
      */
-    @Operation(summary = "토큰 갱신", description = "RefreshToken을 사용하여 새로운 AccessToken을 발급합니다")
+    @Operation(summary = "토큰 갱신", description = "RefreshToken을 사용하여 새로운 AccessToken과 RefreshToken을 발급합니다 (Refresh Token Rotation)")
     @PostMapping("/refresh")
     public ResponseEntity<Map<String, String>> refresh(@Valid @RequestBody RefreshRequest request) {
-        String newAccessToken = authService.refreshAccessToken(request.getRefreshToken());
-        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+        Map<String, String> tokens = authService.refreshAccessToken(request.getRefreshToken());
+        return ResponseEntity.ok(tokens);
     }
 }
