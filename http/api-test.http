@@ -173,13 +173,14 @@ Authorization: Bearer {{accessToken}}
 ### 감정 조절 팁 기능 테스트
 ### ========================================
 ### 테스트 시나리오:
-### 1. 오늘 날짜로 연속 3일 일기 작성 (같은 area)
-### 2. 각 일기를 분석하여 연속 체크
+### 1. 연속 3일 일기 작성 (같은 area, 날짜는 연속이면 됨)
+### 2. 각 일기를 분석하여 연속 체크 (area=red 파라미터 사용)
 ### 3. 3일째 일기 분석 시 showEmotionControlTip=true 확인
 ### 4. 감정 조절 팁 코드 조회하여 적절한 메시지 확인
 ###
-### ⚠️ 주의: 테스트 전 날짜를 오늘 날짜로 수정하고,
-### 이전 2일치 일기도 같은 area로 분석되어야 합니다.
+### 🎯 개선: 오늘 날짜 체크 제거됨
+### - 과거/미래 어떤 날짜든 연속 패턴만 맞으면 팁 표시
+### - 며칠치 모아서 작성해도 패턴 인식 가능
 
 ### 1단계: 오늘-2일 일기 작성 및 분석 (예: 2025-12-24)
 POST http://localhost:8080/api/v1/diaries
@@ -267,6 +268,11 @@ Authorization: Bearer {{accessToken}}
 ### ✅ 3일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 3
 ### ✅ 5일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 5
 ### ✅ 연속이 끊긴 경우 → showEmotionControlTip: false
-### ✅ 오늘이 아닌 날짜 → showEmotionControlTip: false (과거 일기는 팁 표시 안함)
+### ✅ 과거 일기도 팁 표시 (날짜 무관, 연속 패턴 기준으로 판단)
 ### ✅ 감정 조절 팁 코드 조회 → code_name에 적절한 메시지 확인
+###
+### 🎯 개선 사항:
+### - 오늘 날짜 체크 제거: 언제 일기를 쓰든 연속 패턴 인식
+### - 며칠치 모아서 작성해도 패턴 인식 가능
+### - 과거 일기 작성 시에도 "그때 이런 패턴이었구나" 인식 가능
 ###

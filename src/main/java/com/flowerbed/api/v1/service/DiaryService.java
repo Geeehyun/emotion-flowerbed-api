@@ -431,39 +431,40 @@ public class DiaryService {
      * 감정 조절 팁 표시 여부 체크
      *
      * 비즈니스 로직:
-     * 1. 오늘 날짜가 아니면 체크 안함
-     * 2. 최근 7일간의 분석된 일기 조회
+     * 1. 현재 일기의 감정 영역 조회
+     * 2. 최근 7일간의 분석된 일기 조회 (현재 일기 기준 이전)
      * 3. 연속으로 같은 감정 영역(area)이 나온 일수 체크
      * 4. 3일 이상 또는 5일 이상이면 감정 조절 팁 표시
      *
      * 주의:
      * - 날짜가 연속이어야 함 (하루라도 끊기면 연속 중단)
      * - area가 같아야 함 (red, yellow, blue, green)
+     * - 과거 일기를 나중에 작성해도 패턴 인식하여 팁 제공
+     *
+     * 사용자 경험 개선:
+     * - 오늘 날짜 체크 제거: 언제 일기를 쓰든 연속 패턴 기준으로 팁 제공
+     * - 며칠치 일기를 모아서 써도 패턴 인식 가능
+     * - 과거 일기 작성 시에도 "그때 이런 패턴이었구나" 인식 가능
      *
      * @param userSn 사용자 일련번호
      * @param currentDiary 현재 분석한 일기
      * @return EmotionControlTipInfo (표시 여부, 연속 일수, 영역)
      */
     private EmotionControlTipInfo checkEmotionControlTip(Long userSn, Diary currentDiary) {
-        // 1. 오늘 날짜가 아니면 체크 안함
-        if (!currentDiary.getDiaryDate().equals(LocalDate.now())) {
-            return new EmotionControlTipInfo(false, null, null);
-        }
-
-        // 2. 현재 일기의 감정 영역 조회
+        // 1. 현재 일기의 감정 영역 조회
         String currentArea = getEmotionArea(currentDiary.getCoreEmotionCode());
         if (currentArea == null) {
             return new EmotionControlTipInfo(false, null, null);
         }
 
-        // 3. 최근 7일간의 분석된 일기 조회 (현재 일기 포함, 날짜 역순)
+        // 2. 최근 7일간의 분석된 일기 조회 (현재 일기 포함, 날짜 역순)
         List<Diary> recentDiaries = diaryRepository.findRecentAnalyzedDiaries(
                 userSn,
                 currentDiary.getDiaryDate(),
                 PageRequest.of(0, 7)
         );
 
-        // 4. 연속된 같은 영역 일수 체크
+        // 3. 연속된 같은 영역 일수 체크
         int consecutiveDays = 1;  // 현재 일기 포함
 
         for (int i = 1; i < recentDiaries.size(); i++) {
@@ -485,7 +486,7 @@ public class DiaryService {
             consecutiveDays++;
         }
 
-        // 5. 3일 이상이면 감정 조절 팁 표시
+        // 4. 3일 이상이면 감정 조절 팁 표시
         if (consecutiveDays >= 3) {
             // 5일 이상이면 5로, 3~4일이면 3으로 설정
             int tipDays = consecutiveDays >= 5 ? 5 : 3;
