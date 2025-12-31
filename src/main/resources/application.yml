@@ -4,9 +4,9 @@ spring:
 
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: # 각 환경 별 application-environment.yml 에서 설정
-    username: # 각 환경 별 application-environment.yml 에서 설정
-    password: # 각 환경 별 application-environment.yml 에서 설정
+    url: ${SPRING_DATASOURCE_URL:jdbc:mariadb://localhost:3306/flowerbed?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:1234}
 
   jpa:
     hibernate:
@@ -25,11 +25,9 @@ spring:
 
   data:
     redis:
-      host1: # 각 환경 별 application-environment.yml 에서 설정
-      host2: # 각 환경 별 application-environment.yml 에서 설정
-      host3: # 각 환경 별 application-environment.yml 에서 설정
-      port: 6379
-      password: # 각 환경 별 application-environment.yml 에서 설정
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:}
       database: 0
 
 logging:
@@ -59,7 +57,7 @@ springdoc:
 
 # CORS Configuration
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  allowed-origins: ${SPRING_CORS_ALLOWED_ORIGINS:http://localhost:3000}
   allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
   allowed-headers: "*"
   allow-credentials: true
@@ -68,12 +66,12 @@ cors:
 # LLM Provider Configuration
 # llm.provider: claude 또는 openai (기본값: claude)
 llm:
-  provider: ${LLM_PROVIDER:claude}
+  provider: ${SPRING_LLM_PROVIDER:claude}
 
 # Claude API Configuration
 anthropic:
   api:
-    key: ${ANTHROPIC_API_KEY}
+    key: ${SPRING_ANTHROPIC_API_KEY}
     model: claude-3-5-haiku-20241022  # Haiku 모델 (Sonnet보다 20배 저렴!)
     max-tokens: 2000
     temperature: 0.3  # 더 일관된 응답
@@ -81,14 +79,14 @@ anthropic:
 # OpenAI API Configuration
 openai:
   api:
-    key: ${OPENAI_API_KEY:your-openai-api-key}
+    key: ${SPRING_OPENAI_API_KEY:your-openai-api-key}
     model: ${OPENAI_MODEL:gpt-4o-mini}  # gpt-4o-mini, gpt-4o, gpt-4-turbo 등
     max-tokens: 500
     temperature: 0.3
 
 # JWT Configuration
 jwt:
-  secret-key: ${JWT_SECRET_KEY:your-secret-key-min-256-bits-for-hs256-algorithm-please-change-in-production}
+  secret-key: ${SPRING_JWT_SECRET_KEY:your-secret-key-min-256-bits-for-hs256-algorithm-please-change-in-production}
 
 # Weekly Report Batch Configuration
 weekly-report:

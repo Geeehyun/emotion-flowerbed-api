@@ -47,3 +47,10 @@ logs/
 application-local.yml
 application-prod.yml
 .claude/
+
+### Docker ###
+docker-compose.yml
+docker-compose.yml.example
+.env
+.env.local
+.env.*.local
