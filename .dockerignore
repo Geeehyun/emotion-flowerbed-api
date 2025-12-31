@@ -1,20 +1,23 @@
 # ========================================
 # Docker 이미지 빌드 시 제외할 파일/폴더
-# - 빌드 속도 향상
-# - 이미지 크기 감소
-# - 보안 강화 (민감 정보 제외)
 # ========================================
 
-# Build artifacts (빌드 결과물)
+# ❌ 빌드 결과물 (컨테이너 안에서 새로 생성)
 build/
 target/
 *.jar
 *.war
 *.class
 
-# Gradle 캐시 및 wrapper (이미지 내부에서 다시 빌드하므로 불필요)
+# ❌ Gradle 캐시 (wrapper는 필요함!)
 .gradle/
-gradle/wrapper/
+
+# ✅ Gradle Wrapper는 반드시 포함
+!gradle/
+!gradle/wrapper/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!gradlew
 
 # Git 관련
 .git/
@@ -40,20 +43,22 @@ logs/
 Thumbs.db
 Desktop.ini
 
-# 문서 파일 (이미지에 불필요)
+# 문서 파일
 *.md
 README.md
 CLAUDE.md
 LICENSE
 docs/
 
-# CI/CD 설정 파일
+# CI/CD 설정 파일 (이미지엔 불필요)
 .github/
-Dockerfile
 docker-compose.yml
-.dockerignore
 
-# 환경 설정 파일 (민감 정보 포함 가능)
+# Docker 설정 파일은 빌드에 필요
+!.dockerignore
+!Dockerfile
+
+# 환경 설정 파일
 .env
 .env.local
 .env.*.local
@@ -70,5 +75,5 @@ temp/
 test-results/
 coverage/
 
-# SQL 스크립트 (운영 이미지에 불필요)
+# SQL 스크립트
 sql/
