@@ -12,6 +12,8 @@ WORKDIR /app
 # (gradlew, build.gradle, src 등 전부 포함)
 COPY . .
 
+RUN chmod +x gradlew
+
 # Spring Boot 실행 가능한 jar 생성
 # -x test : 테스트는 CI/CD 속도와 안정성을 위해 스킵
 RUN ./gradlew clean bootJar -x test
