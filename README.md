@@ -424,9 +424,34 @@ gradlew.bat bootRun
 http://localhost:8080/api/swagger-ui.html
 ```
 
-**.http 파일** (IntelliJ IDEA, VS Code REST Client):
-```
-api-test.http 파일 참조
+**HTTP 테스트 파일** (IntelliJ IDEA, VS Code REST Client):
+
+`http/` 디렉토리에 업무별로 분리된 테스트 파일이 있습니다:
+
+| 파일 | 설명 |
+|------|------|
+| `auth.http` | 인증 API (로그인, 로그아웃, 토큰 갱신) |
+| `diary.http` | 일기 API + 감정 조절 팁 테스트 |
+| `flower.http` | 꽃 정보 API |
+| `teacher.http` | 선생님 API (학생 목록 조회) |
+| `code.http` | 공통 코드 API |
+| `weekly-report.http` | 주간 리포트 API |
+
+**사용 방법**:
+1. `auth.http` 파일에서 로그인 실행 → `accessToken` 발급
+2. 발급받은 토큰은 **전역 변수**로 관리되어 모든 파일에서 자동 사용
+3. 원하는 API 파일 열고 테스트 실행
+
+**예시**:
+```http
+# 1. auth.http에서 로그인
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+{ "userId": "student2", "password": "1234" }
+
+# 2. diary.http에서 바로 사용 가능
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}  # 자동으로 인식됨
 ```
 
 ---
@@ -453,7 +478,7 @@ anthropic:
   api:
     key: ${ANTHROPIC_API_KEY}
     model: claude-3-5-haiku-20241022  # 비용 최적화
-    max-tokens: 500
+    max-tokens: 10000
     temperature: 0.3
 ```
 

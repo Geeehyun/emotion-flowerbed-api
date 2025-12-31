@@ -1,0 +1,154 @@
+### 주간 리포트 API (Weekly Report)
+### Base URL: http://localhost:8080/api
+### 🔑 인증 필요: auth.http에서 먼저 로그인하여 accessToken을 발급받으세요
+
+### ========================================
+### 학생용 API
+### ========================================
+
+### 안 읽은 리포트 존재 여부 확인
+GET http://localhost:8080/api/v1/weekly-reports/unread/exists
+Authorization: Bearer {{accessToken}}
+
+### 새 리포트 존재 여부 확인 (알림 전송 안 된 리포트)
+GET http://localhost:8080/api/v1/weekly-reports/new/exists
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 전체
+GET http://localhost:8080/api/v1/weekly-reports/list?status=all
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 읽음
+GET http://localhost:8080/api/v1/weekly-reports/list?status=read
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 안읽음
+GET http://localhost:8080/api/v1/weekly-reports/list?status=unread
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 상세 조회
+### ⚠️ reportId를 실제 생성된 ID로 변경 필요
+GET http://localhost:8080/api/v1/weekly-reports/2
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 읽음 처리
+### ⚠️ reportId를 실제 생성된 ID로 변경 필요
+PUT http://localhost:8080/api/v1/weekly-reports/1/read
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 테스트용 API
+### ========================================
+
+### 주간 리포트 수동 생성 - 단일 사용자 (학생 전용)
+### 📌 사용 시나리오:
+### 1. 먼저 해당 주간의 일기를 3개 이상 작성하고 분석 완료
+### 2. 해당 주간의 startDate, endDate를 지정하여 리포트 생성
+### 3. 일기가 3개 미만이면 에러 반환 (리포트 생성 안함)
+### ⚠️ 주의:
+### - 학생 권한 필수 (userTypeCd = 'STUDENT')
+### - 선생님/관리자로 호출 시 403 Forbidden 에러 발생
+POST http://localhost:8080/api/v1/weekly-reports/generate?startDate=2025-12-15&endDate=2025-12-21
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 관리자 전용 API
+### ========================================
+
+### 주간 리포트 수동 생성 - 전체 학생 (관리자 전용)
+### 📌 사용 시나리오:
+### 1. 스케줄러 동작 테스트
+### 2. 특정 기간의 리포트 일괄 생성
+### 3. 활동중인 학생(STUDENT)만 대상으로 리포트 생성
+### 4. 일기 3개 미만: 리포트 생성 안함 (스킵)
+### 5. 일기 3개 이상: AI 분석 시도
+###    - 분석 성공: isAnalyzed=true
+###    - 분석 실패: isAnalyzed=false (재시도 대상)
+### ⚠️ 주의:
+### - 관리자 권한 필수 (userTypeCd = 'ADMIN')
+### - 배치 처리 방식으로 동작 (100명씩 처리, 배치 간 2초 대기)
+### - 학생/선생님으로 호출 시 403 Forbidden 에러 발생
+POST http://localhost:8080/api/v1/weekly-reports/generate-all?startDate=2026-02-02&endDate=2026-02-08
+Authorization: Bearer {{accessToken}}
+
+### 분석 실패한 리포트 재시도 (관리자 전용)
+### 📌 사용 시나리오:
+### 1. isAnalyzed=false인 리포트들을 다시 분석
+### 2. LLM API 일시적 장애 복구 후 재시도
+### 3. 토큰 제한으로 실패한 리포트 재분석
+### 📌 동작 방식:
+### 1. isAnalyzed=false인 모든 리포트 조회
+### 2. 각 리포트에 대해:
+###    - 일기 3개 미만: 스킵 (로그만 남김)
+###    - 일기 3개 이상: LLM 재분석 시도
+###      → 성공: isAnalyzed=true로 업데이트
+###      → 실패: isAnalyzed=false 유지 (다음 재시도 대상)
+### ⚠️ 주의:
+### - 관리자 권한 필수 (userTypeCd = 'ADMIN')
+### - 실패한 리포트가 많을 경우 시간이 오래 걸릴 수 있음
+### - 학생/선생님으로 호출 시 403 Forbidden 에러 발생
+POST http://localhost:8080/api/v1/weekly-reports/retry-failed
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 테스트 시나리오
+### ========================================
+
+### 📌 시나리오 1: 학생이 주간 리포트 조회 (정상 흐름)
+### 1. 학생 계정으로 로그인 (auth.http에서 STUDENT 계정으로 로그인)
+### 2. 특정 주간의 일기 3개 이상 작성 및 분석
+### 3. 주간 리포트 수동 생성 (POST /generate)
+###    → 성공: 리포트 생성 완료, isAnalyzed=true
+### 4. 새 리포트 확인 (GET /new/exists) → hasNew: true
+### 5. 안 읽은 리포트 확인 (GET /unread/exists) → hasUnread: true
+### 6. 리포트 리스트 조회 (GET /list?status=unread)
+### 7. 리포트 상세 조회 (GET /{reportId})
+###    - studentReport, studentEncouragement 확인
+###    - emotionStats, weeklyDiaryDetails 확인
+### 8. 리포트 읽음 처리 (PUT /{reportId}/read)
+### 9. 안 읽은 리포트 확인 (GET /unread/exists) → hasUnread: false
+
+### 📌 시나리오 2: 일기 3개 미만인 경우
+### 1. 학생 계정으로 로그인
+### 2. 특정 주간의 일기 2개만 작성
+### 3. 주간 리포트 수동 생성 (POST /generate)
+###    → 에러: "일기가 3개 미만이어서 주간 리포트를 생성할 수 없습니다."
+
+### 📌 시나리오 3: 관리자가 전체 학생 리포트 생성
+### 1. 관리자 계정으로 로그인 (auth.http에서 ADMIN 계정으로 로그인)
+### 2. 전체 학생 리포트 생성 (POST /generate-all)
+###    → 로그 확인:
+###      - 성공: 분석 완료된 리포트 수
+###      - 스킵: 일기 3개 미만인 학생 수
+###      - 실패: LLM 분석 실패 수
+
+### 📌 시나리오 4: 분석 실패한 리포트 재시도
+### 1. 관리자 계정으로 로그인
+### 2. 분석 실패한 리포트 재시도 (POST /retry-failed)
+###    → 로그 확인:
+###      - isAnalyzed=false인 리포트들을 재분석
+###      - 성공: isAnalyzed=true로 업데이트된 리포트 수
+###      - 실패: 여전히 실패한 리포트 수
+
+### 📌 시나리오 5: 권한 체크 테스트
+### 1. 선생님 계정으로 로그인
+### 2. 주간 리포트 수동 생성 시도 (POST /generate)
+###    → 에러: 403 Forbidden "학생 권한이 필요합니다."
+### 3. 전체 학생 리포트 생성 시도 (POST /generate-all)
+###    → 에러: 403 Forbidden "관리자 권한이 필요합니다."
+### 4. 분석 실패 재시도 시도 (POST /retry-failed)
+###    → 에러: 403 Forbidden "관리자 권한이 필요합니다."
+
+### 📌 응답 필드 설명:
+### - isAnalyzed: 분석 여부 (일기 3개 이상이면 true, 분석 실패 시 false)
+### - readYn: 읽음 여부
+### - studentReport: 학생용 주간 일기 분석
+### - studentEncouragement: 학생용 감정 정원사의 편지
+### - teacherReport: 선생님용 주간 일기 분석 (선생님 화면에서만 표시)
+### - teacherTalkTip: 선생님용 대화 팁 (선생님 화면에서만 표시)
+### - emotionStats: 주간 감정 통계 (감정별 횟수, 비율)
+### - weeklyDiaryDetails: 날짜별 일기 상세 정보 (감정, 꽃 정보)
+###

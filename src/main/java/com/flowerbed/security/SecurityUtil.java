@@ -53,4 +53,67 @@ public class SecurityUtil {
     public static String getCurrentUserId() {
         return getCurrentUser().getUserId();
     }
+
+    /**
+     * 현재 인증된 사용자가 관리자인지 확인합니다.
+     *
+     * @return true: 관리자, false: 일반 사용자
+     */
+    public static boolean isAdmin() {
+        User user = getCurrentUser();
+        return "ADMIN".equals(user.getUserTypeCd());
+    }
+
+    /**
+     * 현재 인증된 사용자가 학생인지 확인합니다.
+     *
+     * @return true: 학생, false: 그 외
+     */
+    public static boolean isStudent() {
+        User user = getCurrentUser();
+        return "STUDENT".equals(user.getUserTypeCd());
+    }
+
+    /**
+     * 현재 인증된 사용자가 선생님인지 확인합니다.
+     *
+     * @return true: 선생님, false: 그 외
+     */
+    public static boolean isTeacher() {
+        User user = getCurrentUser();
+        return "TEACHER".equals(user.getUserTypeCd());
+    }
+
+    /**
+     * 현재 인증된 사용자가 관리자인지 확인하고, 아니면 예외를 발생시킵니다.
+     *
+     * @throws BusinessException 관리자가 아닌 경우
+     */
+    public static void requireAdmin() {
+        if (!isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "관리자 권한이 필요합니다.");
+        }
+    }
+
+    /**
+     * 현재 인증된 사용자가 학생인지 확인하고, 아니면 예외를 발생시킵니다.
+     *
+     * @throws BusinessException 학생이 아닌 경우
+     */
+    public static void requireStudent() {
+        if (!isStudent()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "학생 권한이 필요합니다.");
+        }
+    }
+
+    /**
+     * 현재 인증된 사용자가 선생님인지 확인하고, 아니면 예외를 발생시킵니다.
+     *
+     * @throws BusinessException 선생님이 아닌 경우
+     */
+    public static void requireTeacher() {
+        if (!isTeacher()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "선생님 권한이 필요합니다.");
+        }
+    }
 }

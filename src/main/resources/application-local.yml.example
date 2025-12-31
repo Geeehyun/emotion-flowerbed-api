@@ -18,5 +18,5 @@ anthropic:
   api:
     key: sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  # Anthropic API Key (https://console.anthropic.com/)
     model: claude-3-5-haiku-20241022  # Haiku 모델 (Sonnet보다 20배 저렴!)
-    max-tokens: 500  # 2000 → 500으로 축소
+    max-tokens: 2000
     temperature: 0.3  # 더 일관된 응답

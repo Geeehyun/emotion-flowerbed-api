@@ -87,11 +87,25 @@ public class ClaudeApiClient implements LlmApiClient {
     }
 
     /**
-     * 응답에서 content 추출
+     * 응답에서 content 추출 및 완료 여부 확인
      */
     private String extractContent(String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
+
+            // stop_reason 확인 (응답이 정상 완료되었는지 체크)
+            String stopReason = root.path("stop_reason").asText();
+
+            if ("max_tokens".equals(stopReason)) {
+                log.error("Claude API 응답이 max_tokens로 인해 잘렸습니다. max-tokens 값을 늘려야 합니다.");
+                log.error("현재 설정: model={}, max-tokens={}", config.getModel(), config.getMaxTokens());
+                throw new LlmAnalysisException("Claude API 응답이 토큰 제한으로 잘렸습니다. max-tokens 설정을 늘려주세요.");
+            }
+
+            if (!"end_turn".equals(stopReason)) {
+                log.warn("Claude API 응답의 stop_reason이 예상과 다릅니다: {}", stopReason);
+            }
+
             JsonNode content = root.path("content").get(0).path("text");
 
             if (content.isMissingNode()) {
@@ -100,6 +114,8 @@ public class ClaudeApiClient implements LlmApiClient {
 
             return content.asText();
 
+        } catch (LlmAnalysisException e) {
+            throw e;  // 이미 처리된 예외는 그대로 throw
         } catch (Exception e) {
             log.error("Failed to parse Claude API response", e);
             throw new LlmAnalysisException("Claude API 응답 파싱에 실패했습니다", e);

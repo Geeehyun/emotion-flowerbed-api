@@ -1,67 +1,9 @@
-### Emotion Flowerbed API Test
-### Base URL: http://localhost:8080/api
-
-### ========================================
-### 인증 API (Auth)
-### ========================================
-
-### 로그인
-POST http://localhost:8080/api/v1/auth/login
-Content-Type: application/json
-
-{
-  "userId": "student2",
-  "password": "1234"
-}
-
-> {%
-    client.test('로그인 테스트', () => {
-        if(response.status === 200) {
-            client.global.set('accessToken', response.body.accessToken);
-            client.global.set('refreshToken', response.body.refreshToken);
-            client.log(`인증 성공 : ${response.body.accessToken} / ${response.body.refreshToken}`);
-            client.assert(true);
-        } else {
-            client.log('인증 실패');
-            client.assert(false);
-            client.exit();
-        }
-    })
-%}
-
-### 로그아웃 (인증 필요)
-# @name logout
-POST http://localhost:8080/api/v1/auth/logout
-Authorization: Bearer {{accessToken}}
-
-### Access Token 갱신 (Refresh Token Rotation)
-### !! 중요: RefreshToken도 함께 재발급됩니다 (보안 강화)
-### 기존 RefreshToken은 사용 후 무효화되므로 새로 발급된 RefreshToken을 저장해야 합니다
-POST http://localhost:8080/api/v1/auth/refresh
-Content-Type: application/json
-
-{
-  "refreshToken": "{{refreshToken}}"
-}
-
-> {%
-    client.test('토큰 갱신 테스트', () => {
-        if(response.status === 200) {
-            client.global.set('accessToken', response.body.accessToken);
-            client.global.set('refreshToken', response.body.refreshToken);
-            client.log(`토큰 갱신 성공 (Refresh Token Rotation)`);
-            client.log(`새로운 AccessToken: ${response.body.accessToken}`);
-            client.log(`새로운 RefreshToken: ${response.body.refreshToken}`);
-            client.assert(true);
-        } else {
-            client.log('토큰 갱신 실패');
-            client.assert(false);
-        }
-    })
-%}
-
-### ========================================
 ### 일기 API (Diary)
+### Base URL: http://localhost:8080/api
+### 🔑 인증 필요: auth.http에서 먼저 로그인하여 accessToken을 발급받으세요
+
+### ========================================
+### 일기 CRUD
 ### ========================================
 
 ### 일기 작성
@@ -116,69 +58,6 @@ Content-Type: application/json
 ### 일기 삭제 (Soft Delete)
 # TODO response가 없다? 원래 RESTful은 그런것인가?
 DELETE http://localhost:8080/api/v1/diaries/60
-Authorization: Bearer {{accessToken}}
-
-
-### ========================================
-### 꽃 정보 API (Flower)
-### ========================================
-
-### 사용자의 감정&꽃 통계 조회 (날짜 목록 + 꽃 상세정보 포함)
-GET http://localhost:8080/api/v1/flowers/my-emotions
-Authorization: Bearer {{accessToken}}
-
-### 전체 감정-꽃 정보 조회 (display_order 순)
-GET http://localhost:8080/api/v1/flowers/all-emotions
-Authorization: Bearer {{accessToken}}
-
-
-### ========================================
-### 선생님 API (Teacher)
-### ========================================
-
-### 내 학생 목록 조회
-### 선생님이 담당하는 반의 학생 목록을 조회합니다
-### - 같은 school_code, class_code의 STUDENT 타입 회원 조회
-### - 이름 오름차순 정렬
-### ⚠️ TEACHER 타입 계정으로 로그인 필요
-GET http://localhost:8080/api/v1/teachers/students
-Authorization: Bearer {{accessToken}}
-
-
-### ========================================
-### 공통 코드 API (Code)
-### ========================================
-
-### 모든 코드 그룹 조회 (코드 포함)
-GET http://localhost:8080/api/v1/codes/groups
-Authorization: Bearer {{accessToken}}
-
-### 특정 코드 그룹 조회 (USER_TYPE)
-GET http://localhost:8080/api/v1/codes/groups/USER_TYPE
-Authorization: Bearer {{accessToken}}
-
-### 특정 코드 그룹 조회 (EMOTION_CONTROL)
-GET http://localhost:8080/api/v1/codes/groups/EMOTION_CONTROL
-Authorization: Bearer {{accessToken}}
-
-### USER_TYPE 코드 목록 조회
-GET http://localhost:8080/api/v1/codes/USER_TYPE
-Authorization: Bearer {{accessToken}}
-
-### EMOTION_CONTROL 코드 목록 조회
-GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
-Authorization: Bearer {{accessToken}}
-
-### 특정 코드 조회 (USER_TYPE/STUDENT)
-GET http://localhost:8080/api/v1/codes/USER_TYPE/STUDENT
-Authorization: Bearer {{accessToken}}
-
-### 사용자 유형 코드 목록 (단축 URL)
-GET http://localhost:8080/api/v1/codes/user-types
-Authorization: Bearer {{accessToken}}
-
-### 감정 제어 활동 코드 목록 (단축 URL)
-GET http://localhost:8080/api/v1/codes/emotion-controls
 Authorization: Bearer {{accessToken}}
 
 
@@ -252,6 +131,7 @@ Authorization: Bearer {{accessToken}}
 ### - emotionControlTipCode: "RED_3" → GET /codes/EMOTION_CONTROL/RED_3
 ### - emotionControlTipCode: "YELLOW_5" → GET /codes/EMOTION_CONTROL/YELLOW_5
 ### 프론트엔드에서 별도로 코드를 조합할 필요 없이 바로 사용 가능합니다.
+### (자세한 코드 조회는 code.http 참고)
 GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
 Authorization: Bearer {{accessToken}}
 

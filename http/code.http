@@ -1,0 +1,35 @@
+### 공통 코드 API (Code)
+### Base URL: http://localhost:8080/api
+### 🔑 인증 필요: auth.http에서 먼저 로그인하여 accessToken을 발급받으세요
+
+### 모든 코드 그룹 조회 (코드 포함)
+GET http://localhost:8080/api/v1/codes/groups
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 그룹 조회 (USER_TYPE)
+GET http://localhost:8080/api/v1/codes/groups/USER_TYPE
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 그룹 조회 (EMOTION_CONTROL)
+GET http://localhost:8080/api/v1/codes/groups/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### USER_TYPE 코드 목록 조회
+GET http://localhost:8080/api/v1/codes/USER_TYPE
+Authorization: Bearer {{accessToken}}
+
+### EMOTION_CONTROL 코드 목록 조회
+GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 조회 (USER_TYPE/STUDENT)
+GET http://localhost:8080/api/v1/codes/USER_TYPE/STUDENT
+Authorization: Bearer {{accessToken}}
+
+### 사용자 유형 코드 목록 (단축 URL)
+GET http://localhost:8080/api/v1/codes/user-types
+Authorization: Bearer {{accessToken}}
+
+### 감정 제어 활동 코드 목록 (단축 URL)
+GET http://localhost:8080/api/v1/codes/emotion-controls
+Authorization: Bearer {{accessToken}}

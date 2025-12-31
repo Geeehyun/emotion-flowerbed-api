@@ -16,6 +16,7 @@ import org.springframework.util.StreamUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,27 +38,76 @@ public class DiaryEmotionService {
     // DB에서 조회한 유효한 감정 코드 목록 (초기화 시 캐싱)
     private Set<String> validEmotions;
 
-    // emotion-analysis-prompt.txt 파일 로드
-    private static String promptTemplate;
+    // emotion-analysis-prompt.txt 템플릿
+    private String promptTemplateRaw;
 
-    static {
+    // DB 감정 정보가 주입된 최종 프롬프트 템플릿
+    private String promptTemplate;
+
+    /**
+     * 서비스 초기화
+     * 1. 프롬프트 템플릿 파일 로드
+     * 2. DB에서 감정 정보 조회
+     * 3. 프롬프트에 감정 정보 주입
+     */
+    @PostConstruct
+    public void init() {
         try {
+            // 1. 프롬프트 템플릿 파일 로드
             ClassPathResource resource = new ClassPathResource("prompts/emotion-analysis-prompt.txt");
-            promptTemplate = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+            promptTemplateRaw = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+
+            // 2. DB에서 감정 정보 조회
+            List<Emotion> emotions = flowerRepository.findAllByOrderByDisplayOrderAsc();
+            validEmotions = emotions.stream()
+                    .map(Emotion::getEmotionCode)
+                    .collect(Collectors.toSet());
+
+            // 3. 감정-꽃 매칭표 생성 (영역별로 그룹핑)
+            String emotionMappings = buildEmotionMappings(emotions);
+
+            // 4. 프롬프트에 주입
+            promptTemplate = promptTemplateRaw.replace("{EMOTION_MAPPINGS}", emotionMappings);
+
+            log.info("DiaryEmotionService 초기화 완료: {} 개 감정 로드", validEmotions.size());
+
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load prompt template", e);
+            throw new RuntimeException("감정 분석 프롬프트 초기화 실패", e);
         }
     }
 
     /**
-     * 서비스 초기화 시 DB에서 유효한 감정 코드 목록 조회하여 캐싱
+     * DB 감정 정보를 바탕으로 감정-꽃 매칭표 텍스트 생성
      */
-    @PostConstruct
-    public void init() {
-        validEmotions = flowerRepository.findAll().stream()
-                .map(Emotion::getEmotionCode)
-                .collect(Collectors.toSet());
-        log.info("Loaded {} valid emotion codes from database", validEmotions.size());
+    private String buildEmotionMappings(List<Emotion> emotions) {
+        StringBuilder sb = new StringBuilder();
+
+        // 영역별로 그룹핑
+        String[] areas = {"YELLOW", "GREEN", "BLUE", "RED"};
+        String[] areaNames = {"노랑 영역 (활기찬 감정)", "초록 영역 (평온한 감정)",
+                             "파랑 영역 (차분한 감정)", "빨강 영역 (강한 감정)"};
+
+        for (int i = 0; i < areas.length; i++) {
+            String area = areas[i];
+            String areaName = areaNames[i];
+
+            List<Emotion> areaEmotions = emotions.stream()
+                    .filter(e -> area.equalsIgnoreCase(e.getArea()))
+                    .collect(Collectors.toList());
+
+            if (!areaEmotions.isEmpty()) {
+                sb.append("\n").append(areaName).append("\n");
+                for (Emotion emotion : areaEmotions) {
+                    sb.append(String.format("- %s (%s): %s / %s\n",
+                            emotion.getEmotionCode(),
+                            emotion.getEmotionNameKr(),
+                            emotion.getFlowerNameKr(),
+                            emotion.getFlowerMeaning()));
+                }
+            }
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -71,6 +121,7 @@ public class DiaryEmotionService {
 
         // 2. 프롬프트 생성
         String prompt = buildPrompt(diaryContent);
+        log.info("[DiaryEmotionService - analyzeDiary] prompt : {}", prompt);
 
         // 3. LLM API 호출
         String llmResponse = llmApiClient.call(prompt);

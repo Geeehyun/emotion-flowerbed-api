@@ -1,0 +1,377 @@
+### Emotion Flowerbed API Test
+### Base URL: http://localhost:8080/api
+
+### ========================================
+### 인증 API (Auth)
+### ========================================
+
+### 로그인
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "userId": "student2",
+  "password": "1234"
+}
+
+> {%
+    client.test('로그인 테스트', () => {
+        if(response.status === 200) {
+            client.global.set('accessToken', response.body.accessToken);
+            client.global.set('refreshToken', response.body.refreshToken);
+            client.log(`인증 성공 : ${response.body.accessToken} / ${response.body.refreshToken}`);
+            client.assert(true);
+        } else {
+            client.log('인증 실패');
+            client.assert(false);
+            client.exit();
+        }
+    })
+%}
+
+### 로그아웃 (인증 필요)
+# @name logout
+POST http://localhost:8080/api/v1/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### Access Token 갱신 (Refresh Token Rotation)
+### !! 중요: RefreshToken도 함께 재발급됩니다 (보안 강화)
+### 기존 RefreshToken은 사용 후 무효화되므로 새로 발급된 RefreshToken을 저장해야 합니다
+POST http://localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    client.test('토큰 갱신 테스트', () => {
+        if(response.status === 200) {
+            client.global.set('accessToken', response.body.accessToken);
+            client.global.set('refreshToken', response.body.refreshToken);
+            client.log(`토큰 갱신 성공 (Refresh Token Rotation)`);
+            client.log(`새로운 AccessToken: ${response.body.accessToken}`);
+            client.log(`새로운 RefreshToken: ${response.body.refreshToken}`);
+            client.assert(true);
+        } else {
+            client.log('토큰 갱신 실패');
+            client.assert(false);
+        }
+    })
+%}
+
+### ========================================
+### 일기 API (Diary)
+### ========================================
+
+### 일기 작성
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2025-12-09",
+  "content": "오늘 친구와 맛있는 저녁을 먹었다. 오랜만에 만나서 정말 즐거웠고, 대화를 나누면서 많은 위로를 받았다. 힘든 일이 있었지만 친구 덕분에 기분이 많이 좋아졌다."
+}
+
+### 일기 감정 분석 (실제 - Claude API 사용)
+POST http://localhost:8080/api/v1/diaries/1/analyze
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 일기 감정 분석 (테스트 모드 - 랜덤 생성)
+POST http://localhost:8080/api/v1/diaries/1/analyze-test
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 일기 감정 분석 (테스트 모드 - 특정 영역 지정)
+### area 파라미터로 red/yellow/blue/green 중 하나 지정 가능
+### 연속 감정 팁 테스트 시 동일한 영역의 감정을 받고 싶을 때 유용
+POST http://localhost:8080/api/v1/diaries/1/analyze-test?area=red
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### 일기 상세 조회
+GET http://localhost:8080/api/v1/diaries/60
+Authorization: Bearer {{accessToken}}
+
+### 특정 날짜 일기 조회
+GET http://localhost:8080/api/v1/diaries/date/2025-12-09
+Authorization: Bearer {{accessToken}}
+
+### 월별 일기 목록 조회 (꽃 상세정보 포함)
+GET http://localhost:8080/api/v1/diaries?yearMonth=2025-12
+Authorization: Bearer {{accessToken}}
+
+### 일기 수정
+# TODO 수정되면 기존 분석 내용 날려야할듯
+PUT http://localhost:8080/api/v1/diaries/60
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "content": "오늘 친구와 맛있는 저녁을 먹었다. 정말 행복한 하루였다. (수정됨)"
+}
+
+### 일기 삭제 (Soft Delete)
+# TODO response가 없다? 원래 RESTful은 그런것인가?
+DELETE http://localhost:8080/api/v1/diaries/60
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 꽃 정보 API (Flower)
+### ========================================
+
+### 사용자의 감정&꽃 통계 조회 (날짜 목록 + 꽃 상세정보 포함)
+GET http://localhost:8080/api/v1/flowers/my-emotions
+Authorization: Bearer {{accessToken}}
+
+### 전체 감정-꽃 정보 조회 (display_order 순)
+GET http://localhost:8080/api/v1/flowers/all-emotions
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 선생님 API (Teacher)
+### ========================================
+
+### 내 학생 목록 조회
+### 선생님이 담당하는 반의 학생 목록을 조회합니다
+### - 같은 school_code, class_code의 STUDENT 타입 회원 조회
+### - 이름 오름차순 정렬
+### ⚠️ TEACHER 타입 계정으로 로그인 필요
+GET http://localhost:8080/api/v1/teachers/students
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 공통 코드 API (Code)
+### ========================================
+
+### 모든 코드 그룹 조회 (코드 포함)
+GET http://localhost:8080/api/v1/codes/groups
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 그룹 조회 (USER_TYPE)
+GET http://localhost:8080/api/v1/codes/groups/USER_TYPE
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 그룹 조회 (EMOTION_CONTROL)
+GET http://localhost:8080/api/v1/codes/groups/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### USER_TYPE 코드 목록 조회
+GET http://localhost:8080/api/v1/codes/USER_TYPE
+Authorization: Bearer {{accessToken}}
+
+### EMOTION_CONTROL 코드 목록 조회
+GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### 특정 코드 조회 (USER_TYPE/STUDENT)
+GET http://localhost:8080/api/v1/codes/USER_TYPE/STUDENT
+Authorization: Bearer {{accessToken}}
+
+### 사용자 유형 코드 목록 (단축 URL)
+GET http://localhost:8080/api/v1/codes/user-types
+Authorization: Bearer {{accessToken}}
+
+### 감정 제어 활동 코드 목록 (단축 URL)
+GET http://localhost:8080/api/v1/codes/emotion-controls
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 감정 조절 팁 기능 테스트
+### ========================================
+### 테스트 시나리오:
+### 1. 연속 3일 일기 작성 (같은 area, 날짜는 연속이면 됨)
+### 2. 각 일기를 분석하여 연속 체크 (area=red 파라미터 사용)
+### 3. 3일째 일기 분석 시 showEmotionControlTip=true 확인
+### 4. 감정 조절 팁 코드 조회하여 적절한 메시지 확인
+###
+### 🎯 개선: 오늘 날짜 체크 제거됨
+### - 과거/미래 어떤 날짜든 연속 패턴만 맞으면 팁 표시
+### - 며칠치 모아서 작성해도 패턴 인식 가능
+
+### 1단계: 오늘-2일 일기 작성 및 분석 (예: 2025-12-24)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2026-01-05",
+  "content": "오늘은 정말 화가 났다. 모든 것이 뜻대로 되지 않아서 너무 답답하고 짜증이 난다."
+}
+
+### 오늘-2일 일기 분석 (테스트 모드 - red 영역 지정)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+### area=red 파라미터로 red 영역의 감정만 랜덤 선택
+POST http://localhost:8080/api/v1/diaries/148/analyze-test?area=red
+Authorization: Bearer {{accessToken}}
+
+### 2단계: 오늘-1일 일기 작성 및 분석 (예: 2025-12-25)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2026-01-02",
+  "content": "어제에 이어 오늘도 기분이 안 좋다. 계속 화가 나고 모든 게 싫다."
+}
+
+### 오늘-1일 일기 분석 (테스트 모드 - red 영역 지정)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+POST http://localhost:8080/api/v1/diaries/133/analyze-test?area=red
+Authorization: Bearer {{accessToken}}
+
+### 3단계: 오늘 일기 작성 및 분석 (예: 2025-12-26)
+### 🎯 이 일기 분석 시 감정 조절 팁이 표시되어야 함
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2026-01-03",
+  "content": "3일째 계속 화가 난다. 이 감정을 어떻게 다스려야 할지 모르겠다."
+}
+
+### 오늘 일기 분석 (테스트 모드 - red 영역 지정)
+### ✅ 예상 결과:
+### - showEmotionControlTip: true
+### - consecutiveSameAreaDays: 3 (실제 연속 일수, 3일/4일/5일/6일... 등)
+### - repeatedEmotionArea: "red" (또는 연속된 area)
+### - emotionControlTipCode: "RED_3" (3~4일 연속 시) 또는 "RED_5" (5일 이상 연속 시)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+POST http://localhost:8080/api/v1/diaries/134/analyze-test?area=red
+Authorization: Bearer {{accessToken}}
+
+### 4단계: 감정 조절 팁 코드 조회
+### 🎯 Response에서 받은 emotionControlTipCode를 바로 사용!
+### - emotionControlTipCode: "RED_3" → GET /codes/EMOTION_CONTROL/RED_3
+### - emotionControlTipCode: "YELLOW_5" → GET /codes/EMOTION_CONTROL/YELLOW_5
+### 프론트엔드에서 별도로 코드를 조합할 필요 없이 바로 사용 가능합니다.
+GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
+Authorization: Bearer {{accessToken}}
+
+### 특정 감정 조절 팁 코드 조회 예시 (Red 영역 3일 연속)
+### emotionControlTipCode 값을 그대로 사용
+GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL/RED_3
+Authorization: Bearer {{accessToken}}
+
+### 5단계: 연속이 끊긴 경우 테스트
+### 다른 area의 일기를 작성하면 연속이 끊김
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2025-12-27",
+  "content": "오늘은 기분이 좋다. 친구들과 즐거운 시간을 보냈다."
+}
+
+### 연속이 끊긴 일기 분석
+### ✅ 예상 결과:
+### - showEmotionControlTip: false
+### - consecutiveSameAreaDays: null
+### - repeatedEmotionArea: null
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+POST http://localhost:8080/api/v1/diaries/104/analyze-test
+Authorization: Bearer {{accessToken}}
+
+###
+### 📌 테스트 체크리스트:
+### ✅ 3일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 3, emotionControlTipCode: "RED_3"
+### ✅ 4일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 4, emotionControlTipCode: "RED_3"
+### ✅ 5일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 5, emotionControlTipCode: "RED_5"
+### ✅ 실제 연속 일수를 정확히 반환 (3, 4, 5, 6, 7... 등)
+### ✅ emotionControlTipCode를 바로 사용하여 감정 조절 팁 조회 가능
+### ✅ 연속이 끊긴 경우 → showEmotionControlTip: false
+### ✅ 과거 일기도 팁 표시 (날짜 무관, 연속 패턴 기준으로 판단)
+### ✅ 감정 조절 팁 코드 조회 → code_name에 적절한 메시지 확인
+###
+### 🎯 개선 사항:
+### - 오늘 날짜 체크 제거: 언제 일기를 쓰든 연속 패턴 인식
+### - 며칠치 모아서 작성해도 패턴 인식 가능
+### - 과거 일기 작성 시에도 "그때 이런 패턴이었구나" 인식 가능
+### - consecutiveSameAreaDays에 실제 연속 일수 정확히 반환 (3, 4, 5, 6, 7... 등)
+### - emotionControlTipCode 추가: 프론트엔드에서 바로 사용 가능한 코드 제공 (RED_3, YELLOW_5 등)
+###
+
+
+### ========================================
+### 주간 리포트 API (Weekly Report)
+### ========================================
+
+### 안 읽은 리포트 존재 여부 확인
+GET http://localhost:8080/api/v1/weekly-reports/unread/exists
+Authorization: Bearer {{accessToken}}
+
+### 새 리포트 존재 여부 확인 (알림 전송 안 된 리포트)
+GET http://localhost:8080/api/v1/weekly-reports/new/exists
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 전체
+GET http://localhost:8080/api/v1/weekly-reports/list?status=all
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 읽음
+GET http://localhost:8080/api/v1/weekly-reports/list?status=read
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 안읽음
+GET http://localhost:8080/api/v1/weekly-reports/list?status=unread
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 상세 조회
+### ⚠️ reportId를 실제 생성된 ID로 변경 필요
+GET http://localhost:8080/api/v1/weekly-reports/1
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 읽음 처리
+### ⚠️ reportId를 실제 생성된 ID로 변경 필요
+PUT http://localhost:8080/api/v1/weekly-reports/1/read
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 수동 생성 - 단일 사용자 (테스트용)
+### 📌 사용 시나리오:
+### 1. 먼저 해당 주간의 일기를 3개 이상 작성하고 분석 완료
+### 2. 해당 주간의 startDate, endDate를 지정하여 리포트 생성
+### 3. 일기가 3개 미만이면 isAnalyzed=false로 생성됨
+POST http://localhost:8080/api/v1/weekly-reports/generate?startDate=2025-12-22&endDate=2025-12-28
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 수동 생성 - 전체 사용자 (관리자 전용)
+### 📌 사용 시나리오:
+### 1. 스케줄러 동작 테스트
+### 2. 특정 기간의 리포트 일괄 재생성
+### 3. 모든 사용자에 대해 리포트 레코드 생성 (일기 3개 미만도 포함)
+### ⚠️ 주의:
+### - 관리자 권한 필수 (userTypeCd = 'ADMIN')
+### - 모든 사용자 대상으로 실행되므로 신중히 사용
+### - 일반 사용자(STUDENT/TEACHER)로 호출 시 403 Forbidden 에러 발생
+POST http://localhost:8080/api/v1/weekly-reports/generate-all?startDate=2025-12-22&endDate=2025-12-28
+Authorization: Bearer {{accessToken}}
+
+###
+### 📌 주간 리포트 테스트 시나리오:
+### 1. 특정 주간의 일기 3개 이상 작성 및 분석
+### 2. 주간 리포트 수동 생성 (POST /generate)
+### 3. 새 리포트 확인 (GET /new/exists) → hasNew: true
+### 4. 안 읽은 리포트 확인 (GET /unread/exists) → hasUnread: true
+### 5. 리포트 리스트 조회 (GET /list?status=unread)
+### 6. 리포트 상세 조회 (GET /{reportId})
+###    - studentReport, studentEncouragement 확인
+###    - emotionStats, weeklyDiaryDetails 확인
+### 7. 리포트 읽음 처리 (PUT /{reportId}/read)
+### 8. 안 읽은 리포트 확인 (GET /unread/exists) → hasUnread: false
+###
+### 📌 응답 필드 설명:
+### - isAnalyzed: 분석 여부 (일기 3개 이상이면 true)
+### - readYn: 읽음 여부
+### - studentReport: 학생용 주간 일기 분석
+### - studentEncouragement: 학생용 응원의 말
+### - emotionStats: 주간 감정 통계 (감정별 횟수, 비율)
+### - weeklyDiaryDetails: 날짜별 일기 상세 정보 (감정, 꽃 정보)
+###

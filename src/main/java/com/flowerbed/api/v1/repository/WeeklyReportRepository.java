@@ -33,4 +33,16 @@ public interface WeeklyReportRepository extends JpaRepository<WeeklyReport, Long
     @Query("SELECT w FROM WeeklyReport w WHERE w.user.userSn = :userSn " +
             "AND w.deletedAt IS NULL ORDER BY w.startDate DESC LIMIT :limit")
     List<WeeklyReport> findRecentReports(@Param("userSn") Long userSn, @Param("limit") int limit);
+
+    // 안 읽은 리포트 존재 여부 확인
+    boolean existsByUserUserSnAndReadYnFalseAndDeletedAtIsNull(Long userSn);
+
+    // 새 리포트 존재 여부 확인 (알림 전송 안 된 리포트)
+    boolean existsByUserUserSnAndNewNotificationSentFalseAndIsAnalyzedTrueAndDeletedAtIsNull(Long userSn);
+
+    // 읽음 상태별 리포트 조회 (최신순)
+    List<WeeklyReport> findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(Long userSn, Boolean readYn);
+
+    // 분석 실패한 리포트 조회 (isAnalyzed=false)
+    List<WeeklyReport> findByIsAnalyzedFalseAndDeletedAtIsNull();
 }

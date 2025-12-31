@@ -1,0 +1,57 @@
+### 인증 API (Auth)
+### Base URL: http://localhost:8080/api
+
+### 로그인
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "userId": "admin",
+  "password": "1234"
+}
+
+> {%
+    client.test('로그인 테스트', () => {
+        if(response.status === 200) {
+            client.global.set('accessToken', response.body.accessToken);
+            client.global.set('refreshToken', response.body.refreshToken);
+            client.log(`인증 성공 : ${response.body.accessToken} / ${response.body.refreshToken}`);
+            client.assert(true);
+        } else {
+            client.log('인증 실패');
+            client.assert(false);
+            client.exit();
+        }
+    })
+%}
+
+### 로그아웃 (인증 필요)
+# @name logout
+POST http://localhost:8080/api/v1/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### Access Token 갱신 (Refresh Token Rotation)
+### !! 중요: RefreshToken도 함께 재발급됩니다 (보안 강화)
+### 기존 RefreshToken은 사용 후 무효화되므로 새로 발급된 RefreshToken을 저장해야 합니다
+POST http://localhost:8080/api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    client.test('토큰 갱신 테스트', () => {
+        if(response.status === 200) {
+            client.global.set('accessToken', response.body.accessToken);
+            client.global.set('refreshToken', response.body.refreshToken);
+            client.log(`토큰 갱신 성공 (Refresh Token Rotation)`);
+            client.log(`새로운 AccessToken: ${response.body.accessToken}`);
+            client.log(`새로운 RefreshToken: ${response.body.refreshToken}`);
+            client.assert(true);
+        } else {
+            client.log('토큰 갱신 실패');
+            client.assert(false);
+        }
+    })
+%}

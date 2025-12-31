@@ -1,0 +1,11 @@
+### 꽃 정보 API (Flower)
+### Base URL: http://localhost:8080/api
+### 🔑 인증 필요: auth.http에서 먼저 로그인하여 accessToken을 발급받으세요
+
+### 사용자의 감정&꽃 통계 조회 (날짜 목록 + 꽃 상세정보 포함)
+GET http://localhost:8080/api/v1/flowers/my-emotions
+Authorization: Bearer {{accessToken}}
+
+### 전체 감정-꽃 정보 조회 (display_order 순)
+GET http://localhost:8080/api/v1/flowers/all-emotions
+Authorization: Bearer {{accessToken}}
