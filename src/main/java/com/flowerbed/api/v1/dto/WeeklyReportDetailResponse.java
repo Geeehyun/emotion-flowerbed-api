@@ -29,6 +29,7 @@ public class WeeklyReportDetailResponse {
     private String studentEncouragement;
     private List<EmotionStatDto> emotionStats;
     private List<DiaryDetailDto> weeklyDiaryDetails;
+    private HighlightsDto highlights;
     private LocalDateTime createdAt;
 
     /**
@@ -39,6 +40,7 @@ public class WeeklyReportDetailResponse {
     public static class EmotionStatDto {
         private String emotion;  // 감정 코드
         private String emotionNameKr;  // 감정 한글 이름
+        private String color;  // 감정 색상 (HEX)
         private Integer count;  // 출현 횟수
         private Double percentage;  // 비율
     }
@@ -56,6 +58,57 @@ public class WeeklyReportDetailResponse {
         private String emotionNameKr;
         private String flowerNameKr;
         private String flowerMeaning;
+        private String imageFile3d;
+    }
+
+    /**
+     * 하이라이트 DTO
+     */
+    @Getter
+    @Builder
+    public static class HighlightsDto {
+        private FlowerOfTheWeekDto flowerOfTheWeek;
+        private QuickStatsDto quickStats;
+        private GardenDiversityDto gardenDiversity;
+    }
+
+    /**
+     * 이번 주 대표 꽃 DTO
+     */
+    @Getter
+    @Builder
+    public static class FlowerOfTheWeekDto {
+        private String emotion;
+        private String emotionNameKr;
+        private String flowerNameKr;
+        private String flowerMeaning;
+        private String imageFile3d;
+        private Integer count;
+    }
+
+    /**
+     * 숫자로 보는 한 주 DTO
+     */
+    @Getter
+    @Builder
+    public static class QuickStatsDto {
+        private Integer totalDiaries;
+        private Integer emotionVariety;
+        private String dominantArea;
+        private String dominantAreaNameKr;
+    }
+
+    /**
+     * 감정 정원 다양성 DTO
+     */
+    @Getter
+    @Builder
+    public static class GardenDiversityDto {
+        private Integer score;
+        private String level;
+        private String description;
+        private Integer emotionVariety;
+        private Integer areaVariety;
     }
 
     /**
@@ -68,6 +121,7 @@ public class WeeklyReportDetailResponse {
                     .map(stat -> EmotionStatDto.builder()
                             .emotion(stat.getEmotion())
                             .emotionNameKr(stat.getEmotionNameKr())
+                            .color(stat.getColor())
                             .count(stat.getCount())
                             .percentage(stat.getPercentage())
                             .build())
@@ -84,8 +138,56 @@ public class WeeklyReportDetailResponse {
                             .emotionNameKr(detail.getEmotionNameKr())
                             .flowerNameKr(detail.getFlowerNameKr())
                             .flowerMeaning(detail.getFlowerMeaning())
+                            .imageFile3d(detail.getImageFile3d())
                             .build())
                     .collect(Collectors.toList());
+        }
+
+        HighlightsDto highlightsDto = null;
+        if (report.getHighlights() != null) {
+            WeeklyReport.Highlights highlights = report.getHighlights();
+
+            FlowerOfTheWeekDto flowerDto = null;
+            if (highlights.getFlowerOfTheWeek() != null) {
+                WeeklyReport.FlowerOfTheWeek flower = highlights.getFlowerOfTheWeek();
+                flowerDto = FlowerOfTheWeekDto.builder()
+                        .emotion(flower.getEmotion())
+                        .emotionNameKr(flower.getEmotionNameKr())
+                        .flowerNameKr(flower.getFlowerNameKr())
+                        .flowerMeaning(flower.getFlowerMeaning())
+                        .imageFile3d(flower.getImageFile3d())
+                        .count(flower.getCount())
+                        .build();
+            }
+
+            QuickStatsDto quickStatsDto = null;
+            if (highlights.getQuickStats() != null) {
+                WeeklyReport.QuickStats quickStats = highlights.getQuickStats();
+                quickStatsDto = QuickStatsDto.builder()
+                        .totalDiaries(quickStats.getTotalDiaries())
+                        .emotionVariety(quickStats.getEmotionVariety())
+                        .dominantArea(quickStats.getDominantArea())
+                        .dominantAreaNameKr(quickStats.getDominantAreaNameKr())
+                        .build();
+            }
+
+            GardenDiversityDto gardenDto = null;
+            if (highlights.getGardenDiversity() != null) {
+                WeeklyReport.GardenDiversity garden = highlights.getGardenDiversity();
+                gardenDto = GardenDiversityDto.builder()
+                        .score(garden.getScore())
+                        .level(garden.getLevel())
+                        .description(garden.getDescription())
+                        .emotionVariety(garden.getEmotionVariety())
+                        .areaVariety(garden.getAreaVariety())
+                        .build();
+            }
+
+            highlightsDto = HighlightsDto.builder()
+                    .flowerOfTheWeek(flowerDto)
+                    .quickStats(quickStatsDto)
+                    .gardenDiversity(gardenDto)
+                    .build();
         }
 
         return WeeklyReportDetailResponse.builder()
@@ -99,6 +201,7 @@ public class WeeklyReportDetailResponse {
                 .studentEncouragement(report.getStudentEncouragement())
                 .emotionStats(emotionStats)
                 .weeklyDiaryDetails(diaryDetails)
+                .highlights(highlightsDto)
                 .createdAt(report.getCreatedAt())
                 .build();
     }

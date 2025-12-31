@@ -166,6 +166,22 @@ public class WeeklyReportController {
     }
 
     // ========================================
+    // TODO: 알림 전송 완료 처리 API (푸시 알림 구현 시 필요)
+    // ========================================
+    // PUT /api/v1/weekly-reports/{reportId}/notification-sent
+    // - 새 리포트 푸시 알림 전송 후 호출
+    // - newNotificationSent를 true로 변경
+    // - 이후 GET /new/exists 호출 시 hasNew: false 반환
+    //
+    // 사용 시나리오:
+    // 1. 스케줄러가 주간 리포트 생성 (newNotificationSent=false)
+    // 2. 프론트/푸시서버에서 GET /new/exists 호출 → hasNew: true
+    // 3. 푸시 알림 전송
+    // 4. PUT /{reportId}/notification-sent 호출
+    // 5. 다음부터 GET /new/exists → hasNew: false
+    // ========================================
+
+    // ========================================
     // TODO: 선생님용 API (프론트 화면 준비 후 구현)
     // ========================================
     // GET /api/v1/teachers/students/{studentSn}/weekly-reports/list

@@ -12,6 +12,8 @@ import com.flowerbed.api.v1.repository.FlowerRepository;
 import com.flowerbed.api.v1.repository.UserRepository;
 import com.flowerbed.api.v1.repository.WeeklyReportRepository;
 import com.flowerbed.api.v1.service.LlmApiClient;
+import com.flowerbed.exception.ErrorCode;
+import com.flowerbed.exception.business.BusinessException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -226,6 +228,9 @@ public class WeeklyReportService {
             // 주간 일기 상세 정보 생성
             List<WeeklyReport.DiaryDetail> weeklyDiaryDetails = buildWeeklyDiaryDetails(diaries);
 
+            // 하이라이트 계산
+            WeeklyReport.Highlights highlights = calculateHighlights(diaries, emotionStats);
+
             // LLM API 호출하여 분석
             Map<String, Object> analysisResult = callLlmForAnalysis(diaries);
 
@@ -241,6 +246,7 @@ public class WeeklyReportService {
                     .teacherTalkTip((List<String>) analysisResult.get("teacherTalkTip"))
                     .emotionStats(emotionStats)
                     .weeklyDiaryDetails(weeklyDiaryDetails)
+                    .highlights(highlights)
                     .isAnalyzed(true)
                     .readYn(false)
                     .newNotificationSent(false)
@@ -294,6 +300,7 @@ public class WeeklyReportService {
                             .emotionNameKr(emotion != null ? emotion.getEmotionNameKr() : emotionCode)
                             .flowerNameKr(emotion != null ? emotion.getFlowerNameKr() : null)
                             .flowerMeaning(emotion != null ? emotion.getFlowerMeaning() : null)
+                            .imageFile3d(emotion != null ? emotion.getImageFile3d() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -321,14 +328,15 @@ public class WeeklyReportService {
                     int count = entry.getValue().intValue();
                     double percentage = (count * 100.0) / totalCount;
 
-                    // DB에서 감정 한글 이름 조회
-                    String emotionNameKr = flowerRepository.findById(emotionCode)
-                            .map(Emotion::getEmotionNameKr)
-                            .orElse(emotionCode);
+                    // DB에서 감정 정보 조회 (한글 이름, 색상)
+                    Emotion emotion = flowerRepository.findById(emotionCode).orElse(null);
+                    String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : emotionCode;
+                    String color = emotion != null ? emotion.getColor() : null;
 
                     return WeeklyReport.EmotionStat.builder()
                             .emotion(emotionCode)
                             .emotionNameKr(emotionNameKr)
+                            .color(color)
                             .count(count)
                             .percentage(Math.round(percentage * 10.0) / 10.0)  // 소수점 첫째 자리 반올림
                             .build();
@@ -543,6 +551,11 @@ public class WeeklyReportService {
             throw new IllegalArgumentException("해당 리포트에 접근 권한이 없습니다.");
         }
 
+        // 분석 완료 여부 확인
+        if (!report.getIsAnalyzed()) {
+            throw new BusinessException(ErrorCode.WEEKLY_REPORT_NOT_ANALYZED);
+        }
+
         return report;
     }
 
@@ -671,6 +684,9 @@ public class WeeklyReportService {
                 // 주간 일기 상세 정보 재생성
                 List<WeeklyReport.DiaryDetail> weeklyDiaryDetails = buildWeeklyDiaryDetails(diaries);
 
+                // 하이라이트 재계산
+                WeeklyReport.Highlights highlights = calculateHighlights(diaries, emotionStats);
+
                 // LLM API 재호출
                 Map<String, Object> analysisResult = callLlmForAnalysis(diaries);
 
@@ -682,6 +698,7 @@ public class WeeklyReportService {
                         (List<String>) analysisResult.get("teacherTalkTip"),
                         emotionStats,
                         weeklyDiaryDetails,
+                        highlights,
                         diaryCount
                 );
 
@@ -698,6 +715,211 @@ public class WeeklyReportService {
 
         log.info("========== 분석 실패한 주간 리포트 재시도 완료 ==========");
         log.info("전체 결과: 총 {}개, 성공 {}개, 스킵 {}개, 실패 {}개", totalCount, successCount, skipCount, failCount);
+    }
+
+    /**
+     * 주간 리포트 하이라이트 계산
+     */
+    private WeeklyReport.Highlights calculateHighlights(List<Diary> diaries, List<WeeklyReport.EmotionStat> emotionStats) {
+
+        // 1. 이번 주 대표 꽃
+        WeeklyReport.FlowerOfTheWeek flowerOfTheWeek = calculateFlowerOfTheWeek(emotionStats);
+
+        // 2. 숫자로 보는 한 주
+        WeeklyReport.QuickStats quickStats = calculateQuickStats(diaries, emotionStats);
+
+        // 3. 감정 정원 다양성
+        WeeklyReport.GardenDiversity gardenDiversity = calculateGardenDiversity(diaries, emotionStats);
+
+        return WeeklyReport.Highlights.builder()
+                .flowerOfTheWeek(flowerOfTheWeek)
+                .quickStats(quickStats)
+                .gardenDiversity(gardenDiversity)
+                .build();
+    }
+
+    /**
+     * 이번 주 대표 꽃 계산
+     * - 가장 많이 느낀 감정의 꽃
+     */
+    private WeeklyReport.FlowerOfTheWeek calculateFlowerOfTheWeek(List<WeeklyReport.EmotionStat> emotionStats) {
+        if (emotionStats == null || emotionStats.isEmpty()) {
+            return null;
+        }
+
+        // 가장 많이 출현한 감정 (emotionStats는 이미 count 내림차순 정렬되어 있음)
+        WeeklyReport.EmotionStat topEmotion = emotionStats.get(0);
+
+        // DB에서 꽃 정보 조회
+        Emotion emotion = flowerRepository.findById(topEmotion.getEmotion()).orElse(null);
+
+        return WeeklyReport.FlowerOfTheWeek.builder()
+                .emotion(topEmotion.getEmotion())
+                .emotionNameKr(topEmotion.getEmotionNameKr())
+                .flowerNameKr(emotion != null ? emotion.getFlowerNameKr() : null)
+                .flowerMeaning(emotion != null ? emotion.getFlowerMeaning() : null)
+                .imageFile3d(emotion != null ? emotion.getImageFile3d() : null)
+                .count(topEmotion.getCount())
+                .build();
+    }
+
+    /**
+     * 숫자로 보는 한 주 계산
+     */
+    private WeeklyReport.QuickStats calculateQuickStats(List<Diary> diaries, List<WeeklyReport.EmotionStat> emotionStats) {
+
+        // 감정 종류 수
+        int emotionVariety = emotionStats != null ? emotionStats.size() : 0;
+
+        // 가장 많이 느낀 감정 영역 (area)
+        Map<String, Long> areaCount = diaries.stream()
+                .map(d -> {
+                    Emotion emotion = flowerRepository.findById(d.getCoreEmotionCode()).orElse(null);
+                    return emotion != null ? emotion.getArea() : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(a -> a, Collectors.counting()));
+
+        String dominantArea = null;
+        String dominantAreaNameKr = null;
+
+        if (!areaCount.isEmpty()) {
+            dominantArea = areaCount.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse(null);
+
+            dominantAreaNameKr = getAreaNameKr(dominantArea);
+        }
+
+        return WeeklyReport.QuickStats.builder()
+                .totalDiaries(diaries.size())
+                .emotionVariety(emotionVariety)
+                .dominantArea(dominantArea)
+                .dominantAreaNameKr(dominantAreaNameKr)
+                .build();
+    }
+
+    /**
+     * 감정 정원 다양성 계산
+     */
+    private WeeklyReport.GardenDiversity calculateGardenDiversity(List<Diary> diaries, List<WeeklyReport.EmotionStat> emotionStats) {
+
+        // 감정 종류 수
+        int emotionVariety = emotionStats != null ? emotionStats.size() : 0;
+
+        // 영역 종류 수
+        Set<String> uniqueAreas = diaries.stream()
+                .map(d -> {
+                    Emotion emotion = flowerRepository.findById(d.getCoreEmotionCode()).orElse(null);
+                    return emotion != null ? emotion.getArea() : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        int areaVariety = uniqueAreas.size();
+
+        // 점수 계산
+        int score = calculateDiversityScore(emotionVariety, areaVariety, diaries.size());
+
+        // 레벨 결정
+        String level = getGardenLevel(score);
+
+        // 메시지 생성
+        String description = getGardenMessage(score, emotionVariety, areaVariety);
+
+        return WeeklyReport.GardenDiversity.builder()
+                .score(score)
+                .level(level)
+                .description(description)
+                .emotionVariety(emotionVariety)
+                .areaVariety(areaVariety)
+                .build();
+    }
+
+    /**
+     * 감정 정원 다양성 점수 계산
+     * - 감정 종류 다양성 (40점)
+     * - 영역 균형도 (30점)
+     * - 일기 작성 일수 (30점)
+     */
+    private int calculateDiversityScore(int emotionVariety, int areaVariety, int diaryCount) {
+        // 1. 감정 종류 다양성 (최대 40점)
+        int emotionVarietyScore = Math.min(emotionVariety * 8, 40);
+
+        // 2. 영역 균형도 (최대 30점)
+        int areaBalanceScore = 0;
+        if (areaVariety == 4) {
+            areaBalanceScore = 30;
+        } else if (areaVariety == 3) {
+            areaBalanceScore = 20;
+        } else if (areaVariety == 2) {
+            areaBalanceScore = 10;
+        }
+
+        // 3. 일기 작성 일수 (최대 30점)
+        int diaryCountScore = Math.min(diaryCount * 5, 30);
+
+        return emotionVarietyScore + areaBalanceScore + diaryCountScore;
+    }
+
+    /**
+     * 점수에 따른 정원 레벨 결정
+     */
+    private String getGardenLevel(int score) {
+        if (score >= 80) {
+            return "화려한 정원";
+        } else if (score >= 60) {
+            return "풍성한 정원";
+        } else if (score >= 40) {
+            return "조화로운 정원";
+        } else if (score >= 20) {
+            return "소박한 정원";
+        } else {
+            return "단조로운 정원";
+        }
+    }
+
+    /**
+     * 점수에 따른 정원 메시지 생성
+     */
+    private String getGardenMessage(int score, int emotionCount, int areaCount) {
+        if (score >= 80) {
+            if (areaCount == 4) {
+                return String.format("와! 이번 주는 %d가지 감정의 꽃이 활짝 피었어요. " +
+                        "4가지 감정 영역을 모두 경험한 정말 풍요로운 한 주였네요! 🌈", emotionCount);
+            }
+            return String.format("이번 주는 %d가지 감정의 꽃이 활짝 피었어요. " +
+                    "다채로운 감정을 경험한 화려한 정원이에요! ✨", emotionCount);
+        } else if (score >= 60) {
+            return String.format("이번 주는 %d가지 감정의 꽃이 피었어요. " +
+                    "다양한 감정을 경험한 풍성한 한 주였네요! 🌸", emotionCount);
+        } else if (score >= 40) {
+            return String.format("이번 주는 %d가지 감정을 경험했어요. " +
+                    "적당한 균형을 이룬 조화로운 정원이에요. 🌿", emotionCount);
+        } else if (score >= 20) {
+            return String.format("이번 주는 %d가지 감정을 경험했어요. " +
+                    "소박하지만 의미 있는 한 주였어요. 🌱", emotionCount);
+        } else {
+            return "이번 주는 비슷한 감정을 많이 느꼈네요. " +
+                    "다음 주에는 조금 더 다양한 감정의 꽃을 피워볼까요? 🌼";
+        }
+    }
+
+    /**
+     * 영역 코드를 한글명으로 변환
+     */
+    private String getAreaNameKr(String area) {
+        if (area == null) {
+            return null;
+        }
+        return switch (area.toUpperCase()) {
+            case "RED" -> "빨강 영역 (강한 감정)";
+            case "YELLOW" -> "노랑 영역 (활기찬 감정)";
+            case "BLUE" -> "파랑 영역 (차분한 감정)";
+            case "GREEN" -> "초록 영역 (평온한 감정)";
+            default -> area;
+        };
     }
 
     /**

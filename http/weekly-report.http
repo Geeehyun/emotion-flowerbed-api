@@ -28,7 +28,7 @@ Authorization: Bearer {{accessToken}}
 
 ### 주간 리포트 상세 조회
 ### ⚠️ reportId를 실제 생성된 ID로 변경 필요
-GET http://localhost:8080/api/v1/weekly-reports/2
+GET http://localhost:8080/api/v1/weekly-reports/17
 Authorization: Bearer {{accessToken}}
 
 ### 주간 리포트 읽음 처리
