@@ -13,6 +13,11 @@ spring:
 cors:
   allowed-origins: http://localhost:3000,http://localhost:8080  # 프론트엔드 URL 추가 가능
 
+# LLM Provider Configuration
+# llm.provider: claude 또는 openai (기본값: openai)
+llm:
+  provider: openai  # claude 또는 openai 선택
+
 # Claude API Configuration
 anthropic:
   api:
@@ -20,3 +25,11 @@ anthropic:
     model: claude-3-5-haiku-20241022  # Haiku 모델 (Sonnet보다 20배 저렴!)
     max-tokens: 2000
     temperature: 0.3  # 더 일관된 응답
+
+# OpenAI API Configuration
+openai:
+  api:
+    key: sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  # OpenAI API Key (https://platform.openai.com/)
+    model: gpt-4o-mini  # gpt-4o-mini, gpt-4o, gpt-4-turbo 등
+    max-tokens: 2000
+    temperature: 0.3

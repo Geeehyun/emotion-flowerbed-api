@@ -16,7 +16,9 @@ Content-Type: application/json
   "content": "오늘 친구와 맛있는 저녁을 먹었다. 오랜만에 만나서 정말 즐거웠고, 대화를 나누면서 많은 위로를 받았다. 힘든 일이 있었지만 친구 덕분에 기분이 많이 좋아졌다."
 }
 
-### 일기 감정 분석 (실제 - Claude API 사용)
+### 일기 감정 분석 (실제 - LLM API 사용)
+### 현재 설정: OpenAI (gpt-4o-mini)
+### llm.provider 설정에 따라 Claude 또는 OpenAI 사용
 POST http://localhost:8080/api/v1/diaries/1/analyze
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json

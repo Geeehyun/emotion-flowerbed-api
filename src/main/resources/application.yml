@@ -64,9 +64,9 @@ cors:
   max-age: 3600
 
 # LLM Provider Configuration
-# llm.provider: claude 또는 openai (기본값: claude)
+# llm.provider: claude 또는 openai (기본값: openai)
 llm:
-  provider: ${SPRING_LLM_PROVIDER:claude}
+  provider: ${SPRING_LLM_PROVIDER:openai}
 
 # Claude API Configuration
 anthropic:
@@ -81,7 +81,7 @@ openai:
   api:
     key: ${SPRING_OPENAI_API_KEY:your-openai-api-key}
     model: ${OPENAI_MODEL:gpt-4o-mini}  # gpt-4o-mini, gpt-4o, gpt-4-turbo 등
-    max-tokens: 500
+    max-tokens: 2000
     temperature: 0.3
 
 # JWT Configuration
