@@ -43,6 +43,9 @@ public interface WeeklyReportRepository extends JpaRepository<WeeklyReport, Long
     // 읽음 상태별 리포트 조회 (최신순)
     List<WeeklyReport> findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(Long userSn, Boolean readYn);
 
+    // 최근 3개월 리포트 조회 (startDate 기준 내림차순)
+    List<WeeklyReport> findByUserUserSnAndStartDateGreaterThanEqualAndDeletedAtIsNullOrderByStartDateDesc(Long userSn, LocalDate threeMonthsAgo);
+
     // 분석 실패한 리포트 조회 (isAnalyzed=false)
     List<WeeklyReport> findByIsAnalyzedFalseAndDeletedAtIsNull();
 }

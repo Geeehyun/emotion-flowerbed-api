@@ -352,19 +352,33 @@ public class WeeklyReportService {
      */
     private Map<String, Object> callLlmForAnalysis(List<Diary> diaries) {
 
-        // 일기 내용을 구조화된 형식으로 결합
+        // 일기 내용을 구조화된 형식으로 결합 (null 값 제외, 요일 정보 추가, 분석 완료 여부 추가)
         String diaryContents = diaries.stream()
-                .map(d -> String.format("""
-                        날짜: %s
-                        내용: %s
-                        핵심감정: %s
-                        감정분포: %s
-                        """,
-                        d.getDiaryDate(),
-                        d.getContent(),
-                        d.getCoreEmotionCode(),
-                        d.getEmotionsJson() != null ? toJsonOrNull(d.getEmotionsJson()) : "정보 없음"
-                ))
+                .map(d -> {
+                    StringBuilder sb = new StringBuilder();
+
+                    // 날짜 및 요일 (필수)
+                    String dayOfWeek = getDayOfWeekKorean(d.getDiaryDate());
+                    sb.append("날짜: ").append(d.getDiaryDate()).append(" (").append(dayOfWeek).append(")\n");
+
+                    // 내용 (필수)
+                    sb.append("내용: ").append(d.getContent()).append("\n");
+
+                    // 분석 완료 여부 (필수)
+                    sb.append("분석완료여부: ").append(d.getIsAnalyzed() ? "완료" : "미완료").append("\n");
+
+                    // 핵심감정 (null이 아닐 때만 추가)
+                    if (d.getCoreEmotionCode() != null) {
+                        sb.append("핵심감정: ").append(d.getCoreEmotionCode()).append("\n");
+                    }
+
+                    // 감정분포 (null이 아닐 때만 추가)
+                    if (d.getEmotionsJson() != null) {
+                        sb.append("감정분포: ").append(toJsonOrNull(d.getEmotionsJson())).append("\n");
+                    }
+
+                    return sb.toString();
+                })
                 .collect(Collectors.joining("\n---\n\n"));
 
         // 프롬프트 생성
@@ -524,8 +538,8 @@ public class WeeklyReportService {
     /**
      * 읽음 상태별 리포트 목록 조회
      * @param userSn 사용자 SN
-     * @param status "all", "read", "unread"
-     * @return 리포트 목록 (최신순)
+     * @param status "all", "read", "unread", "recent"
+     * @return 리포트 목록 (startDate 기준 내림차순)
      */
     public List<WeeklyReport> getReportsByStatus(Long userSn, String status) {
         if ("all".equalsIgnoreCase(status)) {
@@ -534,8 +548,12 @@ public class WeeklyReportService {
             return weeklyReportRepository.findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(userSn, true);
         } else if ("unread".equalsIgnoreCase(status)) {
             return weeklyReportRepository.findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
+        } else if ("recent".equalsIgnoreCase(status)) {
+            // 최근 3개월 데이터 조회 (오늘 기준 3개월 전)
+            LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
+            return weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
         } else {
-            throw new IllegalArgumentException("잘못된 status 값입니다. (all, read, unread 중 선택)");
+            throw new IllegalArgumentException("잘못된 status 값입니다. (all, read, unread, recent 중 선택)");
         }
     }
 
@@ -971,5 +989,20 @@ public class WeeklyReportService {
         } catch (JsonProcessingException e) {
             return "정보 없음";
         }
+    }
+
+    /**
+     * LocalDate를 한글 요일로 변환
+     */
+    private String getDayOfWeekKorean(LocalDate date) {
+        return switch (date.getDayOfWeek()) {
+            case MONDAY -> "월요일";
+            case TUESDAY -> "화요일";
+            case WEDNESDAY -> "수요일";
+            case THURSDAY -> "목요일";
+            case FRIDAY -> "금요일";
+            case SATURDAY -> "토요일";
+            case SUNDAY -> "일요일";
+        };
     }
 }

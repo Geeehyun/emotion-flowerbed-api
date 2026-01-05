@@ -54,8 +54,9 @@ public class WeeklyReportController {
 
     /**
      * 주간 리포트 리스트 조회 (필터링)
-     * GET /api/v1/weekly-reports/list?status=all|read|unread
-     * @param status all(전체), read(읽음), unread(안읽음) - 기본값: all
+     * GET /api/v1/weekly-reports/list?status=all|read|unread|recent
+     * @param status all(전체), read(읽음), unread(안읽음), recent(최근 3개월) - 기본값: all
+     * @return 리포트 목록 (startDate 기준 내림차순)
      */
     @GetMapping("/list")
     public ResponseEntity<List<WeeklyReportListItemResponse>> getWeeklyReportList(
