@@ -126,6 +126,8 @@ public class DiaryEmotionService {
         // 3. LLM API 호출
         String llmResponse = llmApiClient.call(prompt);
 
+        log.info("[DiaryEmotionService - analyzeDiary] llmResponse : {}", llmResponse);
+
         // 4. 응답 파싱 및 검증
         return parseAndValidateResponse(llmResponse);
     }

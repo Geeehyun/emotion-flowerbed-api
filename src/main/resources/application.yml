@@ -14,9 +14,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        show_sql: true
         dialect: org.hibernate.dialect.MariaDBDialect
-    show-sql: true
     open-in-view: false
 
   sql:
@@ -32,9 +30,11 @@ spring:
 
 logging:
   level:
-    org.hibernate.SQL: debug
-    org.hibernate.type.descriptor.sql.BasicBinder: trace
-    com.flowerbed: debug
+    org.hibernate.SQL: warn  # SQL 쿼리 출력
+    org.hibernate.orm.jdbc.bind: trace  # 바인딩 파라미터 값 출력 (Hibernate 6)
+    org.hibernate.type: warn  # 불필요한 타입 변환 로그 제거
+    org.hibernate.stat: warn  # 통계 로그 제거
+    com.flowerbed: info  # 애플리케이션 로그
 
 server:
   port: 8080
@@ -80,7 +80,7 @@ anthropic:
 openai:
   api:
     key: ${SPRING_OPENAI_API_KEY:your-openai-api-key}
-    model: ${OPENAI_MODEL:gpt-4o-mini}  # gpt-4o-mini, gpt-4o, gpt-4-turbo 등
+    model: gpt-4.1-mini
     max-tokens: 2000
     temperature: 0.3
 

@@ -26,6 +26,7 @@ public class MonthlyDiariesResponse {
         private Long id;
         private LocalDate date;
         private String content;
+        private Boolean isAnalyzed;
         private String coreEmotionCode;
         private String flower;
         private String floriography;

@@ -97,9 +97,15 @@ public class DiaryService {
         // 감정 분석 수행
         DiaryEmotionResponse emotionResponse = emotionService.analyzeDiary(diary.getContent());
 
-        // 분석 결과 저장
+        // 분석 결과 저장 (color, emotionNameKr 포함)
         List<Diary.EmotionPercent> emotionsJson = emotionResponse.getEmotions().stream()
-                .map(e -> new Diary.EmotionPercent(e.getEmotion(), e.getPercent()))
+                .map(e -> {
+                    // 감정 코드로 색상 및 이름 조회
+                    Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                    String color = emotion != null ? emotion.getColor() : null;
+                    String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
+                    return new Diary.EmotionPercent(e.getEmotion(), e.getPercent(), color, emotionNameKr);
+                })
                 .collect(Collectors.toList());
 
         // 감정 코드 검증 (DB에 존재하는 감정 코드인지 확인)
@@ -151,9 +157,15 @@ public class DiaryService {
         // 테스트 모드 감정 분석 (랜덤 생성, area 지정 가능)
         DiaryEmotionResponse emotionResponse = emotionTestService.analyzeForTest(diary.getContent(), area);
 
-        // 분석 결과 저장
+        // 분석 결과 저장 (color, emotionNameKr 포함)
         List<Diary.EmotionPercent> emotionsJson = emotionResponse.getEmotions().stream()
-                .map(e -> new Diary.EmotionPercent(e.getEmotion(), e.getPercent()))
+                .map(e -> {
+                    // 감정 코드로 색상 및 이름 조회
+                    Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                    String color = emotion != null ? emotion.getColor() : null;
+                    String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
+                    return new Diary.EmotionPercent(e.getEmotion(), e.getPercent(), color, emotionNameKr);
+                })
                 .collect(Collectors.toList());
 
         // 테스트 모드에서는 감정 코드 검증 생략
@@ -305,10 +317,21 @@ public class DiaryService {
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
                     .map(e -> {
-                        // 감정 코드로 색상 및 이름 조회
-                        Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
-                        String color = emotion != null ? emotion.getColor() : null;
-                        String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
+                        String color = e.getColor();
+                        String emotionNameKr = e.getEmotionNameKr();
+
+                        // null이면 DB 조회해서 채움 (기존 데이터 대응)
+                        if (color == null || emotionNameKr == null) {
+                            Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                            if (emotion != null) {
+                                if (color == null) {
+                                    color = emotion.getColor();
+                                }
+                                if (emotionNameKr == null) {
+                                    emotionNameKr = emotion.getEmotionNameKr();
+                                }
+                            }
+                        }
 
                         EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
                         ep.setEmotionNameKr(emotionNameKr);
@@ -391,10 +414,21 @@ public class DiaryService {
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
                     .map(e -> {
-                        // 감정 코드로 색상 및 이름 조회
-                        Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
-                        String color = emotion != null ? emotion.getColor() : null;
-                        String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
+                        String color = e.getColor();
+                        String emotionNameKr = e.getEmotionNameKr();
+
+                        // null이면 DB 조회해서 채움 (기존 데이터 대응)
+                        if (color == null || emotionNameKr == null) {
+                            Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                            if (emotion != null) {
+                                if (color == null) {
+                                    color = emotion.getColor();
+                                }
+                                if (emotionNameKr == null) {
+                                    emotionNameKr = emotion.getEmotionNameKr();
+                                }
+                            }
+                        }
 
                         EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
                         ep.setEmotionNameKr(emotionNameKr);
@@ -415,6 +449,7 @@ public class DiaryService {
                 .id(diary.getDiaryId())
                 .date(diary.getDiaryDate())
                 .content(diary.getContent())
+                .isAnalyzed(diary.getIsAnalyzed())
                 .coreEmotionCode(diary.getCoreEmotionCode())
                 .flower(diary.getFlowerName())
                 .floriography(diary.getFlowerMeaning())
