@@ -34,9 +34,9 @@ import java.util.stream.Collectors;
  * 주간 리포트 서비스
  * - 주간 일기 분석 및 리포트 생성
  * - LLM API를 통한 감정 트렌드 분석
- * - 모든 사용자에 대해 레코드 생성 (일기 3개 미만이어도)
+ * - 모든 사용자에 대해 레코드 생성 (일기 개수와 무관)
  * - 일기 3개 이상: AI 분석 수행 (isAnalyzed=true)
- * - 일기 3개 미만: 분석 미수행 (isAnalyzed=false)
+ * - 일기 3개 미만: 레코드만 생성, AI 분석 미수행 (isAnalyzed=false)
  */
 @Slf4j
 @Service
@@ -168,7 +168,7 @@ public class WeeklyReportService {
 
     /**
      * 비동기로 사용자별 주간 리포트 생성
-     * @return CompletableFuture<WeeklyReport> (일기 3개 미만 시 null 포함)
+     * @return CompletableFuture<WeeklyReport> (항상 WeeklyReport 반환)
      */
     @Async
     @Transactional
@@ -188,10 +188,10 @@ public class WeeklyReportService {
      *
      * 비즈니스 로직:
      * 1. 일기 3개 이상: AI 분석 수행, isAnalyzed=true
-     * 2. 일기 3개 미만: 리포트 생성하지 않음 (null 반환)
+     * 2. 일기 3개 미만: 레코드만 생성, isAnalyzed=false (AI 분석 미수행)
      * 3. 분석 실패: 레코드 생성 + isAnalyzed=false (재시도 대상)
      *
-     * @return WeeklyReport or null (일기 3개 미만 시)
+     * @return WeeklyReport (항상 반환)
      */
     @Transactional
     public WeeklyReport generateReport(Long userSn, LocalDate startDate, LocalDate endDate) {
@@ -199,7 +199,7 @@ public class WeeklyReportService {
         // 이미 생성된 리포트가 있는지 확인
         if (weeklyReportRepository.existsByUserUserSnAndStartDateAndDeletedAtIsNull(userSn, startDate)) {
             log.info("Weekly report already exists for user: {}, week: {}", userSn, startDate);
-            return weeklyReportRepository.findByUserUserSnAndStartDateAndDeletedAtIsNull(userSn, startDate)
+            return weeklyReportRepository.findByUserUserSnAndStartDateAndIsAnalyzedTrueAndDeletedAtIsNull(userSn, startDate)
                     .orElseThrow();
         }
 
@@ -214,10 +214,24 @@ public class WeeklyReportService {
 
         int diaryCount = diaries.size();
 
-        // 일기 3개 미만: 리포트 생성하지 않음
+        // 일기 3개 미만: 레코드만 생성 (AI 분석 미수행)
         if (diaryCount < 3) {
-            log.info("User {} has less than 3 analyzed diaries. Skipping report generation.", userSn);
-            return null;
+            log.info("User {} has less than 3 analyzed diaries. Creating report without AI analysis.", userSn);
+
+            WeeklyReport report = WeeklyReport.builder()
+                    .user(user)
+                    .startDate(startDate)
+                    .endDate(endDate)
+                    .diaryCount(diaryCount)
+                    .isAnalyzed(false)
+                    .readYn(false)
+                    .newNotificationSent(false)
+                    .build();
+
+            WeeklyReport saved = weeklyReportRepository.save(report);
+            log.info("Weekly report created without analysis (diary count: {}): reportId={}, user={}, week={}",
+                    diaryCount, saved.getReportId(), userSn, startDate);
+            return saved;
         }
 
         // 일기 3개 이상: AI 분석 수행
@@ -473,7 +487,7 @@ public class WeeklyReportService {
      * 특정 사용자의 주간 리포트 조회
      */
     public WeeklyReport getReport(Long userSn, LocalDate startDate) {
-        return weeklyReportRepository.findByUserUserSnAndStartDateAndDeletedAtIsNull(userSn, startDate)
+        return weeklyReportRepository.findByUserUserSnAndStartDateAndIsAnalyzedTrueAndDeletedAtIsNull(userSn, startDate)
                 .orElseThrow(() -> new IllegalArgumentException("주간 리포트를 찾을 수 없습니다."));
     }
 
@@ -481,7 +495,7 @@ public class WeeklyReportService {
      * 특정 사용자의 모든 주간 리포트 조회
      */
     public List<WeeklyReport> getAllReports(Long userSn) {
-        return weeklyReportRepository.findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(userSn);
+        return weeklyReportRepository.findByUserUserSnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn);
     }
 
     /**
@@ -509,7 +523,7 @@ public class WeeklyReportService {
     }
 
     /**
-     * 새 리포트 알림 전송 완료 처리
+     * 새 리포트 알림 전송 완료 처리 (시스템용 - reportId만)
      */
     @Transactional
     public void markNotificationSent(Long reportId) {
@@ -521,10 +535,27 @@ public class WeeklyReportService {
     }
 
     /**
+     * 새 리포트 알림 확인 처리 (학생용 - 권한 체크 포함)
+     */
+    @Transactional
+    public void markNotificationSentByUser(Long reportId, Long userSn) {
+        WeeklyReport report = weeklyReportRepository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("주간 리포트를 찾을 수 없습니다."));
+
+        // 권한 확인
+        if (!report.getUser().getUserSn().equals(userSn)) {
+            throw new IllegalArgumentException("해당 리포트에 접근 권한이 없습니다.");
+        }
+
+        report.markNotificationSent();
+        log.info("Weekly report notification marked as sent by user: reportId={}, user={}", reportId, userSn);
+    }
+
+    /**
      * 안 읽은 리포트 존재 여부 확인
      */
     public boolean hasUnreadReports(Long userSn) {
-        return weeklyReportRepository.existsByUserUserSnAndReadYnFalseAndDeletedAtIsNull(userSn);
+        return weeklyReportRepository.existsByUserUserSnAndReadYnFalseAndIsAnalyzedTrueAndDeletedAtIsNull(userSn);
     }
 
     /**
@@ -543,15 +574,15 @@ public class WeeklyReportService {
      */
     public List<WeeklyReport> getReportsByStatus(Long userSn, String status) {
         if ("all".equalsIgnoreCase(status)) {
-            return weeklyReportRepository.findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(userSn);
+            return weeklyReportRepository.findByUserUserSnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn);
         } else if ("read".equalsIgnoreCase(status)) {
-            return weeklyReportRepository.findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(userSn, true);
+            return weeklyReportRepository.findByUserUserSnAndReadYnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, true);
         } else if ("unread".equalsIgnoreCase(status)) {
-            return weeklyReportRepository.findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
+            return weeklyReportRepository.findByUserUserSnAndReadYnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
         } else if ("recent".equalsIgnoreCase(status)) {
             // 최근 3개월 데이터 조회 (오늘 기준 3개월 전)
             LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
-            return weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
+            return weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
         } else {
             throw new IllegalArgumentException("잘못된 status 값입니다. (all, read, unread, recent 중 선택)");
         }
@@ -608,7 +639,6 @@ public class WeeklyReportService {
         // 배치 단위로 분할 처리
         int totalBatches = (int) Math.ceil((double) totalUsers / batchSize);
         int successCount = 0;
-        int skipCount = 0;
         int failCount = 0;
 
         for (int batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
@@ -622,11 +652,10 @@ public class WeeklyReportService {
             // 현재 배치 처리
             BatchResult batchResult = processBatch(batchUserSns, startDate, endDate);
             successCount += batchResult.successCount;
-            skipCount += batchResult.skipCount;
             failCount += batchResult.failCount;
 
-            log.info("========== 배치 {}/{} 처리 완료 (성공: {}, 스킵: {}, 실패: {}) ==========",
-                    batchIndex + 1, totalBatches, batchResult.successCount, batchResult.skipCount, batchResult.failCount);
+            log.info("========== 배치 {}/{} 처리 완료 (성공: {}, 실패: {}) ==========",
+                    batchIndex + 1, totalBatches, batchResult.successCount, batchResult.failCount);
 
             // 마지막 배치가 아니면 대기 (API Rate Limit 방지)
             if (batchIndex < totalBatches - 1) {
@@ -641,8 +670,8 @@ public class WeeklyReportService {
         }
 
         log.info("========== 전체 사용자 주간 리포트 생성 완료 ==========");
-        log.info("전체 결과: 총 {}명, 성공 {}명, 스킵 {}명 (일기 3개 미만), 실패 {}명",
-                totalUsers, successCount, skipCount, failCount);
+        log.info("전체 결과: 총 {}명, 성공 {}명, 실패 {}명",
+                totalUsers, successCount, failCount);
     }
 
     /**
@@ -653,6 +682,9 @@ public class WeeklyReportService {
      * 사용 시나리오:
      * - LLM API 일시적 장애 복구 후 재시도
      * - 토큰 제한으로 실패한 리포트 재분석
+     *
+     * 주의:
+     * - 일기 3개 미만으로 생성된 리포트는 자동 스킵 (재분석 불필요)
      */
     @Transactional
     public void retryFailedReports() {
@@ -689,9 +721,9 @@ public class WeeklyReportService {
 
                 int diaryCount = diaries.size();
 
-                // 일기 3개 미만: 스킵 (이론적으로 발생하지 않아야 함)
+                // 일기 3개 미만: 스킵 (정상 케이스 - 원래 분석 대상이 아님)
                 if (diaryCount < 3) {
-                    log.warn("리포트 재분석 스킵: reportId={}, 일기 개수 부족 ({}개)", reportId, diaryCount);
+                    log.info("리포트 재분석 스킵 (일기 3개 미만): reportId={}, diaryCount={}", reportId, diaryCount);
                     skipCount++;
                     continue;
                 }
@@ -944,8 +976,8 @@ public class WeeklyReportService {
      * 배치 처리 결과
      */
     private static class BatchResult {
-        int successCount = 0;  // 성공 (분석 완료 + 분석 실패했지만 레코드 생성)
-        int skipCount = 0;     // 스킵 (일기 3개 미만)
+        int successCount = 0;  // 성공 (분석 완료 + 분석 미완료 레코드 생성)
+        int skipCount = 0;     // 미사용 (이전 버전 호환용)
         int failCount = 0;     // 실패 (예외 발생)
     }
 
@@ -959,16 +991,10 @@ public class WeeklyReportService {
         List<CompletableFuture<Void>> futures = userSns.stream()
                 .map(userSn -> generateReportAsync(userSn, startDate, endDate)
                         .thenAccept(report -> {
-                            if (report == null) {
-                                // 일기 3개 미만으로 스킵
-                                result.skipCount++;
-                                log.debug("○ 주간 리포트 스킵 (일기 3개 미만): userId={}", userSn);
-                            } else {
-                                // 성공 (분석 완료 또는 분석 실패했지만 레코드 생성)
-                                result.successCount++;
-                                log.debug("✓ 주간 리포트 생성 완료: userId={}, reportId={}, isAnalyzed={}",
-                                        userSn, report.getReportId(), report.getIsAnalyzed());
-                            }
+                            // 항상 리포트 생성 (isAnalyzed 여부와 무관)
+                            result.successCount++;
+                            log.debug("✓ 주간 리포트 생성 완료: userId={}, reportId={}, isAnalyzed={}, diaryCount={}",
+                                    userSn, report.getReportId(), report.getIsAnalyzed(), report.getDiaryCount());
                         })
                         .exceptionally(ex -> {
                             result.failCount++;

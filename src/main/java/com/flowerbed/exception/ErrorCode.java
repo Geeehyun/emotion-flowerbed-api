@@ -17,6 +17,7 @@ public enum ErrorCode {
     INVALID_DIARY_CONTENT(HttpStatus.BAD_REQUEST, "INVALID_DIARY_CONTENT", "일기 내용이 분석 불가능합니다"),
     DUPLICATE_DIARY_DATE(HttpStatus.BAD_REQUEST, "DUPLICATE_DIARY_DATE", "해당 날짜에 이미 일기가 존재합니다"),
     NO_SCHOOL_INFO(HttpStatus.BAD_REQUEST, "DUPLICATE_DIARY_DATE", "학교 정보가 올바르지 않습니다."),
+    INVALID_RISK_LEVEL(HttpStatus.BAD_REQUEST, "DUPLICATE_DIARY_DATE", "학교 정보가 올바르지 않습니다."),
 
     // 403 Forbidden
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없는 사용자입니다."),

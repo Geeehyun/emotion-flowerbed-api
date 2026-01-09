@@ -71,4 +71,12 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             @Param("baseDate") LocalDate baseDate,
             org.springframework.data.domain.Pageable pageable
     );
+
+    // 특정 날짜의 여러 학생들 일기 조회 (선생님 감정 현황 조회용)
+    @Query("SELECT d FROM Diary d WHERE d.user.userSn IN :userSnList " +
+            "AND d.diaryDate = :date")
+    List<Diary> findByUserSnListAndDate(
+            @Param("userSnList") List<Long> userSnList,
+            @Param("date") LocalDate date
+    );
 }

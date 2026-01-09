@@ -14,10 +14,10 @@ import java.util.Optional;
 public interface WeeklyReportRepository extends JpaRepository<WeeklyReport, Long> {
 
     // 특정 사용자의 특정 주 리포트 조회
-    Optional<WeeklyReport> findByUserUserSnAndStartDateAndDeletedAtIsNull(Long userSn, LocalDate startDate);
+    Optional<WeeklyReport> findByUserUserSnAndStartDateAndIsAnalyzedTrueAndDeletedAtIsNull(Long userSn, LocalDate startDate);
 
     // 특정 사용자의 모든 주간 리포트 조회 (최신순)
-    List<WeeklyReport> findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(Long userSn);
+    List<WeeklyReport> findByUserUserSnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(Long userSn);
 
     // 특정 기간의 리포트 존재 여부 확인
     boolean existsByUserUserSnAndStartDateAndDeletedAtIsNull(Long userSn, LocalDate startDate);
@@ -29,22 +29,22 @@ public interface WeeklyReportRepository extends JpaRepository<WeeklyReport, Long
             @Param("endDate") LocalDate endDate
     );
 
-    // 사용자의 최근 N개 리포트 조회
+    // 사용자의 최근 N개 리포트 조회 (분석 완료된 것만)
     @Query("SELECT w FROM WeeklyReport w WHERE w.user.userSn = :userSn " +
-            "AND w.deletedAt IS NULL ORDER BY w.startDate DESC LIMIT :limit")
+            "AND w.isAnalyzed = true AND w.deletedAt IS NULL ORDER BY w.startDate DESC LIMIT :limit")
     List<WeeklyReport> findRecentReports(@Param("userSn") Long userSn, @Param("limit") int limit);
 
-    // 안 읽은 리포트 존재 여부 확인
-    boolean existsByUserUserSnAndReadYnFalseAndDeletedAtIsNull(Long userSn);
+    // 안 읽은 리포트 존재 여부 확인 (분석 완료된 것만)
+    boolean existsByUserUserSnAndReadYnFalseAndIsAnalyzedTrueAndDeletedAtIsNull(Long userSn);
 
-    // 새 리포트 존재 여부 확인 (알림 전송 안 된 리포트)
+    // 새 리포트 존재 여부 확인 (알림 전송 안 된 리포트, 분석 완료된 것만)
     boolean existsByUserUserSnAndNewNotificationSentFalseAndIsAnalyzedTrueAndDeletedAtIsNull(Long userSn);
 
     // 읽음 상태별 리포트 조회 (최신순)
-    List<WeeklyReport> findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(Long userSn, Boolean readYn);
+    List<WeeklyReport> findByUserUserSnAndReadYnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(Long userSn, Boolean readYn);
 
     // 최근 3개월 리포트 조회 (startDate 기준 내림차순)
-    List<WeeklyReport> findByUserUserSnAndStartDateGreaterThanEqualAndDeletedAtIsNullOrderByStartDateDesc(Long userSn, LocalDate threeMonthsAgo);
+    List<WeeklyReport> findByUserUserSnAndStartDateGreaterThanEqualAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(Long userSn, LocalDate threeMonthsAgo);
 
     // 분석 실패한 리포트 조회 (isAnalyzed=false)
     List<WeeklyReport> findByIsAnalyzedFalseAndDeletedAtIsNull();

@@ -6,6 +6,9 @@ import com.flowerbed.api.v1.dto.WeeklyReportListItemResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportStatusResponse;
 import com.flowerbed.security.SecurityUtil;
 import com.flowerbed.service.WeeklyReportService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -166,21 +169,27 @@ public class WeeklyReportController {
         return ResponseEntity.ok().build();
     }
 
-    // ========================================
-    // TODO: 알림 전송 완료 처리 API (푸시 알림 구현 시 필요)
-    // ========================================
-    // PUT /api/v1/weekly-reports/{reportId}/notification-sent
-    // - 새 리포트 푸시 알림 전송 후 호출
-    // - newNotificationSent를 true로 변경
-    // - 이후 GET /new/exists 호출 시 hasNew: false 반환
-    //
-    // 사용 시나리오:
-    // 1. 스케줄러가 주간 리포트 생성 (newNotificationSent=false)
-    // 2. 프론트/푸시서버에서 GET /new/exists 호출 → hasNew: true
-    // 3. 푸시 알림 전송
-    // 4. PUT /{reportId}/notification-sent 호출
-    // 5. 다음부터 GET /new/exists → hasNew: false
-    // ========================================
+    /**
+     * 주간 리포트 알림 확인 처리
+     * PUT /api/v1/weekly-reports/{reportId}/notification-sent
+     *
+     * 사용 시나리오:
+     * 1. 학생이 앱을 열면 GET /new/exists 호출 → hasNew: true
+     * 2. 학생이 새 리포트 알림을 확인 (리포트 목록 진입 등)
+     * 3. PUT /{reportId}/notification-sent 호출
+     * 4. newNotificationSent를 true로 변경
+     * 5. 다음부터 GET /new/exists → hasNew: false
+     */
+    @Operation(summary = "주간 리포트 알림 확인 처리", description = "학생이 새 리포트 알림을 확인했을 때 호출하여 newNotificationSent를 true로 변경")
+    @PutMapping("/{reportId}/notification-sent")
+    public ResponseEntity<Void> markNotificationSent(
+            @Parameter(description = "주간 리포트 ID", required = true)
+            @PathVariable Long reportId
+    ) {
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        weeklyReportService.markNotificationSentByUser(reportId, userSn);
+        return ResponseEntity.ok().build();
+    }
 
     // ========================================
     // TODO: 선생님용 API (프론트 화면 준비 후 구현)

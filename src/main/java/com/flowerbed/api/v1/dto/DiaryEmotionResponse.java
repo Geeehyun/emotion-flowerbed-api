@@ -26,4 +26,9 @@ public class DiaryEmotionResponse {
     private String reason;
     private String flower;
     private String floriography;
+
+    // 위험도 분석 (2단계 - 키워드 탐지)
+    private String riskLevel;  // normal, caution, danger
+    private String riskReason;  // 위험도 판정 사유
+    private List<String> concernKeywords;  // 탐지된 우려 키워드
 }

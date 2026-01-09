@@ -41,6 +41,13 @@ Authorization: Bearer {{accessToken}}
 PUT http://localhost:8080/api/v1/weekly-reports/1/read
 Authorization: Bearer {{accessToken}}
 
+### 주간 리포트 알림 확인 처리
+### 학생이 새 리포트 알림을 확인했을 때 호출
+### newNotificationSent를 true로 변경하여 다음부터 GET /new/exists 시 hasNew: false 반환
+### ⚠️ reportId를 실제 생성된 ID로 변경 필요
+PUT http://localhost:8080/api/v1/weekly-reports/1/notification-sent
+Authorization: Bearer {{accessToken}}
+
 
 ### ========================================
 ### 테스트용 API
@@ -75,7 +82,7 @@ Authorization: Bearer {{accessToken}}
 ### - 관리자 권한 필수 (userTypeCd = 'ADMIN')
 ### - 배치 처리 방식으로 동작 (100명씩 처리, 배치 간 2초 대기)
 ### - 학생/선생님으로 호출 시 403 Forbidden 에러 발생
-POST http://localhost:8080/api/v1/weekly-reports/generate-all?startDate=2026-02-02&endDate=2026-02-08
+POST http://localhost:8080/api/v1/weekly-reports/generate-all?startDate=2026-03-02&endDate=2026-03-08
 Authorization: Bearer {{accessToken}}
 
 ### 분석 실패한 리포트 재시도 (관리자 전용)
@@ -106,15 +113,18 @@ Authorization: Bearer {{accessToken}}
 ### 1. 학생 계정으로 로그인 (auth.http에서 STUDENT 계정으로 로그인)
 ### 2. 특정 주간의 일기 3개 이상 작성 및 분석
 ### 3. 주간 리포트 수동 생성 (POST /generate)
-###    → 성공: 리포트 생성 완료, isAnalyzed=true
+###    → 성공: 리포트 생성 완료, isAnalyzed=true, newNotificationSent=false
 ### 4. 새 리포트 확인 (GET /new/exists) → hasNew: true
 ### 5. 안 읽은 리포트 확인 (GET /unread/exists) → hasUnread: true
 ### 6. 리포트 리스트 조회 (GET /list?status=unread)
 ### 7. 리포트 상세 조회 (GET /{reportId})
 ###    - studentReport, studentEncouragement 확인
 ###    - emotionStats, weeklyDiaryDetails 확인
-### 8. 리포트 읽음 처리 (PUT /{reportId}/read)
-### 9. 안 읽은 리포트 확인 (GET /unread/exists) → hasUnread: false
+### 8. 리포트 알림 확인 처리 (PUT /{reportId}/notification-sent)
+###    → newNotificationSent=true로 변경
+### 9. 새 리포트 확인 (GET /new/exists) → hasNew: false
+### 10. 리포트 읽음 처리 (PUT /{reportId}/read)
+### 11. 안 읽은 리포트 확인 (GET /unread/exists) → hasUnread: false
 
 ### 📌 시나리오 2: 일기 3개 미만인 경우
 ### 1. 학생 계정으로 로그인

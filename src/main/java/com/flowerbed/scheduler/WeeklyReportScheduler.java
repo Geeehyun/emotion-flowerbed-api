@@ -14,7 +14,7 @@ import java.time.LocalDate;
  * - 매주 월요일 00시에 실행
  * - 모든 사용자에 대해 주간 리포트 레코드 생성
  * - 일기 3개 이상: AI 분석 수행 (isAnalyzed=true)
- * - 일기 3개 미만: 분석 미수행 (isAnalyzed=false)
+ * - 일기 3개 미만: 레코드만 생성, AI 분석 미수행 (isAnalyzed=false)
  */
 @Slf4j
 @Component

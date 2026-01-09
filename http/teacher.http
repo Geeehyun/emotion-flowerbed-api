@@ -7,5 +7,118 @@
 ### 선생님이 담당하는 반의 학생 목록을 조회합니다
 ### - 같은 school_code, class_code의 STUDENT 타입 회원 조회
 ### - 이름 오름차순 정렬
+### - 각 학생의 최근 감정 정보 포함:
+###   - recentEmotionArea: 최근 감정 영역 (red, yellow, blue, green)
+###   - recentCoreEmotionCd: 최근 핵심 감정 코드
+###   - recentCoreEmotionNameKr: 최근 핵심 감정 한글명
+###   - recentCoreEmotionImage: 최근 핵심 감정 3D 이미지 파일명
+###   - 최근 분석된 일기가 없으면 모두 null
 GET http://localhost:8080/api/v1/teachers/students
 Authorization: Bearer {{accessToken}}
+
+###
+
+### 날짜별 학생 감정 현황 조회 (오늘 날짜)
+### 선생님이 담당하는 반의 학생들의 오늘 감정 현황을 조회합니다
+### - 날짜 파라미터 없으면 오늘 날짜 기준
+### - area별 학생 수 집계 (red, yellow, blue, green, unanalyzed, none)
+### - 학생별 감정 정보 리스트 제공
+GET http://localhost:8080/api/v1/teachers/daily-emotion-status
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 날짜별 학생 감정 현황 조회 (특정 날짜)
+### 선생님이 담당하는 반의 학생들의 특정 날짜 감정 현황을 조회합니다
+### - date 파라미터로 조회 날짜 지정 (yyyy-MM-dd)
+### - 응답 구조:
+###   - date: 조회 날짜
+###   - totalCount: 전체 학생 수
+###   - area: 영역별 학생 수 (red, yellow, blue, green, unanalyzed, none)
+###   - students: 학생별 감정 정보 (userSn, name, area, coreEmotion, coreEmotionNameKr, isAnalyzed)
+GET http://localhost:8080/api/v1/teachers/daily-emotion-status?date=2026-01-06
+Authorization: Bearer {{accessToken}}
+
+
+### DANGER 상태 학생 해제
+### 선생님이 DANGER 상태인 학생을 상담 후 해제
+### - DANGER 상태만 해제 가능
+### - 같은 학교, 같은 반의 학생만 해제 가능
+### - 해제 후 다음 일기 분석 시 자동으로 위험도 재평가
+POST http://localhost:8080/api/v1/teachers/students/1/resolve-danger
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "memo": "학생 상담 완료. 최근 일주일간 감정 상태 개선 확인. 학부모와 통화하여 가정 내 문제 해결 중임을 확인함."
+}
+
+###
+
+### 위험 학생 리스트 조회 (전체 - CAUTION + DANGER)
+### 선생님이 담당하는 반의 CAUTION/DANGER 상태 학생 목록을 조회합니다
+### - level 파라미터로 필터링 가능 (ALL, CAUTION, DANGER)
+### - DANGER 우선 정렬, 같은 레벨 내에서는 위험도 갱신 시각 최신순
+### - 응답 구조:
+###   - totalCount: 전체 위험 학생 수
+###   - dangerCount: DANGER 학생 수
+###   - cautionCount: CAUTION 학생 수
+###   - students: 위험 학생 목록 (userSn, name, riskLevel, riskReason, riskContinuousArea, riskContinuousDays, riskUpdatedAt, dangerResolvedBy, dangerResolvedAt, dangerResolveMemo)
+GET http://localhost:8080/api/v1/teachers/students/at-risk?level=ALL
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 위험 학생 리스트 조회 (DANGER만)
+GET http://localhost:8080/api/v1/teachers/students/at-risk?level=DANGER
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 위험 학생 리스트 조회 (CAUTION만)
+GET http://localhost:8080/api/v1/teachers/students/at-risk?level=CAUTION
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 위험 학생 리스트 조회 (level 미지정 시 ALL)
+GET http://localhost:8080/api/v1/teachers/students/at-risk
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 학생별 위험도 변화 이력 조회
+### 선생님이 특정 학생의 위험도 변화 이력을 조회합니다
+### - 같은 학교, 같은 반의 학생만 조회 가능
+### - 최근순으로 정렬되어 반환
+### - 응답 구조:
+###   - userSn: 학생 일련번호
+###   - name: 학생 이름
+###   - totalCount: 전체 이력 개수
+###   - histories: 위험도 변화 이력 목록
+###     - historyId, previousLevel, newLevel, riskType, riskReason
+###     - continuousArea, continuousDays, concernKeywords
+###     - isConfirmed, confirmedBy, confirmedAt, teacherMemo, createdAt
+### ⚠️ studentUserSn을 실제 학생 ID로 변경 필요
+GET http://localhost:8080/api/v1/teachers/students/2/risk-history
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 학생별 주간 리포트 조회
+### 선생님이 특정 학생의 주간 리포트 목록을 조회합니다
+### - 같은 학교, 같은 반의 학생만 조회 가능
+### - 최근순으로 정렬되어 반환
+### - 응답 구조:
+###   - reportId: 리포트 ID
+###   - startDate: 시작 날짜 (월요일)
+###   - endDate: 종료 날짜 (일요일)
+###   - diaryCount: 해당 주의 일기 개수
+###   - isAnalyzed: 분석 완료 여부
+###   - readYn: 읽음 여부
+###   - createdAt: 생성 시각
+### ⚠️ studentUserSn을 실제 학생 ID로 변경 필요
+GET http://localhost:8080/api/v1/teachers/students/2/weekly-reports
+Authorization: Bearer {{accessToken}}
+
+###

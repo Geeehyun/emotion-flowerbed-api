@@ -41,6 +41,7 @@ public class DiaryService {
     private final FlowerRepository flowerRepository;
     private final DiaryEmotionService emotionService;  // 실제 Claude API 분석
     private final DiaryEmotionTestService emotionTestService;  // 테스트용 랜덤 분석
+    private final RiskAnalysisService riskAnalysisService;  // 위험도 분석
 
     /**
      * 일기 작성 (감정 분석 X, 내용만 저장)
@@ -134,6 +135,15 @@ public class DiaryService {
         // 감정 조절 팁 체크 (오늘 날짜이고 연속 3일 이상인 경우)
         EmotionControlTipInfo tipInfo = checkEmotionControlTip(userId, diary);
 
+        // 위험도 체크 (7일 연속 같은 영역, red/blue 체크 + LLM 키워드 탐지)
+        riskAnalysisService.checkAndUpdateRiskLevel(
+                userId,
+                diary.getDiaryDate(),
+                emotionResponse.getRiskLevel(),
+                emotionResponse.getRiskReason(),
+                emotionResponse.getConcernKeywords()
+        );
+
         return convertToResponse(diary, tipInfo);
     }
 
@@ -185,6 +195,16 @@ public class DiaryService {
 
         // 감정 조절 팁 체크 (오늘 날짜이고 연속 3일 이상인 경우)
         EmotionControlTipInfo tipInfo = checkEmotionControlTip(userId, diary);
+
+        // 위험도 체크 (7일 연속 같은 영역, red/blue 체크 + LLM 키워드 탐지)
+        // 테스트 모드는 LLM 분석 없으므로 null 전달
+        riskAnalysisService.checkAndUpdateRiskLevel(
+                userId,
+                diary.getDiaryDate(),
+                null,
+                null,
+                null
+        );
 
         return convertToResponse(diary, tipInfo);
     }

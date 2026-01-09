@@ -34,6 +34,12 @@ public class LoginResponse {
     @Schema(description = "사용자 유형 코드", example = "STUDENT")
     private String userTypeCd;
 
-    @Schema(description = "감정 제어 활동 코드", example = "DEEP_BREATHING")
-    private String emotionControlCd;
+    @Schema(description = "학교 코드", example = "1111")
+    private String schoolCode;
+
+    @Schema(description = "학교명", example = "예시초등학교")
+    private String schoolNm;
+
+    @Schema(description = "학급 코드", example = "301")
+    private String classCode;
 }

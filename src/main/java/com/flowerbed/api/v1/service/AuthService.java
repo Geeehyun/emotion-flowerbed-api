@@ -68,7 +68,9 @@ public class AuthService {
                 .userId(user.getUserId())
                 .name(user.getName())
                 .userTypeCd(user.getUserTypeCd())
-                .emotionControlCd(user.getEmotionControlCd())
+                .schoolCode(user.getSchoolCode())
+                .schoolNm(user.getSchoolNm())
+                .classCode(user.getClassCode())
                 .build();
     }
 
