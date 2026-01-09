@@ -16,8 +16,11 @@ public interface WeeklyReportRepository extends JpaRepository<WeeklyReport, Long
     // 특정 사용자의 특정 주 리포트 조회
     Optional<WeeklyReport> findByUserUserSnAndStartDateAndIsAnalyzedTrueAndDeletedAtIsNull(Long userSn, LocalDate startDate);
 
-    // 특정 사용자의 모든 주간 리포트 조회 (최신순)
+    // 특정 사용자의 모든 주간 리포트 조회 (최신순, 학생용 - 분석 완료된 것만)
     List<WeeklyReport> findByUserUserSnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(Long userSn);
+
+    // 특정 사용자의 모든 주간 리포트 조회 (최신순, 선생님용 - 분석 여부 무관)
+    List<WeeklyReport> findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(Long userSn);
 
     // 특정 기간의 리포트 존재 여부 확인
     boolean existsByUserUserSnAndStartDateAndDeletedAtIsNull(Long userSn, LocalDate startDate);

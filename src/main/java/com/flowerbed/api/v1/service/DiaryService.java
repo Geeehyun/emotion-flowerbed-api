@@ -38,7 +38,7 @@ public class DiaryService {
 
     private final DiaryRepository diaryRepository;
     private final UserRepository userRepository;
-    private final FlowerRepository flowerRepository;
+    private final EmotionCacheService emotionCacheService;
     private final DiaryEmotionService emotionService;  // 실제 Claude API 분석
     private final DiaryEmotionTestService emotionTestService;  // 테스트용 랜덤 분석
     private final RiskAnalysisService riskAnalysisService;  // 위험도 분석
@@ -102,7 +102,7 @@ public class DiaryService {
         List<Diary.EmotionPercent> emotionsJson = emotionResponse.getEmotions().stream()
                 .map(e -> {
                     // 감정 코드로 색상 및 이름 조회
-                    Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                    Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
                     String color = emotion != null ? emotion.getColor() : null;
                     String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
                     return new Diary.EmotionPercent(e.getEmotion(), e.getPercent(), color, emotionNameKr);
@@ -111,7 +111,7 @@ public class DiaryService {
 
         // 감정 코드 검증 (DB에 존재하는 감정 코드인지 확인)
         String emotionCode = emotionResponse.getCoreEmotion();
-        boolean emotionExists = flowerRepository.findById(emotionCode).isPresent();
+        boolean emotionExists = emotionCacheService.getEmotion(emotionCode) != null;
 
         if(!emotionExists) {
             log.error("Invalid emotion code from LLM: diaryId={}, coreEmotionCode={}",
@@ -171,7 +171,7 @@ public class DiaryService {
         List<Diary.EmotionPercent> emotionsJson = emotionResponse.getEmotions().stream()
                 .map(e -> {
                     // 감정 코드로 색상 및 이름 조회
-                    Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                    Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
                     String color = emotion != null ? emotion.getColor() : null;
                     String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : null;
                     return new Diary.EmotionPercent(e.getEmotion(), e.getPercent(), color, emotionNameKr);
@@ -342,7 +342,7 @@ public class DiaryService {
 
                         // null이면 DB 조회해서 채움 (기존 데이터 대응)
                         if (color == null || emotionNameKr == null) {
-                            Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                            Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
                             if (emotion != null) {
                                 if (color == null) {
                                     color = emotion.getColor();
@@ -360,12 +360,11 @@ public class DiaryService {
                     .collect(Collectors.toList());
         }
 
-        // 꽃 상세정보 조회 (coreEmotionCode로 조회)
+        // 꽃 상세정보 조회 (coreEmotionCode로 조회, 캐싱 적용)
         DiaryResponse.FlowerDetail flowerDetail = null;
         if (diary.getCoreEmotionCode() != null) {
-            flowerDetail = flowerRepository.findById(diary.getCoreEmotionCode())
-                    .map(this::convertToDiaryFlowerDetail)
-                    .orElse(null);
+            Emotion emotion = emotionCacheService.getEmotion(diary.getCoreEmotionCode());
+            flowerDetail = emotion != null ? convertToDiaryFlowerDetail(emotion) : null;
         }
 
         // 감정 조절 팁 정보 설정 (분석 API에서만 제공)
@@ -439,7 +438,7 @@ public class DiaryService {
 
                         // null이면 DB 조회해서 채움 (기존 데이터 대응)
                         if (color == null || emotionNameKr == null) {
-                            Emotion emotion = flowerRepository.findById(e.getEmotion()).orElse(null);
+                            Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
                             if (emotion != null) {
                                 if (color == null) {
                                     color = emotion.getColor();
@@ -460,9 +459,8 @@ public class DiaryService {
         // 꽃 상세 정보 조회 (coreEmotionCode로 조회)
         MonthlyDiariesResponse.FlowerDetail flowerDetail = null;
         if (diary.getCoreEmotionCode() != null) {
-            flowerDetail = flowerRepository.findById(diary.getCoreEmotionCode())
-                    .map(this::convertToFlowerDetail)
-                    .orElse(null);
+            Emotion emotion = emotionCacheService.getEmotion(diary.getCoreEmotionCode());
+            flowerDetail = emotion != null ? convertToFlowerDetail(emotion) : null;
         }
 
         return MonthlyDiariesResponse.DiaryListItem.builder()
@@ -585,9 +583,8 @@ public class DiaryService {
             return null;
         }
 
-        return flowerRepository.findById(emotionCode)
-                .map(Emotion::getArea)
-                .orElse(null);
+        Emotion emotion = emotionCacheService.getEmotion(emotionCode);
+        return emotion != null ? emotion.getArea() : null;
     }
 
     /**

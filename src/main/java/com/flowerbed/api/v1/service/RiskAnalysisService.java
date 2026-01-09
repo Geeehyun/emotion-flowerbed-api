@@ -32,7 +32,7 @@ public class RiskAnalysisService {
 
     private final UserRepository userRepository;
     private final DiaryRepository diaryRepository;
-    private final FlowerRepository flowerRepository;
+    private final EmotionCacheService emotionCacheService;
     private final StudentRiskHistoryRepository riskHistoryRepository;
 
     /**
@@ -207,17 +207,15 @@ public class RiskAnalysisService {
     }
 
     /**
-     * 일기에서 감정 영역 조회
+     * 일기에서 감정 영역 조회 (캐싱 적용)
      */
     private String getEmotionArea(Diary diary) {
         if (diary.getCoreEmotionCode() == null) {
             return null;
         }
 
-        return flowerRepository.findById(diary.getCoreEmotionCode())
-                .map(Emotion::getArea)
-                .map(String::toLowerCase)
-                .orElse(null);
+        Emotion emotion = emotionCacheService.getEmotion(diary.getCoreEmotionCode());
+        return emotion != null ? emotion.getArea().toLowerCase() : null;
     }
 
     /**

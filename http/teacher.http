@@ -108,17 +108,39 @@ Authorization: Bearer {{accessToken}}
 ### 학생별 주간 리포트 조회
 ### 선생님이 특정 학생의 주간 리포트 목록을 조회합니다
 ### - 같은 학교, 같은 반의 학생만 조회 가능
+### - 분석 완료/미완료 모두 포함 (isAnalyzed 무관)
 ### - 최근순으로 정렬되어 반환
 ### - 응답 구조:
 ###   - reportId: 리포트 ID
 ###   - startDate: 시작 날짜 (월요일)
 ###   - endDate: 종료 날짜 (일요일)
 ###   - diaryCount: 해당 주의 일기 개수
-###   - isAnalyzed: 분석 완료 여부
+###   - isAnalyzed: 분석 완료 여부 (true/false)
 ###   - readYn: 읽음 여부
 ###   - createdAt: 생성 시각
 ### ⚠️ studentUserSn을 실제 학생 ID로 변경 필요
 GET http://localhost:8080/api/v1/teachers/students/2/weekly-reports
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 학생별 주간 리포트 상세 조회
+### 선생님이 특정 학생의 주간 리포트 상세를 조회합니다
+### - 같은 학교, 같은 반의 학생만 조회 가능
+### - teacherReport, teacherTalkTip 포함
+### - 분석 완료/미완료 모두 조회 가능 (isAnalyzed 무관)
+###   ⚠️ isAnalyzed=false인 경우 분석 관련 필드(studentReport, teacherReport 등)는 null
+### - 응답 구조:
+###   - reportId, startDate, endDate, diaryCount, isAnalyzed, readYn
+###   - studentReport: 학생용 주간 분석 (분석 완료 시)
+###   - studentEncouragement: 학생용 격려 메시지 (분석 완료 시)
+###   - teacherReport: 선생님용 주간 분석 (분석 완료 시)
+###   - teacherTalkTip: 선생님용 대화 팁 배열 (분석 완료 시)
+###   - emotionStats: 감정 통계 (분석 완료 시)
+###   - weeklyDiaryDetails: 주간 일기 상세 (분석 완료 시)
+###   - highlights: 하이라이트 (분석 완료 시)
+### ⚠️ studentUserSn과 reportId를 실제 값으로 변경 필요
+GET http://localhost:8080/api/v1/teachers/students/2/weekly-reports/1
 Authorization: Bearer {{accessToken}}
 
 ###

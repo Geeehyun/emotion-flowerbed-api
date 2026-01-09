@@ -9,6 +9,7 @@ import com.flowerbed.api.v1.dto.AtRiskStudentsResponse;
 import com.flowerbed.api.v1.dto.DailyEmotionStatusResponse;
 import com.flowerbed.api.v1.dto.StudentResponse;
 import com.flowerbed.api.v1.dto.StudentRiskHistoryResponse;
+import com.flowerbed.api.v1.dto.TeacherWeeklyReportDetailResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportListItemResponse;
 import com.flowerbed.api.v1.repository.DiaryRepository;
 import com.flowerbed.api.v1.repository.FlowerRepository;
@@ -40,7 +41,7 @@ public class TeacherService {
 
     private final UserRepository userRepository;
     private final DiaryRepository diaryRepository;
-    private final FlowerRepository flowerRepository;
+    private final EmotionCacheService emotionCacheService;
     private final StudentRiskHistoryRepository riskHistoryRepository;
     private final WeeklyReportRepository weeklyReportRepository;
 
@@ -110,13 +111,14 @@ public class TeacherService {
                         String coreEmotionCode = recentDiary.getCoreEmotionCode();
 
                         if (coreEmotionCode != null) {
-                            // 감정 정보 조회
-                            flowerRepository.findById(coreEmotionCode).ifPresent(emotion -> {
+                            // 감정 정보 조회 (캐싱 적용)
+                            Emotion emotion = emotionCacheService.getEmotion(coreEmotionCode);
+                            if (emotion != null) {
                                 response.setRecentEmotionArea(emotion.getArea() != null ? emotion.getArea().toLowerCase() : null);
                                 response.setRecentCoreEmotionCd(coreEmotionCode);
                                 response.setRecentCoreEmotionNameKr(emotion.getEmotionNameKr());
                                 response.setRecentCoreEmotionImage(emotion.getImageFile3d());
-                            });
+                            }
                         }
                     }
 
@@ -218,8 +220,8 @@ public class TeacherService {
                 isAnalyzed = true;
                 coreEmotion = diary.getCoreEmotionCode();
 
-                // 감정 코드로 area와 emotionNameKr 조회
-                Emotion emotion = flowerRepository.findById(coreEmotion).orElse(null);
+                // 감정 코드로 area와 emotionNameKr 조회 (캐싱 적용)
+                Emotion emotion = emotionCacheService.getEmotion(coreEmotion);
                 if (emotion != null) {
                     area = emotion.getArea().toLowerCase();
                     coreEmotionNameKr = emotion.getEmotionNameKr();
@@ -530,15 +532,70 @@ public class TeacherService {
                     "다른 반 학생의 주간 리포트는 조회할 수 없습니다");
         }
 
-        // 3. 학생의 주간 리포트 조회 (최근순)
-        List<WeeklyReport> reports = weeklyReportRepository.findByUserUserSnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(studentUserSn);
+        // 3. 학생의 주간 리포트 조회 (최근순, 분석 여부 무관)
+        List<WeeklyReport> reports = weeklyReportRepository.findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(studentUserSn);
 
-        log.info("Teacher {} retrieved weekly reports for student {}: {} reports found",
-                teacher.getUserId(), student.getUserId(), reports.size());
+        log.info("Teacher {} retrieved weekly reports for student {}: {} reports found (analyzed: {}, unanalyzed: {})",
+                teacher.getUserId(), student.getUserId(), reports.size(),
+                reports.stream().filter(WeeklyReport::getIsAnalyzed).count(),
+                reports.stream().filter(r -> !r.getIsAnalyzed()).count());
 
         // 4. WeeklyReportListItemResponse로 변환
         return reports.stream()
                 .map(WeeklyReportListItemResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 학생별 주간 리포트 상세 조회
+     * - 선생님이 특정 학생의 특정 주간 리포트 상세를 조회합니다
+     * - 같은 학교, 같은 반의 학생만 조회 가능
+     * - teacherReport, teacherTalkTip 포함
+     *
+     * @param studentUserSn 학생 user_sn
+     * @param reportId 주간 리포트 ID
+     * @return 주간 리포트 상세 (선생님용)
+     */
+    public TeacherWeeklyReportDetailResponse getStudentWeeklyReportDetail(Long studentUserSn, Long reportId) {
+        // 1. 현재 로그인한 선생님 조회 및 권한 확인
+        User teacher = SecurityUtil.getCurrentUser();
+
+        if (!"TEACHER".equals(teacher.getUserTypeCd())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "선생님만 학생 주간 리포트를 조회할 수 있습니다");
+        }
+
+        if (teacher.getSchoolCode() == null || teacher.getClassCode() == null) {
+            throw new BusinessException(ErrorCode.NO_SCHOOL_INFO,
+                    "학교 코드 또는 반 코드가 설정되지 않았습니다");
+        }
+
+        // 2. 학생 조회 및 같은 학교, 같은 반 확인
+        User student = userRepository.findById(studentUserSn)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND,
+                        "학생을 찾을 수 없습니다"));
+
+        if (!teacher.getSchoolCode().equals(student.getSchoolCode()) ||
+            !teacher.getClassCode().equals(student.getClassCode())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "다른 반 학생의 주간 리포트는 조회할 수 없습니다");
+        }
+
+        // 3. 주간 리포트 조회
+        WeeklyReport report = weeklyReportRepository.findById(reportId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.WEEKLY_REPORT_NOT_ANALYZED,
+                        "주간 리포트를 찾을 수 없습니다"));
+
+        // 4. 리포트가 해당 학생의 것인지 확인
+        if (!report.getUser().getUserSn().equals(studentUserSn)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "해당 리포트는 지정된 학생의 것이 아닙니다");
+        }
+
+        log.info("Teacher {} retrieved weekly report detail for student {}: reportId={}, isAnalyzed={}",
+                teacher.getUserId(), student.getUserId(), reportId, report.getIsAnalyzed());
+
+        // 6. TeacherWeeklyReportDetailResponse로 변환
+        return TeacherWeeklyReportDetailResponse.from(report);
     }
 }

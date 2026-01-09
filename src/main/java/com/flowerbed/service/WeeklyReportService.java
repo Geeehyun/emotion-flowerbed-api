@@ -8,7 +8,6 @@ import com.flowerbed.api.v1.domain.Emotion;
 import com.flowerbed.api.v1.domain.User;
 import com.flowerbed.api.v1.domain.WeeklyReport;
 import com.flowerbed.api.v1.repository.DiaryRepository;
-import com.flowerbed.api.v1.repository.FlowerRepository;
 import com.flowerbed.api.v1.repository.UserRepository;
 import com.flowerbed.api.v1.repository.WeeklyReportRepository;
 import com.flowerbed.api.v1.service.LlmApiClient;
@@ -47,7 +46,7 @@ public class WeeklyReportService {
     private final WeeklyReportRepository weeklyReportRepository;
     private final DiaryRepository diaryRepository;
     private final UserRepository userRepository;
-    private final FlowerRepository flowerRepository;
+    private final com.flowerbed.api.v1.service.EmotionCacheService emotionCacheService;
     private final LlmApiClient llmApiClient;
     private final ObjectMapper objectMapper;
 
@@ -76,8 +75,8 @@ public class WeeklyReportService {
             ClassPathResource resource = new ClassPathResource("prompts/weekly-report-analysis-prompt.txt");
             promptTemplateRaw = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
 
-            // 2. DB에서 감정 정보 조회
-            List<Emotion> emotions = flowerRepository.findAllByOrderByDisplayOrderAsc();
+            // 2. DB에서 감정 정보 조회 (캐싱)
+            List<Emotion> emotions = emotionCacheService.getAllEmotions();
 
             // 3. 감정 영역 설명 생성
             String emotionAreas = buildEmotionAreas(emotions);
@@ -304,8 +303,8 @@ public class WeeklyReportService {
                 .map(diary -> {
                     String emotionCode = diary.getCoreEmotionCode();
 
-                    // DB에서 감정 정보 조회
-                    Emotion emotion = flowerRepository.findById(emotionCode).orElse(null);
+                    // DB에서 감정 정보 조회 (캐싱)
+                    Emotion emotion = emotionCacheService.getEmotion(emotionCode);
 
                     return WeeklyReport.DiaryDetail.builder()
                             .diaryId(diary.getDiaryId())
@@ -342,8 +341,8 @@ public class WeeklyReportService {
                     int count = entry.getValue().intValue();
                     double percentage = (count * 100.0) / totalCount;
 
-                    // DB에서 감정 정보 조회 (한글 이름, 색상)
-                    Emotion emotion = flowerRepository.findById(emotionCode).orElse(null);
+                    // DB에서 감정 정보 조회 (캐싱)
+                    Emotion emotion = emotionCacheService.getEmotion(emotionCode);
                     String emotionNameKr = emotion != null ? emotion.getEmotionNameKr() : emotionCode;
                     String color = emotion != null ? emotion.getColor() : null;
 
@@ -800,8 +799,8 @@ public class WeeklyReportService {
         // 가장 많이 출현한 감정 (emotionStats는 이미 count 내림차순 정렬되어 있음)
         WeeklyReport.EmotionStat topEmotion = emotionStats.get(0);
 
-        // DB에서 꽃 정보 조회
-        Emotion emotion = flowerRepository.findById(topEmotion.getEmotion()).orElse(null);
+        // DB에서 꽃 정보 조회 (캐싱)
+        Emotion emotion = emotionCacheService.getEmotion(topEmotion.getEmotion());
 
         return WeeklyReport.FlowerOfTheWeek.builder()
                 .emotion(topEmotion.getEmotion())
@@ -821,10 +820,10 @@ public class WeeklyReportService {
         // 감정 종류 수
         int emotionVariety = emotionStats != null ? emotionStats.size() : 0;
 
-        // 가장 많이 느낀 감정 영역 (area)
+        // 가장 많이 느낀 감정 영역 (area) (캐싱)
         Map<String, Long> areaCount = diaries.stream()
                 .map(d -> {
-                    Emotion emotion = flowerRepository.findById(d.getCoreEmotionCode()).orElse(null);
+                    Emotion emotion = emotionCacheService.getEmotion(d.getCoreEmotionCode());
                     return emotion != null ? emotion.getArea() : null;
                 })
                 .filter(Objects::nonNull)
@@ -858,10 +857,10 @@ public class WeeklyReportService {
         // 감정 종류 수
         int emotionVariety = emotionStats != null ? emotionStats.size() : 0;
 
-        // 영역 종류 수
+        // 영역 종류 수 (캐싱)
         Set<String> uniqueAreas = diaries.stream()
                 .map(d -> {
-                    Emotion emotion = flowerRepository.findById(d.getCoreEmotionCode()).orElse(null);
+                    Emotion emotion = emotionCacheService.getEmotion(d.getCoreEmotionCode());
                     return emotion != null ? emotion.getArea() : null;
                 })
                 .filter(Objects::nonNull)

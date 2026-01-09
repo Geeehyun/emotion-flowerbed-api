@@ -5,6 +5,7 @@ import com.flowerbed.api.v1.dto.DailyEmotionStatusResponse;
 import com.flowerbed.api.v1.dto.ResolveDangerRequest;
 import com.flowerbed.api.v1.dto.StudentResponse;
 import com.flowerbed.api.v1.dto.StudentRiskHistoryResponse;
+import com.flowerbed.api.v1.dto.TeacherWeeklyReportDetailResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportListItemResponse;
 import com.flowerbed.api.v1.service.TeacherService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -337,15 +338,39 @@ public class TeacherController {
      * !! 주의 !!
      * - TEACHER 타입만 접근 가능
      * - 같은 학교, 같은 반의 학생만 조회 가능
+     * - 분석 완료/미완료 모두 포함 (isAnalyzed 무관)
      * - 학생을 찾을 수 없으면 오류 발생
      */
-    @Operation(summary = "학생별 주간 리포트 조회", description = "선생님이 특정 학생의 주간 리포트 목록을 조회합니다")
+    @Operation(summary = "학생별 주간 리포트 조회", description = "선생님이 특정 학생의 주간 리포트 목록을 조회합니다 (분석 완료/미완료 모두 포함)")
     @GetMapping("/students/{studentUserSn}/weekly-reports")
     public ResponseEntity<List<WeeklyReportListItemResponse>> getStudentWeeklyReports(
             @Parameter(description = "학생 user_sn", required = true)
             @PathVariable Long studentUserSn
     ) {
         List<WeeklyReportListItemResponse> response = teacherService.getStudentWeeklyReports(studentUserSn);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 학생별 주간 리포트 상세 조회
+     * GET /api/v1/teachers/students/{studentUserSn}/weekly-reports/{reportId}
+     *
+     * 선생님이 특정 학생의 특정 주간 리포트 상세를 조회합니다.
+     * - TEACHER 타입만 접근 가능
+     * - 같은 학교, 같은 반의 학생만 조회 가능
+     * - teacherReport, teacherTalkTip 포함
+     * - 분석 완료/미완료 모두 조회 가능 (isAnalyzed 무관)
+     *   - isAnalyzed=false인 경우 일부 필드는 null일 수 있음
+     */
+    @Operation(summary = "학생별 주간 리포트 상세 조회", description = "선생님이 특정 학생의 주간 리포트 상세를 조회합니다 (분석 완료/미완료 모두 조회 가능)")
+    @GetMapping("/students/{studentUserSn}/weekly-reports/{reportId}")
+    public ResponseEntity<TeacherWeeklyReportDetailResponse> getStudentWeeklyReportDetail(
+            @Parameter(description = "학생 user_sn", required = true)
+            @PathVariable Long studentUserSn,
+            @Parameter(description = "주간 리포트 ID", required = true)
+            @PathVariable Long reportId
+    ) {
+        TeacherWeeklyReportDetailResponse response = teacherService.getStudentWeeklyReportDetail(studentUserSn, reportId);
         return ResponseEntity.ok(response);
     }
 }
