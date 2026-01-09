@@ -5,12 +5,7 @@ import com.flowerbed.api.v1.domain.Emotion;
 import com.flowerbed.api.v1.domain.StudentRiskHistory;
 import com.flowerbed.api.v1.domain.User;
 import com.flowerbed.api.v1.domain.WeeklyReport;
-import com.flowerbed.api.v1.dto.AtRiskStudentsResponse;
-import com.flowerbed.api.v1.dto.DailyEmotionStatusResponse;
-import com.flowerbed.api.v1.dto.StudentResponse;
-import com.flowerbed.api.v1.dto.StudentRiskHistoryResponse;
-import com.flowerbed.api.v1.dto.TeacherWeeklyReportDetailResponse;
-import com.flowerbed.api.v1.dto.WeeklyReportListItemResponse;
+import com.flowerbed.api.v1.dto.*;
 import com.flowerbed.api.v1.repository.DiaryRepository;
 import com.flowerbed.api.v1.repository.FlowerRepository;
 import com.flowerbed.api.v1.repository.StudentRiskHistoryRepository;
@@ -25,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -597,5 +593,117 @@ public class TeacherService {
 
         // 6. TeacherWeeklyReportDetailResponse로 변환
         return TeacherWeeklyReportDetailResponse.from(report);
+    }
+
+    public TeacherMonthlyDiariesResponse getStudentMonthlyEmotions(Long studentUserSn, String yearMonth) {
+        // 1. 현재 로그인한 선생님 조회 및 권한 확인
+        User teacher = SecurityUtil.getCurrentUser();
+
+        if (!"TEACHER".equals(teacher.getUserTypeCd())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "선생님만 학생 월별 감정 정보를 조회할 수 있습니다");
+        }
+
+        if (teacher.getSchoolCode() == null || teacher.getClassCode() == null) {
+            throw new BusinessException(ErrorCode.NO_SCHOOL_INFO,
+                    "학교 코드 또는 반 코드가 설정되지 않았습니다");
+        }
+
+        // 2. 학생 조회 및 같은 학교, 같은 반 확인
+        User student = userRepository.findById(studentUserSn)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND,
+                        "학생을 찾을 수 없습니다"));
+
+        if (!teacher.getSchoolCode().equals(student.getSchoolCode()) ||
+                !teacher.getClassCode().equals(student.getClassCode())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "다른 반 학생의 감정 정보는 조회할 수 없습니다");
+        }
+
+        // 3. 월 데이터 파싱
+        YearMonth ym = YearMonth.parse(yearMonth);
+        int year = ym.getYear();
+        int month = ym.getMonthValue();
+
+        // 4. 월별 감정 정보 조회
+        List<Diary> diaries = diaryRepository.findByUserSnAndYearMonth(studentUserSn, year, month);
+
+        // 5. 선생님 Response 형태로 파싱
+        List<TeacherMonthlyDiariesResponse.EmotionListItem> items = diaries.stream()
+                .map(this::convertToListItem)
+                .toList();
+
+        return TeacherMonthlyDiariesResponse.builder()
+                .yearMonth(yearMonth)
+                .emotions(items)
+                .totalCount(items.size())
+                .build();
+    }
+
+    /**
+     * Entity -> ListItem 변환
+     */
+    private TeacherMonthlyDiariesResponse.EmotionListItem convertToListItem(Diary diary) {
+        List<EmotionPercent> emotions = null;
+
+        if (diary.getEmotionsJson() != null) {
+            emotions = diary.getEmotionsJson().stream()
+                    .map(e -> {
+                        String color = e.getColor();
+                        String emotionNameKr = e.getEmotionNameKr();
+
+                        // null이면 DB 조회해서 채움 (기존 데이터 대응)
+                        if (color == null || emotionNameKr == null) {
+                            Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
+                            if (emotion != null) {
+                                if (color == null) {
+                                    color = emotion.getColor();
+                                }
+                                if (emotionNameKr == null) {
+                                    emotionNameKr = emotion.getEmotionNameKr();
+                                }
+                            }
+                        }
+
+                        EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
+                        ep.setEmotionNameKr(emotionNameKr);
+                        return ep;
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // coreEmotion 상세 정보 조회
+        TeacherMonthlyDiariesResponse.EmotionDetail coreEmotionDetail = null;
+        if (diary.getCoreEmotionCode() != null) {
+            Emotion coreEmotion = emotionCacheService.getEmotion(diary.getCoreEmotionCode());
+            if (coreEmotion != null) {
+                coreEmotionDetail = convertToEmotionDetail(coreEmotion);
+            }
+        }
+
+        return TeacherMonthlyDiariesResponse.EmotionListItem.builder()
+                .id(diary.getDiaryId())
+                .date(diary.getDiaryDate())
+                .isAnalyzed(diary.getIsAnalyzed())
+                .coreEmotionCode(diary.getCoreEmotionCode())
+                .emotions(emotions)
+                .coreEmotionDetail(coreEmotionDetail)
+                .build();
+    }
+
+
+    /**
+     * Emotion Entity -> FlowerDetail DTO 변환
+     */
+    private TeacherMonthlyDiariesResponse.EmotionDetail convertToEmotionDetail(Emotion emotion) {
+        return TeacherMonthlyDiariesResponse.EmotionDetail.builder()
+                .emotionCode(emotion.getEmotionCode())
+                .emotionNameKr(emotion.getEmotionNameKr())
+                .emotionNameEn(emotion.getEmotionNameEn())
+                .flowerNameKr(emotion.getFlowerNameKr())
+                .flowerNameEn(emotion.getFlowerNameEn())
+                .flowerMeaning(emotion.getFlowerMeaning())
+                .imageFile3d(emotion.getImageFile3d())
+                .build();
     }
 }

@@ -144,3 +144,7 @@ GET http://localhost:8080/api/v1/teachers/students/2/weekly-reports/1
 Authorization: Bearer {{accessToken}}
 
 ###
+
+
+GET http://localhost:8080/api/v1/teachers/students/1/monthly-emotions?yearMonth=2025-12
+Authorization: Bearer {{accessToken}}

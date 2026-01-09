@@ -1,12 +1,6 @@
 package com.flowerbed.api.v1.controller;
 
-import com.flowerbed.api.v1.dto.AtRiskStudentsResponse;
-import com.flowerbed.api.v1.dto.DailyEmotionStatusResponse;
-import com.flowerbed.api.v1.dto.ResolveDangerRequest;
-import com.flowerbed.api.v1.dto.StudentResponse;
-import com.flowerbed.api.v1.dto.StudentRiskHistoryResponse;
-import com.flowerbed.api.v1.dto.TeacherWeeklyReportDetailResponse;
-import com.flowerbed.api.v1.dto.WeeklyReportListItemResponse;
+import com.flowerbed.api.v1.dto.*;
 import com.flowerbed.api.v1.service.TeacherService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -371,6 +365,17 @@ public class TeacherController {
             @PathVariable Long reportId
     ) {
         TeacherWeeklyReportDetailResponse response = teacherService.getStudentWeeklyReportDetail(studentUserSn, reportId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/students/{studentUserSn}/monthly-emotions")
+    public ResponseEntity<TeacherMonthlyDiariesResponse> getStudentMonthlyEmotions(
+            @Parameter(description = "학생 user_sn", required = true)
+            @PathVariable Long studentUserSn,
+            @Parameter(description = "년월 (YYYY-MM)", example = "2025-12")
+            @RequestParam String yearMonth
+    ) {
+        TeacherMonthlyDiariesResponse response = teacherService.getStudentMonthlyEmotions(studentUserSn, yearMonth);
         return ResponseEntity.ok(response);
     }
 }
