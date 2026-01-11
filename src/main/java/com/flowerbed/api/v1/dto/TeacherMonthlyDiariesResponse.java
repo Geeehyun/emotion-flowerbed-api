@@ -39,6 +39,7 @@ public class TeacherMonthlyDiariesResponse {
         private String emotionCode;
         private String emotionNameKr;
         private String emotionNameEn;
+        private String emotionArea;
         private String flowerNameKr;
         private String flowerNameEn;
         private String flowerMeaning;

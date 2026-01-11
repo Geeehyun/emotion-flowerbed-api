@@ -378,4 +378,25 @@ public class TeacherController {
         TeacherMonthlyDiariesResponse response = teacherService.getStudentMonthlyEmotions(studentUserSn, yearMonth);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * 학급 월별 감정 분포 조회
+     *
+     * 선생님이 담당하는 반의 월별 일자별 감정 분포를 조회합니다.
+     * - 일기 미작성: none
+     * - 일기 작성했지만 분석 안됨: unanalyzed
+     * - 감정 영역: red, yellow, blue, green
+     *
+     * @param yearMonth 년월 (YYYY-MM)
+     * @return 월별 일자별 감정 분포
+     */
+    @Operation(summary = "학급 월별 감정 분포 조회", description = "선생님이 담당하는 반의 월별 일자별 감정 분포를 조회합니다")
+    @GetMapping("/class/monthly-emotion-distribution")
+    public ResponseEntity<MonthlyEmotionDistributionResponse> getMonthlyEmotionDistribution(
+            @Parameter(description = "년월 (YYYY-MM)", example = "2026-01", required = true)
+            @RequestParam String yearMonth
+    ) {
+        MonthlyEmotionDistributionResponse response = teacherService.getMonthlyEmotionDistribution(yearMonth);
+        return ResponseEntity.ok(response);
+    }
 }

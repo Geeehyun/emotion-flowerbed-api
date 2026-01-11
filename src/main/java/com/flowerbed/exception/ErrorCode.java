@@ -27,6 +27,7 @@ public enum ErrorCode {
     DIARY_NOT_ANALYZED(HttpStatus.NOT_FOUND, "DIARY_NOT_ANALYZED", "일기가 아직 분석되지 않았습니다"),
     WEEKLY_REPORT_NOT_ANALYZED(HttpStatus.NOT_FOUND, "WEEKLY_REPORT_NOT_ANALYZED", "주간 리포트가 아직 분석되지 않았습니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다"),
+    NO_STUDENTS_FOUND(HttpStatus.NOT_FOUND, "NO_STUDENTS_FOUND", "담당 학생이 없습니다"),
     FLOWER_NOT_FOUND(HttpStatus.NOT_FOUND, "FLOWER_NOT_FOUND", "꽃 정보를 찾을 수 없습니다"),
     CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "CODE_NOT_FOUND", "코드 정보를 찾을 수 없습니다"),
 

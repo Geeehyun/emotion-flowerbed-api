@@ -700,10 +700,160 @@ public class TeacherService {
                 .emotionCode(emotion.getEmotionCode())
                 .emotionNameKr(emotion.getEmotionNameKr())
                 .emotionNameEn(emotion.getEmotionNameEn())
+                .emotionArea(emotion.getArea())
                 .flowerNameKr(emotion.getFlowerNameKr())
                 .flowerNameEn(emotion.getFlowerNameEn())
                 .flowerMeaning(emotion.getFlowerMeaning())
                 .imageFile3d(emotion.getImageFile3d())
                 .build();
+    }
+
+    /**
+     * 학급 월별 감정 분포 조회
+     * - 선생님이 담당하는 반의 월별 일자별 감정 분포를 조회
+     * - 일기 미작성: none, 일기 작성했지만 분석 안됨: unanalyzed
+     *
+     * @param yearMonth 년월 (YYYY-MM)
+     * @return 월별 일자별 감정 분포
+     */
+    public MonthlyEmotionDistributionResponse getMonthlyEmotionDistribution(String yearMonth) {
+        // 1. 현재 로그인한 선생님 조회 및 권한 확인
+        User teacher = SecurityUtil.getCurrentUser();
+
+        if (!"TEACHER".equals(teacher.getUserTypeCd())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                    "선생님만 학급 월별 감정 분포를 조회할 수 있습니다");
+        }
+
+        if (teacher.getSchoolCode() == null || teacher.getClassCode() == null) {
+            throw new BusinessException(ErrorCode.NO_SCHOOL_INFO,
+                    "학교 코드 또는 반 코드가 설정되지 않았습니다");
+        }
+
+        // 2. 같은 학교, 같은 반의 모든 학생 조회
+        List<User> students = userRepository.findBySchoolCodeAndClassCodeAndUserTypeCdOrderByNameAsc(
+                teacher.getSchoolCode(),
+                teacher.getClassCode(),
+                "STUDENT"
+        );
+
+        if (students.isEmpty()) {
+            throw new BusinessException(ErrorCode.NO_STUDENTS_FOUND,
+                    "담당 학생이 없습니다");
+        }
+
+        List<Long> studentSnList = students.stream()
+                .map(User::getUserSn)
+                .collect(Collectors.toList());
+
+        int totalStudents = students.size();
+
+        // 3. 월 범위 계산
+        YearMonth ym = YearMonth.parse(yearMonth);
+        LocalDate startDate = ym.atDay(1);  // 월 첫째 날
+        LocalDate endDate = ym.atEndOfMonth();  // 월 마지막 날
+
+        // 4. 해당 월의 모든 학생 일기 한번에 조회
+        List<Diary> allDiaries = diaryRepository.findByUserSnListAndDateBetween(
+                studentSnList,
+                startDate,
+                endDate
+        );
+
+        // 5. 일기 데이터를 날짜별, 학생별로 그룹핑 (빠른 조회를 위해 Map 사용)
+        Map<LocalDate, Map<Long, Diary>> diaryByDateAndStudent = allDiaries.stream()
+                .collect(Collectors.groupingBy(
+                        Diary::getDiaryDate,
+                        Collectors.toMap(
+                                d -> d.getUser().getUserSn(),
+                                d -> d,
+                                (d1, d2) -> d1  // 중복 시 첫 번째 선택 (일반적으로 발생하지 않음)
+                        )
+                ));
+
+        // 6. 일자별 감정 분포 계산
+        List<MonthlyEmotionDistributionResponse.DailyDistribution> dailyDistributions = new ArrayList<>();
+
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            Map<Long, Diary> diariesOnDate = diaryByDateAndStudent.getOrDefault(date, new HashMap<>());
+
+            // 영역별 카운트 초기화
+            int red = 0, yellow = 0, blue = 0, green = 0, unanalyzed = 0, none = 0;
+
+            // 각 학생별로 감정 영역 분류
+            for (Long studentSn : studentSnList) {
+                Diary diary = diariesOnDate.get(studentSn);
+
+                if (diary == null) {
+                    // 일기 없음
+                    none++;
+                } else if (!diary.getIsAnalyzed()) {
+                    // 일기 있지만 분석 안됨
+                    unanalyzed++;
+                } else {
+                    // 일기 있고 분석됨 → 감정 영역 조회
+                    String coreEmotionCode = diary.getCoreEmotionCode();
+                    if (coreEmotionCode != null) {
+                        Emotion emotion = emotionCacheService.getEmotion(coreEmotionCode);
+                        if (emotion != null) {
+                            String area = emotion.getArea().toLowerCase();
+                            switch (area) {
+                                case "red" -> red++;
+                                case "yellow" -> yellow++;
+                                case "blue" -> blue++;
+                                case "green" -> green++;
+                                default -> none++;  // 예외 케이스
+                            }
+                        } else {
+                            none++;  // 감정 정보 없음
+                        }
+                    } else {
+                        unanalyzed++;  // 핵심 감정 없음
+                    }
+                }
+            }
+
+            // 일자별 분포 생성
+            MonthlyEmotionDistributionResponse.AreaDistribution areaDistribution =
+                    MonthlyEmotionDistributionResponse.AreaDistribution.builder()
+                            .red(red)
+                            .yellow(yellow)
+                            .blue(blue)
+                            .green(green)
+                            .unanalyzed(unanalyzed)
+                            .none(none)
+                            .build();
+
+            MonthlyEmotionDistributionResponse.DailyDistribution dailyDistribution =
+                    MonthlyEmotionDistributionResponse.DailyDistribution.builder()
+                            .date(date.toString())
+                            .dayOfWeek(getDayOfWeekKorean(date))
+                            .area(areaDistribution)
+                            .build();
+
+            dailyDistributions.add(dailyDistribution);
+        }
+
+        // 7. 응답 생성
+        return MonthlyEmotionDistributionResponse.builder()
+                .yearMonth(yearMonth)
+                .totalStudents(totalStudents)
+                .dailyDistribution(dailyDistributions)
+                .build();
+    }
+
+    /**
+     * LocalDate를 한글 요일로 변환
+     */
+    private String getDayOfWeekKorean(LocalDate date) {
+        return switch (date.getDayOfWeek()) {
+            case MONDAY -> "월요일";
+            case TUESDAY -> "화요일";
+            case WEDNESDAY -> "수요일";
+            case THURSDAY -> "목요일";
+            case FRIDAY -> "금요일";
+            case SATURDAY -> "토요일";
+            case SUNDAY -> "일요일";
+        };
     }
 }

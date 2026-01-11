@@ -145,6 +145,29 @@ Authorization: Bearer {{accessToken}}
 
 ###
 
-
+### 학생 월별 감정 조회
+### 선생님이 특정 학생의 월별 일기 감정 정보를 조회합니다.
+### Response:
+###   - yearMonth: 조회한 년월
+###   - totalCount: 해당 월 일기 총 개수
+###   - emotions: 일기 감정 목록 (날짜 내림차순)
+###     - isAnalyzed=false일 때 감정 정보는 null
 GET http://localhost:8080/api/v1/teachers/students/1/monthly-emotions?yearMonth=2025-12
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 학급 월별 감정 분포 조회
+### 선생님이 담당 반의 월별 일자별 감정 분포를 조회합니다.
+### Response:
+###   - yearMonth: 조회한 년월
+###   - totalStudents: 전체 학생 수
+###   - dailyDistribution: 일자별 감정 분포
+###     - date: 날짜 (YYYY-MM-DD)
+###     - dayOfWeek: 요일 (월요일, 화요일, ...)
+###     - area: 영역별 학생 수
+###       - red, yellow, blue, green: 감정 영역
+###       - unanalyzed: 일기 작성했지만 분석 안됨
+###       - none: 일기 미작성
+GET http://localhost:8080/api/v1/teachers/class/monthly-emotion-distribution?yearMonth=2026-01
 Authorization: Bearer {{accessToken}}

@@ -79,4 +79,13 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             @Param("userSnList") List<Long> userSnList,
             @Param("date") LocalDate date
     );
+
+    // 특정 기간의 여러 학생들 일기 조회 (선생님 월별 감정 분포 조회용)
+    @Query("SELECT d FROM Diary d WHERE d.user.userSn IN :userSnList " +
+            "AND d.diaryDate BETWEEN :startDate AND :endDate")
+    List<Diary> findByUserSnListAndDateBetween(
+            @Param("userSnList") List<Long> userSnList,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }
