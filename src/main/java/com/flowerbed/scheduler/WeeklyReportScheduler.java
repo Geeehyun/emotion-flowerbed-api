@@ -28,7 +28,7 @@ public class WeeklyReportScheduler {
      * cron: "초 분 시 일 월 요일"
      * "0 0 0 * * MON" = 매주 월요일 00:00:00
      */
-    @Scheduled(cron = "0 15 0 * * MON")
+    @Scheduled(cron = "0 25 0 * * MON")
     public void generateWeeklyReports() {
         log.info("========== 주간 리포트 자동 생성 스케줄러 시작 ==========");
 
