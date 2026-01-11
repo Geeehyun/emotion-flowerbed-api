@@ -26,6 +26,7 @@ public class DiaryResponse {
     private String flowerName;
     private String flowerMeaning;
     private List<EmotionPercent> emotions;
+    private List<String> keywords;  // 핵심 감정 관련 키워드 (최대 3개)
     private Boolean isAnalyzed;
     private LocalDateTime analyzedAt;
     private LocalDateTime createdAt;

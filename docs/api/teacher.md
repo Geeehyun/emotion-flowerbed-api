@@ -525,11 +525,18 @@ Authorization: Bearer {accessToken}
   "endDate": "2026-01-05",
   "diaryCount": 5,
   "isAnalyzed": true,
+  "studentReport": "이번 주 너는 친구들과 많은 시간을 보내며...",
+  "studentEncouragement": "다음 주에도 긍정적인 마음으로 생활하길 바라!",
   "teacherReport": "이번 주 김학생은 전반적으로 긍정적인 감정을 많이 느꼈습니다...",
   "teacherTalkTip": [
-    "\"이번 주에 가장 기뻤던 일이 무엇인지 이야기해볼까요?\"",
-    "\"친구들과 함께 한 활동 중 어떤 것이 가장 즐거웠나요?\""
+    "이번 주에 가장 기뻤던 일이 무엇인지 이야기해볼까요?",
+    "친구들과 함께 한 활동 중 어떤 것이 가장 즐거웠나요?"
   ],
+  "mindGardeningTip": [
+    "친구 일로 마음이 아플 때는, 그 감정을 바로 해결하지 않아도 괜찮아요. 글이나 메모로 마음을 먼저 꺼내본 뒤, 이야기할지 말지를 천천히 정해 보세요.",
+    "기분이 계속 좋을 때도 몸이 보내는 피곤 신호를 한 번 살펴봐도 좋아요. 충분히 쉬는 것도 마음을 잘 가꾸는 방법이에요."
+  ],
+  "weekKeywords": ["친구", "가족", "놀이", "학교"],
   "emotionStats": [
     {
       "emotion": "E001",
@@ -597,8 +604,12 @@ Authorization: Bearer {accessToken}
 | endDate | String | O | 종료 날짜 (일요일) |
 | diaryCount | Integer | O | 일기 개수 |
 | isAnalyzed | Boolean | O | 분석 완료 여부 |
+| studentReport | String | △ | 학생용 리포트 (미분석 시 null) |
+| studentEncouragement | String | △ | 학생용 격려 메시지 (미분석 시 null) |
 | teacherReport | String | △ | 선생님용 리포트 (미분석 시 null) |
-| teacherTalkTip | Array<String> | △ | 선생님 대화 팁 (미분석 시 null) |
+| teacherTalkTip | Array<String> | △ | 선생님 대화 팁 배열 (미분석 시 null, 3~5개) |
+| mindGardeningTip | Array<String> | △ | 마음 가드닝 팁 배열 (미분석 시 null, 2~3개) |
+| weekKeywords | Array<String> | △ | 주간 핵심 키워드 배열 (미분석 시 null, 최대 5개) |
 | emotionStats | Array | △ | 감정 통계 (미분석 시 null) |
 | weeklyDiaryDetails | Array | △ | 주간 일기 상세 (미분석 시 null) |
 | highlights | Object | △ | 하이라이트 (미분석 시 null) |
@@ -835,6 +846,16 @@ Authorization: Bearer {accessToken}
 {
   "yearMonth": "2026-01",
   "totalStudents": 25,
+  "areaKeywords": {
+    "red": [],
+    "yellow": [
+      "위로",
+      "친구",
+      "저녁"
+    ],
+    "blue": [],
+    "green": []
+  },
   "dailyDistribution": [
     {
       "date": "2026-01-01",
@@ -871,7 +892,16 @@ Authorization: Bearer {accessToken}
 |-----|------|------|------|
 | yearMonth | String | O | 조회한 년월 (YYYY-MM) |
 | totalStudents | Integer | O | 전체 학생 수 |
+| areaKeywords | Object | O | 각 영역별 키워드 |
 | dailyDistribution | Array | O | 일자별 감정 분포 리스트 (날짜 오름차순) |
+
+**areaKeywords[]**
+| 필드 | 타입 | 필수 | 설명 |
+|-----|------|------|------|
+| red | Array | O | 빨강 영역 (강한 감정) 주요 키워드 (빈도순) |
+| yellow | Array | O | 노랑 영역 (활기찬 감정) 주요 키워드 (빈도순)  |
+| blue | Array | O | 파랑 영역 (차분한 감정) 주요 키워드 (빈도순)  |
+| green | Array | O | 초록 영역 (평온한 감정) 주요 키워드 (빈도순)  |
 
 **dailyDistribution[] (DailyDistribution)**
 | 필드 | 타입 | 필수 | 설명 |
@@ -942,6 +972,11 @@ Authorization: Bearer {accessToken}
 ---
 
 ## 버전 히스토리
+
+### v1.2.0 (2026-01-11)
+- 주간 리포트 API 응답에 `mindGardeningTip` 필드를 배열로 변경 (2~3개)
+- 주간 리포트 API 응답에 `weekKeywords` 필드 추가 (최대 5개)
+- 주간 리포트 API 응답에 `studentReport`, `studentEncouragement` 필드 추가
 
 ### v1.1.0 (2026-01-11)
 - 학급 월별 감정 분포 조회 API 추가

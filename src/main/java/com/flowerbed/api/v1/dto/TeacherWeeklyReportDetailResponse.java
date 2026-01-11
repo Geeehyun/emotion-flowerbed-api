@@ -34,6 +34,10 @@ public class TeacherWeeklyReportDetailResponse {
     private String teacherReport;
     private List<String> teacherTalkTip;
 
+    // 공통 필드
+    private List<String> mindGardeningTip;  // 마음 가드닝 팁 (학생용, 선생님도 조회 가능, 2~3개)
+    private List<String> weekKeywords;  // 주간 핵심 키워드 (최대 5개)
+
     private List<EmotionStatDto> emotionStats;
     private List<DiaryDetailDto> weeklyDiaryDetails;
     private HighlightsDto highlights;
@@ -197,6 +201,12 @@ public class TeacherWeeklyReportDetailResponse {
                     .build();
         }
 
+        // 주간 키워드를 쉼표로 구분된 문자열에서 List로 변환
+        List<String> weekKeywords = null;
+        if (report.getWeekKeywords() != null && !report.getWeekKeywords().isEmpty()) {
+            weekKeywords = List.of(report.getWeekKeywords().split(","));
+        }
+
         return TeacherWeeklyReportDetailResponse.builder()
                 .reportId(report.getReportId())
                 .startDate(report.getStartDate())
@@ -208,6 +218,8 @@ public class TeacherWeeklyReportDetailResponse {
                 .studentEncouragement(report.getStudentEncouragement())
                 .teacherReport(report.getTeacherReport())
                 .teacherTalkTip(report.getTeacherTalkTip())
+                .mindGardeningTip(report.getMindGardeningTip())
+                .weekKeywords(weekKeywords)
                 .emotionStats(emotionStats)
                 .weeklyDiaryDetails(diaryDetails)
                 .highlights(highlightsDto)

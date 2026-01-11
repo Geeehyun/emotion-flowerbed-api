@@ -247,6 +247,10 @@ public class WeeklyReportService {
             // LLM API 호출하여 분석
             Map<String, Object> analysisResult = callLlmForAnalysis(diaries);
 
+            // keywords를 쉼표로 구분된 문자열로 변환
+            List<String> keywordList = (List<String>) analysisResult.get("keywords");
+            String weekKeywords = keywordList != null ? String.join(",", keywordList) : null;
+
             // WeeklyReport 엔티티 생성
             WeeklyReport report = WeeklyReport.builder()
                     .user(user)
@@ -257,6 +261,8 @@ public class WeeklyReportService {
                     .studentEncouragement((String) analysisResult.get("studentEncouragement"))
                     .teacherReport((String) analysisResult.get("teacherReport"))
                     .teacherTalkTip((List<String>) analysisResult.get("teacherTalkTip"))
+                    .mindGardeningTip((List<String>) analysisResult.get("mindGardeningTip"))
+                    .weekKeywords(weekKeywords)
                     .emotionStats(emotionStats)
                     .weeklyDiaryDetails(weeklyDiaryDetails)
                     .highlights(highlights)
@@ -413,8 +419,8 @@ public class WeeklyReportService {
      *
      * 예외 처리:
      * 1. JSON 파싱 실패
-     * 2. 필수 필드 누락 (studentReport, studentEncouragement, teacherReport, teacherTalkTip)
-     * 3. teacherTalkTip이 배열이 아닌 경우
+     * 2. 필수 필드 누락 (studentReport, studentEncouragement, teacherReport, teacherTalkTip, mindGardeningTip, keywords)
+     * 3. teacherTalkTip, mindGardeningTip, keywords가 배열이 아닌 경우
      */
     private Map<String, Object> parseAnalysisResponse(String llmResponse) {
         try {
@@ -436,6 +442,12 @@ public class WeeklyReportService {
             if (!jsonNode.has("teacherTalkTip") || !jsonNode.get("teacherTalkTip").isArray()) {
                 throw new IllegalArgumentException("teacherTalkTip 필드가 배열 형식이 아닙니다.");
             }
+            if (!jsonNode.has("mindGardeningTip") || !jsonNode.get("mindGardeningTip").isArray()) {
+                throw new IllegalArgumentException("mindGardeningTip 필드가 배열 형식이 아닙니다.");
+            }
+            if (!jsonNode.has("keywords") || !jsonNode.get("keywords").isArray()) {
+                throw new IllegalArgumentException("keywords 필드가 배열 형식이 아닙니다.");
+            }
 
             String studentReport = jsonNode.get("studentReport").asText();
             String studentEncouragement = jsonNode.get("studentEncouragement").asText();
@@ -443,6 +455,12 @@ public class WeeklyReportService {
 
             List<String> teacherTalkTip = new ArrayList<>();
             jsonNode.get("teacherTalkTip").forEach(node -> teacherTalkTip.add(node.asText()));
+
+            List<String> mindGardeningTip = new ArrayList<>();
+            jsonNode.get("mindGardeningTip").forEach(node -> mindGardeningTip.add(node.asText()));
+
+            List<String> keywords = new ArrayList<>();
+            jsonNode.get("keywords").forEach(node -> keywords.add(node.asText()));
 
             // 빈 값 검증
             if (studentReport.trim().isEmpty()) {
@@ -457,12 +475,20 @@ public class WeeklyReportService {
             if (teacherTalkTip.isEmpty()) {
                 throw new IllegalArgumentException("teacherTalkTip이 비어있습니다.");
             }
+            if (mindGardeningTip.isEmpty()) {
+                throw new IllegalArgumentException("mindGardeningTip이 비어있습니다.");
+            }
+            if (keywords.isEmpty()) {
+                throw new IllegalArgumentException("keywords가 비어있습니다.");
+            }
 
             Map<String, Object> result = new HashMap<>();
             result.put("studentReport", studentReport);
             result.put("studentEncouragement", studentEncouragement);
             result.put("teacherReport", teacherReport);
             result.put("teacherTalkTip", teacherTalkTip);
+            result.put("mindGardeningTip", mindGardeningTip);
+            result.put("keywords", keywords);
 
             return result;
 
@@ -739,6 +765,10 @@ public class WeeklyReportService {
                 // LLM API 재호출
                 Map<String, Object> analysisResult = callLlmForAnalysis(diaries);
 
+                // keywords를 쉼표로 구분된 문자열로 변환
+                List<String> keywordList = (List<String>) analysisResult.get("keywords");
+                String weekKeywords = keywordList != null ? String.join(",", keywordList) : null;
+
                 // 리포트 업데이트
                 report.updateAnalysisResult(
                         (String) analysisResult.get("studentReport"),
@@ -748,6 +778,8 @@ public class WeeklyReportService {
                         emotionStats,
                         weeklyDiaryDetails,
                         highlights,
+                        (List<String>) analysisResult.get("mindGardeningTip"),
+                        weekKeywords,
                         diaryCount
                 );
 

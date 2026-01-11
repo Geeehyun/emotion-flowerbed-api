@@ -834,10 +834,14 @@ public class TeacherService {
             dailyDistributions.add(dailyDistribution);
         }
 
-        // 7. 응답 생성
+        // 7. 영역별 키워드 집계
+        MonthlyEmotionDistributionResponse.AreaKeywords areaKeywords = calculateAreaKeywords(allDiaries);
+
+        // 8. 응답 생성
         return MonthlyEmotionDistributionResponse.builder()
                 .yearMonth(yearMonth)
                 .totalStudents(totalStudents)
+                .areaKeywords(areaKeywords)
                 .dailyDistribution(dailyDistributions)
                 .build();
     }
@@ -855,5 +859,74 @@ public class TeacherService {
             case SATURDAY -> "토요일";
             case SUNDAY -> "일요일";
         };
+    }
+
+    /**
+     * 영역별 키워드 집계 (빈도 높은 순 최대 5개)
+     */
+    private MonthlyEmotionDistributionResponse.AreaKeywords calculateAreaKeywords(List<Diary> diaries) {
+        // 영역별 키워드 빈도 Map
+        Map<String, Map<String, Integer>> areaKeywordFreq = new HashMap<>();
+        areaKeywordFreq.put("red", new HashMap<>());
+        areaKeywordFreq.put("yellow", new HashMap<>());
+        areaKeywordFreq.put("blue", new HashMap<>());
+        areaKeywordFreq.put("green", new HashMap<>());
+
+        // 분석된 일기에서 키워드 추출
+        for (Diary diary : diaries) {
+            if (!diary.getIsAnalyzed() || diary.getCoreEmotionCode() == null || diary.getKeywords() == null) {
+                continue;
+            }
+
+            // 감정 영역 조회
+            Emotion emotion = emotionCacheService.getEmotion(diary.getCoreEmotionCode());
+            if (emotion == null) {
+                continue;
+            }
+
+            String area = emotion.getArea().toLowerCase();
+            if (!areaKeywordFreq.containsKey(area)) {
+                continue;
+            }
+
+            // 키워드를 쉼표로 구분하여 파싱
+            String[] keywords = diary.getKeywords().split(",");
+            Map<String, Integer> keywordFreq = areaKeywordFreq.get(area);
+
+            for (String keyword : keywords) {
+                String trimmedKeyword = keyword.trim();
+                if (!trimmedKeyword.isEmpty()) {
+                    keywordFreq.put(trimmedKeyword, keywordFreq.getOrDefault(trimmedKeyword, 0) + 1);
+                }
+            }
+        }
+
+        // 각 영역별 상위 5개 키워드 선택
+        List<String> redKeywords = getTopKeywords(areaKeywordFreq.get("red"), 5);
+        List<String> yellowKeywords = getTopKeywords(areaKeywordFreq.get("yellow"), 5);
+        List<String> blueKeywords = getTopKeywords(areaKeywordFreq.get("blue"), 5);
+        List<String> greenKeywords = getTopKeywords(areaKeywordFreq.get("green"), 5);
+
+        return MonthlyEmotionDistributionResponse.AreaKeywords.builder()
+                .red(redKeywords)
+                .yellow(yellowKeywords)
+                .blue(blueKeywords)
+                .green(greenKeywords)
+                .build();
+    }
+
+    /**
+     * 키워드 빈도 Map에서 상위 N개 키워드 추출
+     */
+    private List<String> getTopKeywords(Map<String, Integer> keywordFreq, int topN) {
+        if (keywordFreq.isEmpty()) {
+            return List.of();
+        }
+
+        return keywordFreq.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(topN)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 }

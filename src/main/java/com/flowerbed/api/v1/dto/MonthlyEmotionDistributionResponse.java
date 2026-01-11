@@ -27,6 +27,11 @@ public class MonthlyEmotionDistributionResponse {
     private Integer totalStudents;
 
     /**
+     * 영역별 핵심 키워드 (빈도 높은 순 최대 5개)
+     */
+    private AreaKeywords areaKeywords;
+
+    /**
      * 일자별 감정 분포 리스트
      */
     private List<DailyDistribution> dailyDistribution;
@@ -92,5 +97,34 @@ public class MonthlyEmotionDistributionResponse {
          * 일기 미작성
          */
         private Integer none;
+    }
+
+    /**
+     * 영역별 핵심 키워드
+     */
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AreaKeywords {
+        /**
+         * 빨강 영역 키워드 (빈도 높은 순 최대 5개)
+         */
+        private List<String> red;
+
+        /**
+         * 노랑 영역 키워드 (빈도 높은 순 최대 5개)
+         */
+        private List<String> yellow;
+
+        /**
+         * 파랑 영역 키워드 (빈도 높은 순 최대 5개)
+         */
+        private List<String> blue;
+
+        /**
+         * 초록 영역 키워드 (빈도 높은 순 최대 5개)
+         */
+        private List<String> green;
     }
 }

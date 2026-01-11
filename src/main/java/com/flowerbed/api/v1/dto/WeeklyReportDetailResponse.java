@@ -27,6 +27,8 @@ public class WeeklyReportDetailResponse {
     private Boolean readYn;
     private String studentReport;
     private String studentEncouragement;
+    private List<String> mindGardeningTip;  // 마음 가드닝 팁 (학생용, 2~3개)
+    private List<String> weekKeywords;  // 주간 핵심 키워드 (최대 5개)
     private List<EmotionStatDto> emotionStats;
     private List<DiaryDetailDto> weeklyDiaryDetails;
     private HighlightsDto highlights;
@@ -190,6 +192,12 @@ public class WeeklyReportDetailResponse {
                     .build();
         }
 
+        // 주간 키워드를 쉼표로 구분된 문자열에서 List로 변환
+        List<String> weekKeywords = null;
+        if (report.getWeekKeywords() != null && !report.getWeekKeywords().isEmpty()) {
+            weekKeywords = List.of(report.getWeekKeywords().split(","));
+        }
+
         return WeeklyReportDetailResponse.builder()
                 .reportId(report.getReportId())
                 .startDate(report.getStartDate())
@@ -199,6 +207,8 @@ public class WeeklyReportDetailResponse {
                 .readYn(report.getReadYn())
                 .studentReport(report.getStudentReport())
                 .studentEncouragement(report.getStudentEncouragement())
+                .mindGardeningTip(report.getMindGardeningTip())
+                .weekKeywords(weekKeywords)
                 .emotionStats(emotionStats)
                 .weeklyDiaryDetails(diaryDetails)
                 .highlights(highlightsDto)

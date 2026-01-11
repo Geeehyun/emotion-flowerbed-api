@@ -73,6 +73,13 @@ public class WeeklyReport extends BaseAuditEntity {
     @Column(name = "highlights", columnDefinition = "LONGTEXT")
     private Highlights highlights;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "mind_gardening_tip", columnDefinition = "LONGTEXT")
+    private List<String> mindGardeningTip;
+
+    @Column(name = "week_keywords", length = 500)
+    private String weekKeywords;
+
     @Column(name = "is_analyzed", nullable = false)
     private Boolean isAnalyzed = false;
 
@@ -87,7 +94,7 @@ public class WeeklyReport extends BaseAuditEntity {
                        Integer diaryCount, String studentReport, String studentEncouragement,
                        String teacherReport, List<String> teacherTalkTip,
                        List<EmotionStat> emotionStats, List<DiaryDetail> weeklyDiaryDetails,
-                       Highlights highlights,
+                       Highlights highlights, List<String> mindGardeningTip, String weekKeywords,
                        Boolean isAnalyzed, Boolean readYn, Boolean newNotificationSent) {
         this.user = user;
         this.startDate = startDate;
@@ -100,6 +107,8 @@ public class WeeklyReport extends BaseAuditEntity {
         this.emotionStats = emotionStats;
         this.weeklyDiaryDetails = weeklyDiaryDetails;
         this.highlights = highlights;
+        this.mindGardeningTip = mindGardeningTip;
+        this.weekKeywords = weekKeywords;
         this.isAnalyzed = isAnalyzed != null ? isAnalyzed : false;
         this.readYn = readYn != null ? readYn : false;
         this.newNotificationSent = newNotificationSent != null ? newNotificationSent : false;
@@ -262,7 +271,8 @@ public class WeeklyReport extends BaseAuditEntity {
     public void updateAnalysisResult(String studentReport, String studentEncouragement,
                                      String teacherReport, List<String> teacherTalkTip,
                                      List<EmotionStat> emotionStats, List<DiaryDetail> weeklyDiaryDetails,
-                                     Highlights highlights, Integer diaryCount) {
+                                     Highlights highlights, List<String> mindGardeningTip, String weekKeywords,
+                                     Integer diaryCount) {
         this.studentReport = studentReport;
         this.studentEncouragement = studentEncouragement;
         this.teacherReport = teacherReport;
@@ -270,6 +280,8 @@ public class WeeklyReport extends BaseAuditEntity {
         this.emotionStats = emotionStats;
         this.weeklyDiaryDetails = weeklyDiaryDetails;
         this.highlights = highlights;
+        this.mindGardeningTip = mindGardeningTip;
+        this.weekKeywords = weekKeywords;
         this.diaryCount = diaryCount;
         this.isAnalyzed = true;  // 분석 완료 상태로 변경
     }

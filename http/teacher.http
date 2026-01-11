@@ -127,7 +127,7 @@ Authorization: Bearer {{accessToken}}
 ### 학생별 주간 리포트 상세 조회
 ### 선생님이 특정 학생의 주간 리포트 상세를 조회합니다
 ### - 같은 학교, 같은 반의 학생만 조회 가능
-### - teacherReport, teacherTalkTip 포함
+### - teacherReport, teacherTalkTip, mindGardeningTip 포함
 ### - 분석 완료/미완료 모두 조회 가능 (isAnalyzed 무관)
 ###   ⚠️ isAnalyzed=false인 경우 분석 관련 필드(studentReport, teacherReport 등)는 null
 ### - 응답 구조:
@@ -135,7 +135,9 @@ Authorization: Bearer {{accessToken}}
 ###   - studentReport: 학생용 주간 분석 (분석 완료 시)
 ###   - studentEncouragement: 학생용 격려 메시지 (분석 완료 시)
 ###   - teacherReport: 선생님용 주간 분석 (분석 완료 시)
-###   - teacherTalkTip: 선생님용 대화 팁 배열 (분석 완료 시)
+###   - teacherTalkTip: 선생님용 대화 팁 배열 (분석 완료 시, 3~5개)
+###   - mindGardeningTip: 마음 가드닝 팁 배열 (분석 완료 시, 2~3개)
+###   - weekKeywords: 주간 핵심 키워드 배열 (분석 완료 시, 최대 5개)
 ###   - emotionStats: 감정 통계 (분석 완료 시)
 ###   - weeklyDiaryDetails: 주간 일기 상세 (분석 완료 시)
 ###   - highlights: 하이라이트 (분석 완료 시)

@@ -26,6 +26,7 @@ public class DiaryEmotionResponse {
     private String reason;
     private String flower;
     private String floriography;
+    private List<String> keywords;  // 핵심 감정 관련 키워드 (최대 3개)
 
     // 위험도 분석 (2단계 - 키워드 탐지)
     private String riskLevel;  // normal, caution, danger

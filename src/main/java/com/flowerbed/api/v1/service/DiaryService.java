@@ -120,17 +120,24 @@ public class DiaryService {
             // TODO LLM 응답 이상 (존재하지 않는 감정 코드) 재요청 1회 필요
         }
 
+        // 키워드를 쉼표로 구분된 문자열로 변환
+        String keywords = null;
+        if (emotionResponse.getKeywords() != null && !emotionResponse.getKeywords().isEmpty()) {
+            keywords = String.join(",", emotionResponse.getKeywords());
+        }
+
         diary.updateAnalysis(
                 emotionResponse.getSummary(),
                 emotionCode,
                 emotionResponse.getReason(),
                 emotionResponse.getFlower(),
                 emotionResponse.getFloriography(),
-                emotionsJson
+                emotionsJson,
+                keywords
         );
 
-        log.info("Diary emotion analyzed: diaryId={}, coreEmotionCode={}",
-                diaryId, emotionResponse.getCoreEmotion());
+        log.info("Diary emotion analyzed: diaryId={}, coreEmotionCode={}, keywords={}",
+                diaryId, emotionResponse.getCoreEmotion(), keywords);
 
         // 감정 조절 팁 체크 (오늘 날짜이고 연속 3일 이상인 경우)
         EmotionControlTipInfo tipInfo = checkEmotionControlTip(userId, diary);
@@ -181,17 +188,24 @@ public class DiaryService {
         // 테스트 모드에서는 감정 코드 검증 생략
         String emotionCode = emotionResponse.getCoreEmotion();
 
+        // 키워드를 쉼표로 구분된 문자열로 변환 (테스트 모드는 기본 키워드)
+        String keywords = null;
+        if (emotionResponse.getKeywords() != null && !emotionResponse.getKeywords().isEmpty()) {
+            keywords = String.join(",", emotionResponse.getKeywords());
+        }
+
         diary.updateAnalysis(
                 emotionResponse.getSummary(),
                 emotionCode,
                 emotionResponse.getReason(),
                 emotionResponse.getFlower(),
                 emotionResponse.getFloriography(),
-                emotionsJson
+                emotionsJson,
+                keywords
         );
 
-        log.info("Diary emotion analyzed (TEST MODE): diaryId={}, coreEmotionCode={}, area={}",
-                diaryId, emotionCode, area);
+        log.info("Diary emotion analyzed (TEST MODE): diaryId={}, coreEmotionCode={}, area={}, keywords={}",
+                diaryId, emotionCode, area, keywords);
 
         // 감정 조절 팁 체크 (오늘 날짜이고 연속 3일 이상인 경우)
         EmotionControlTipInfo tipInfo = checkEmotionControlTip(userId, diary);
@@ -367,6 +381,12 @@ public class DiaryService {
             flowerDetail = emotion != null ? convertToDiaryFlowerDetail(emotion) : null;
         }
 
+        // 키워드를 쉼표로 구분된 문자열에서 List로 변환
+        List<String> keywords = null;
+        if (diary.getKeywords() != null && !diary.getKeywords().isEmpty()) {
+            keywords = List.of(diary.getKeywords().split(","));
+        }
+
         // 감정 조절 팁 정보 설정 (분석 API에서만 제공)
         Boolean showTip = null;
         Integer consecutiveDays = null;
@@ -390,6 +410,7 @@ public class DiaryService {
                 .flowerName(diary.getFlowerName())
                 .flowerMeaning(diary.getFlowerMeaning())
                 .emotions(emotions)
+                .keywords(keywords)
                 .isAnalyzed(diary.getIsAnalyzed())
                 .analyzedAt(diary.getAnalyzedAt())
                 .createdAt(diary.getCreatedAt())

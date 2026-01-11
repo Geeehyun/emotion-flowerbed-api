@@ -82,7 +82,7 @@ Authorization: Bearer {{accessToken}}
 ### - 관리자 권한 필수 (userTypeCd = 'ADMIN')
 ### - 배치 처리 방식으로 동작 (100명씩 처리, 배치 간 2초 대기)
 ### - 학생/선생님으로 호출 시 403 Forbidden 에러 발생
-POST http://localhost:8080/api/v1/weekly-reports/generate-all?startDate=2026-03-02&endDate=2026-03-08
+POST http://localhost:8080/api/v1/weekly-reports/generate-all?startDate=2025-12-29&endDate=2026-01-04
 Authorization: Bearer {{accessToken}}
 
 ### 분석 실패한 리포트 재시도 (관리자 전용)
@@ -163,7 +163,10 @@ Authorization: Bearer {{accessToken}}
 ### - studentReport: 학생용 주간 일기 분석
 ### - studentEncouragement: 학생용 감정 정원사의 편지
 ### - teacherReport: 선생님용 주간 일기 분석 (선생님 화면에서만 표시)
-### - teacherTalkTip: 선생님용 대화 팁 (선생님 화면에서만 표시)
+### - teacherTalkTip: 선생님용 대화 팁 배열 (선생님 화면에서만 표시, 3~5개)
+### - mindGardeningTip: 마음 가드닝 팁 배열 (학생용, 2~3개)
+### - weekKeywords: 주간 핵심 키워드 배열 (최대 5개)
 ### - emotionStats: 주간 감정 통계 (감정별 횟수, 비율)
 ### - weeklyDiaryDetails: 날짜별 일기 상세 정보 (감정, 꽃 정보)
+### - highlights: 주간 하이라이트 (대표 꽃, 숫자로 보는 한 주, 감정 정원 다양성)
 ###

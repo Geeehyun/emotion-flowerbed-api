@@ -57,6 +57,9 @@ public class Diary extends BaseAuditEntity {
     @Column(name = "emotions_json", columnDefinition = "LONGTEXT")
     private List<EmotionPercent> emotionsJson;
 
+    @Column(name = "keywords", length = 500)
+    private String keywords;
+
     @Column(name = "is_analyzed", nullable = false)
     private Boolean isAnalyzed = false;
 
@@ -78,13 +81,14 @@ public class Diary extends BaseAuditEntity {
 
     public void updateAnalysis(String summary, String coreEmotionCode,
                                String emotionReason, String flowerName, String flowerMeaning,
-                               List<EmotionPercent> emotionsJson) {
+                               List<EmotionPercent> emotionsJson, String keywords) {
         this.summary = summary;
         this.coreEmotionCode = coreEmotionCode;
         this.emotionReason = emotionReason;
         this.flowerName = flowerName;
         this.flowerMeaning = flowerMeaning;
         this.emotionsJson = emotionsJson;
+        this.keywords = keywords;
         this.isAnalyzed = true;
         this.analyzedAt = LocalDateTime.now();
     }

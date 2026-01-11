@@ -68,6 +68,7 @@ POST /api/v1/diaries
   "emotionReason": null,
   "flowerName": null,
   "flowerMeaning": null,
+  "keywords": null,
   "emotions": null,
   "flowerDetail": null,
   "createdAt": "2026-01-10T14:30:00",
@@ -122,6 +123,7 @@ Authorization: Bearer {accessToken}
   "emotionReason": "친구들과의 즐거운 시간이 주된 감정입니다",
   "flowerName": "해바라기",
   "flowerMeaning": "긍정적인 에너지",
+  "keywords": ["친구", "즐거움", "행복"],
   "emotions": [
     {
       "emotion": "E001",
@@ -252,6 +254,7 @@ Authorization: Bearer {accessToken}
       "coreEmotionCode": "E001",
       "flower": "해바라기",
       "floriography": "긍정적인 에너지",
+      "keywords": ["친구", "즐거움", "행복"],
       "emotions": [
         {
           "emotion": "E001",
@@ -302,6 +305,7 @@ Content-Type: application/json
   "isAnalyzed": false,
   "summary": null,
   "coreEmotionCode": null,
+  "keywords": null,
   ...
 }
 ```
@@ -424,6 +428,11 @@ GET /api/v1/weekly-reports/{reportId}
   "isAnalyzed": true,
   "studentReport": "이번 주 너는 친구들과 많은 시간을 보내며...",
   "studentEncouragement": "다음 주에도 긍정적인 마음으로 생활하길 바라!",
+  "mindGardeningTip": [
+    "친구 일로 마음이 아플 때는, 그 감정을 바로 해결하지 않아도 괜찮아요. 글이나 메모로 마음을 먼저 꺼내본 뒤, 이야기할지 말지를 천천히 정해 보세요.",
+    "기분이 계속 좋을 때도 몸이 보내는 피곤 신호를 한 번 살펴봐도 좋아요. 충분히 쉬는 것도 마음을 잘 가꾸는 방법이에요."
+  ],
+  "weekKeywords": ["친구", "가족", "놀이", "학교"],
   "emotionStats": [
     {
       "emotion": "E001",
@@ -647,6 +656,7 @@ GET /api/v1/flowers/all-emotions
 | emotionReason | String | △ | 대표 감정 선택 이유 (분석 완료 시) |
 | flowerName | String | △ | 꽃 이름 (분석 완료 시) |
 | flowerMeaning | String | △ | 꽃말 (분석 완료 시) |
+| keywords | Array<String> | △ | 핵심 감정 관련 키워드 (분석 완료 시, 최대 3개) |
 | emotions | Array | △ | 감정 분포 (분석 완료 시) |
 | flowerDetail | Object | △ | 꽃 상세 정보 (분석 완료 시) |
 | createdAt | String | O | 생성 시각 |
@@ -692,6 +702,11 @@ GET /api/v1/flowers/all-emotions
 ---
 
 ## 버전 히스토리
+
+### v1.1.0 (2026-01-11)
+- 일기 분석 API 응답에 `keywords` 필드 추가 (핵심 감정 관련 키워드 최대 3개)
+- 주간 리포트 API 응답에 `mindGardeningTip` 필드를 배열로 변경 (2~3개)
+- 주간 리포트 API 응답에 `weekKeywords` 필드 추가 (최대 5개)
 
 ### v1.0.0 (2026-01-11)
 - 초기 버전 작성

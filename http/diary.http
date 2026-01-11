@@ -12,7 +12,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "diaryDate": "2025-12-09",
+  "diaryDate": "2026-01-11",
   "content": "오늘 친구와 맛있는 저녁을 먹었다. 오랜만에 만나서 정말 즐거웠고, 대화를 나누면서 많은 위로를 받았다. 힘든 일이 있었지만 친구 덕분에 기분이 많이 좋아졌다."
 }
 
@@ -57,7 +57,18 @@ Content-Type: application/json
 ### 일기 감정 분석 (실제 - LLM API 사용)
 ### 현재 설정: OpenAI (gpt-4o-mini)
 ### llm.provider 설정에 따라 Claude 또는 OpenAI 사용
-POST http://localhost:8080/api/v1/diaries/1/analyze
+### 📌 응답 필드:
+### - summary: AI가 생성한 일기 요약
+### - coreEmotionCode: 핵심 감정 코드
+### - emotionReason: 핵심 감정 선택 이유
+### - keywords: 핵심 감정 관련 키워드 배열 (최대 3개)
+### - emotions: 감정 분포 (비율 포함)
+### - flowerDetail: 핵심 감정에 매핑된 꽃 상세정보
+### - showEmotionControlTip: 감정 조절 팁 표시 여부 (연속 3일 이상 같은 영역 시 true)
+### - consecutiveSameAreaDays: 연속된 같은 영역 일수
+### - repeatedEmotionArea: 반복된 감정 영역 (red/yellow/blue/green)
+### - emotionControlTipCode: 감정 조절 팁 코드 (RED_3, YELLOW_5 등)
+POST http://localhost:8080/api/v1/diaries/243/analyze
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
