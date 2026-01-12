@@ -101,176 +101,55 @@ emotions (감정-꽃 마스터)
 
 **인증**: 로그인 제외한 모든 API는 `Authorization: Bearer {accessToken}` 헤더 필요
 
-### Auth API
+### API 개요
 
-| Method | Endpoint | 설명 | 인증 필요 |
-|--------|----------|------|---------|
-| POST | `/auth/login` | 로그인 (Access Token + Refresh Token 발급) | ❌ |
-| POST | `/auth/logout` | 로그아웃 (토큰 무효화) | ✅ |
-| POST | `/auth/refresh` | Access Token 갱신 | ❌ |
+| 카테고리 | 설명 | 상세 문서 |
+|---------|------|----------|
+| 인증 | 로그인, 로그아웃, 토큰 갱신 (3개 API) | [auth.md](./docs/api/auth.md) |
+| 학생 | 일기 CRUD, 감정 분석, 주간 리포트, 감정 통계 (13개 API) | [student.md](./docs/api/student.md) |
+| 선생님 | 학생 관리, 감정 모니터링, 위험 학생 관리 (9개 API) | [teacher.md](./docs/api/teacher.md) |
+| 공통 에러 | 모든 API 에러 코드 및 처리 가이드 | [error.md](./docs/api/error.md) |
 
-### Diary API
-
-| Method | Endpoint | 설명 | 인증 필요 |
-|--------|----------|------|---------|
-| POST | `/diaries` | 일기 작성 | ✅ |
-| POST | `/diaries/{id}/analyze` | 일기 감정 분석 (Claude API) | ✅ |
-| POST | `/diaries/{id}/analyze-test` | 일기 감정 분석 (테스트 모드, 랜덤) | ✅ |
-| GET | `/diaries/{id}` | 일기 상세 조회 | ✅ |
-| GET | `/diaries/date/{date}` | 특정 날짜 일기 조회 | ✅ |
-| GET | `/diaries?yearMonth=YYYY-MM` | 월별 일기 목록 조회 (꽃 상세정보 포함) | ✅ |
-| PUT | `/diaries/{id}` | 일기 수정 | ✅ |
-| DELETE | `/diaries/{id}` | 일기 삭제 (Soft Delete) | ✅ |
-
-### Flower API
-
-| Method | Endpoint | 설명 | 인증 필요 |
-|--------|----------|------|---------|
-| GET | `/flowers/my-emotions` | 사용자의 감정&꽃 통계 (날짜 목록 + 꽃 상세정보 포함) | ✅ |
-| GET | `/flowers/all-emotions` | 전체 감정-꽃 정보 조회 (display_order 순) | ✅ |
-
-### Code API
-
-| Method | Endpoint | 설명 | 인증 필요 |
-|--------|----------|------|---------|
-| GET | `/codes/groups` | 모든 코드 그룹 조회 (코드 포함) | ✅ |
-| GET | `/codes/groups/{groupCode}` | 특정 코드 그룹 조회 | ✅ |
-| GET | `/codes/{groupCode}` | 특정 그룹의 코드 목록 조회 | ✅ |
-| GET | `/codes/{groupCode}/{code}` | 특정 코드 상세 조회 | ✅ |
-
-### Weekly Report API
-
-| Method | Endpoint | 설명 | 인증 필요 |
-|--------|----------|------|---------|
-| GET | `/weekly-reports?startDate=YYYY-MM-DD` | 특정 주의 리포트 조회 | ✅ |
-| GET | `/weekly-reports/all` | 모든 주간 리포트 조회 (최신순) | ✅ |
-| GET | `/weekly-reports/recent?limit=5` | 최근 N개 주간 리포트 조회 | ✅ |
-| POST | `/weekly-reports/generate` | 수동 주간 리포트 생성 (테스트용) | ✅ |
+> 💡 **상세한 API 명세는 [docs/api](./docs/api) 디렉토리를 참조하세요.**
+> 각 API의 요청/응답 구조, 에러 응답, 사용 예시 등이 포함되어 있습니다.
 
 ---
 
 ## 주요 기능 설명
 
-### 1. 로그인
-```json
-POST /api/v1/auth/login
+### 1. 로그인 (JWT 기반)
+- Access Token (1일 유효) + Refresh Token (1년 유효) 발급
+- Refresh Token Rotation 방식으로 보안 강화
+- Redis 기반 토큰 관리 및 블랙리스트
 
-{
-  "userId": "student1",
-  "password": "1234"
-}
+> 상세 명세: [docs/api/auth.md](./docs/api/auth.md)
 
-Response:
-{
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "userSn": 1,
-  "userId": "student1",
-  "name": "홍길동",
-  "userTypeCd": "STUDENT",
-  "emotionControlCd": "DEEP_BREATHING"
-}
-```
+### 2. 일기 작성 및 감정 분석
+- 하루 1개 일기 작성 가능 (10자 이상, 5000자 이하)
+- AI 기반 감정 분석 (Claude Haiku 모델)
+- 20개 감정 분류 체계 및 감정별 꽃 매칭
+- 연속 3일/5일 같은 영역 감정 시 자동으로 감정 조절 팁 제공
 
-### 2. 일기 작성
-```json
-POST /api/v1/diaries
-Authorization: Bearer {accessToken}
-
-{
-  "diaryDate": "2025-12-08",
-  "content": "오늘 친구와 맛있는 저녁을 먹었다..."
-}
-```
-
-**유효성 검사**:
-- 최소 10자 이상
-- 최대 5000자 이하
-- 하루 1개 일기만 작성 가능
-
-### 3. 감정 분석
-```json
-POST /api/v1/diaries/1/analyze
-Authorization: Bearer {accessToken}
-
-Response:
-{
-  "diaryId": 1,
-  "summary": "친구와 저녁을 먹으며 즐거운 시간을 보냄",
-  "coreEmotionCode": "JOY",
-  "emotionReason": "친구와의 즐거운 시간이 강조됨",
-  "flowerName": "해바라기",
-  "flowerMeaning": "당신을 보면 행복해요",
-  "emotions": [
-    {"emotion": "JOY", "percent": 70},
-    {"emotion": "HAPPY", "percent": 30}
-  ],
-  "isAnalyzed": true,
-  "analyzedAt": "2025-12-08T10:30:00",
-  "showEmotionControlTip": true,
-  "consecutiveSameAreaDays": 3,
-  "repeatedEmotionArea": "green"
-}
-```
-
-**감정 조절 팁**:
-- 오늘 날짜의 일기 분석 시, 연속 3일/5일 같은 영역의 감정이 나타나면 자동으로 팁 제공
-- `showEmotionControlTip`: 팁 표시 여부
-- `consecutiveSameAreaDays`: 연속 일수 (3 또는 5)
-- `repeatedEmotionArea`: 반복된 영역 (red, yellow, blue, green)
-- Front에서 `GET /v1/codes/EMOTION_CONTROL/{AREA}_{DAYS}` 호출하여 팁 메시지 조회
-  - 예: `GET /v1/codes/EMOTION_CONTROL/RED_3` → "3일 연속 강한 감정이 감지되었어요..."
-
-**비용 최적화**:
+**비용 최적화:**
 - Claude Haiku 모델 사용 (Sonnet 대비 20배 저렴)
-- max_tokens: 500으로 제한
-- temperature: 0.3 (일관된 결과)
+- 테스트 모드 제공 (랜덤 분석, API 호출 비용 없음)
 
-### 4. 월별 일기 목록 (꽃 상세정보 포함)
-```json
-GET /api/v1/diaries?yearMonth=2025-12
-Authorization: Bearer {accessToken}
+> 상세 명세: [docs/api/student.md](./docs/api/student.md)
 
-Response:
-{
-  "yearMonth": "2025-12",
-  "diaries": [
-    {
-      "id": 1,
-      "date": "2025-12-08",
-      "content": "오늘 친구와...",
-      "coreEmotion": "기쁨",
-      "flower": "해바라기",
-      "floriography": "당신을 보면 행복해요",
-      "summary": "친구와 저녁을...",
-      "emotions": [
-        {"emotion": "JOY", "percent": 70}
-      ],
-      "reason": "친구와의 즐거운 시간...",
-      "flowerDetail": {
-        "emotionCode": "JOY",
-        "emotionNameKr": "기쁨",
-        "emotionNameEn": "Joy",
-        "flowerNameKr": "해바라기",
-        "flowerNameEn": "Sunflower",
-        "flowerMeaning": "당신을 보면 행복해요",
-        "flowerMeaningStory": "해바라기는 해를 따라 고개를 돌리는 특성이 있어...",
-        "flowerColor": "노란색",
-        "flowerColorCodes": "#FFD700,#FFA500",
-        "flowerOrigin": "북아메리카",
-        "flowerFragrance": "은은한 풀향기",
-        "flowerFunFact": "해바라기는 하루에 약 2리터의 물을 흡수합니다",
-        "imageFile3d": "sunflower_3d.png",
-        "imageFileRealistic": "sunflower_real.jpg",
-        "isPositive": true
-      }
-    }
-  ],
-  "totalCount": 15,
-  "hasNextMonth": true,
-  "hasPrevMonth": true
-}
-```
+### 3. 주간 리포트
+- 주간 감정 패턴 분석
+- AI 기반 인사이트 제공 (학생용/선생님용)
+- 감정 다양성 점수 및 대표 꽃 선정
+
+> 상세 명세: [docs/api/student.md](./docs/api/student.md)
+
+### 4. 선생님 기능
+- 담당 학생 목록 및 감정 현황 조회
+- 날짜별/월별 학급 감정 분포 조회
+- 위험 학생 관리 (CAUTION/DANGER 상태)
+- 학생별 주간 리포트 및 위험도 변화 이력
+
+> 상세 명세: [docs/api/teacher.md](./docs/api/teacher.md)
 
 ---
 
@@ -486,17 +365,21 @@ anthropic:
 
 ## 에러 코드
 
+모든 API는 실패 시 동일한 형식의 에러 응답을 반환합니다.
+
+### 주요 에러 코드
+
 | HTTP Status | Error Code | 설명 |
 |-------------|------------|------|
 | 400 | INVALID_INPUT | 입력 값 검증 실패 |
-| 400 | INVALID_DIARY_CONTENT | 일기 내용이 분석 불가능 (10자 미만 또는 5000자 초과) |
-| 400 | DUPLICATE_DIARY_DATE | 해당 날짜에 이미 일기가 존재 |
+| 401 | INVALID_TOKEN | 토큰이 유효하지 않거나 만료됨 |
+| 401 | INVALID_PASSWORD | 비밀번호 불일치 |
+| 403 | FORBIDDEN | 접근 권한 없음 |
 | 404 | DIARY_NOT_FOUND | 일기를 찾을 수 없음 |
-| 404 | DIARY_NOT_ANALYZED | 일기가 아직 분석되지 않음 |
 | 404 | USER_NOT_FOUND | 사용자를 찾을 수 없음 |
-| 404 | FLOWER_NOT_FOUND | 꽃 정보를 찾을 수 없음 |
 | 500 | LLM_ANALYSIS_FAILED | AI 분석 실패 |
-| 500 | INTERNAL_SERVER_ERROR | 서버 내부 오류 |
+
+> 💡 **전체 에러 코드 및 처리 가이드는 [docs/api/error.md](./docs/api/error.md)를 참조하세요.**
 
 ---
 

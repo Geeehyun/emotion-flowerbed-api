@@ -12,6 +12,8 @@ Authorization: Bearer {accessToken}
 
 **공통 권한:** TEACHER 타입 사용자만 접근 가능
 
+**인증 관련:** 로그인, 로그아웃, 토큰 갱신은 [인증 API 명세](./auth.md)를 참조하세요.
+
 ---
 
 ## 목차
@@ -959,6 +961,8 @@ Authorization: Bearer {accessToken}
 
 ## 공통 에러 코드
 
+선생님 API에서 자주 발생하는 에러 코드:
+
 | 코드 | HTTP Status | 설명 |
 |-----|-------------|------|
 | FORBIDDEN | 403 | 권한 없음 (TEACHER 타입 아님 또는 다른 반 학생) |
@@ -968,6 +972,8 @@ Authorization: Bearer {accessToken}
 | NOT_DANGER_STATUS | 400 | DANGER 상태가 아님 |
 | WEEKLY_REPORT_NOT_FOUND | 404 | 주간 리포트를 찾을 수 없음 |
 | BAD_REQUEST | 400 | 잘못된 요청 |
+
+전체 에러 코드 및 상세 설명은 [공통 에러 응답 명세](./error.md)를 참조하세요.
 
 ---
 

@@ -10,6 +10,8 @@ Authorization: Bearer {accessToken}
 
 **공통 권한:** STUDENT 타입 사용자 접근 가능 (일부 API는 권한 제한 없음)
 
+**인증 관련:** 로그인, 로그아웃, 토큰 갱신은 [인증 API 명세](./auth.md)를 참조하세요.
+
 ---
 
 ## API 그룹
@@ -689,6 +691,8 @@ GET /api/v1/flowers/all-emotions
 
 ## 공통 에러 코드
 
+학생 API에서 자주 발생하는 에러 코드:
+
 | 코드 | HTTP Status | 설명 |
 |-----|-------------|------|
 | INVALID_INPUT | 400 | 입력 값이 올바르지 않음 |
@@ -698,6 +702,8 @@ GET /api/v1/flowers/all-emotions
 | WEEKLY_REPORT_NOT_ANALYZED | 404 | 주간 리포트가 아직 분석되지 않음 |
 | FORBIDDEN | 403 | 접근 권한 없음 |
 | LLM_ANALYSIS_FAILED | 500 | AI 감정 분석 실패 |
+
+전체 에러 코드 및 상세 설명은 [공통 에러 응답 명세](./error.md)를 참조하세요.
 
 ---
 

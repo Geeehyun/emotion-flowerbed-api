@@ -16,41 +16,26 @@ Content-Type: application/json
   "content": "오늘 친구와 맛있는 저녁을 먹었다. 오랜만에 만나서 정말 즐거웠고, 대화를 나누면서 많은 위로를 받았다. 힘든 일이 있었지만 친구 덕분에 기분이 많이 좋아졌다."
 }
 
-###
+### 위험 키워드 테스트용 일기 작성 (주석 해제하여 사용)
+### 우울 키워드 테스트 (CAUTION 예상)
+# POST http://localhost:8080/api/v1/diaries
+# Authorization: Bearer {{accessToken}}
+# Content-Type: application/json
+#
+# {
+#   "diaryDate": "2026-01-07",
+#   "content": "오늘도 혼자 밥을 먹었다. 요즘 계속 외로워서 힘들다. 아무도 나를 이해 못하는 것 같고 무기력해진다. 친구들은 다 바빠서 연락도 잘 안 되고."
+# }
 
-### 일기 작성 - 우울 키워드 테스트 (CAUTION 예상)
-POST http://localhost:8080/api/v1/diaries
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "diaryDate": "2026-01-07",
-  "content": "오늘도 혼자 밥을 먹었다. 요즘 계속 외로워서 힘들다. 아무도 나를 이해 못하는 것 같고 무기력해진다. 친구들은 다 바빠서 연락도 잘 안 되고."
-}
-
-###
-
-### 일기 작성 - 극단적 표현 테스트 (DANGER 예상)
-POST http://localhost:8080/api/v1/diaries
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "diaryDate": "2026-01-08",
-  "content": "너무 힘들다. 아무것도 하기 싫고 살기 싫다. 진짜 죽고 싶다는 생각이 든다. 아무도 날 이해 못 해."
-}
-
-###
-
-### 일기 작성 - 긍정적 맥락 테스트 (NORMAL 예상)
-POST http://localhost:8080/api/v1/diaries
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "diaryDate": "2026-01-09",
-  "content": "오늘 엄마가 해준 된장찌개 너무 맛있어서 죽는 줄 알았다! 정말 행복했다. 가족이랑 함께 있으니까 너무 좋다."
-}
+### 극단적 표현 테스트 (DANGER 예상)
+# POST http://localhost:8080/api/v1/diaries
+# Authorization: Bearer {{accessToken}}
+# Content-Type: application/json
+#
+# {
+#   "diaryDate": "2026-01-08",
+#   "content": "너무 힘들다. 아무것도 하기 싫고 살기 싫다. 진짜 죽고 싶다는 생각이 든다. 아무도 날 이해 못 해."
+# }
 
 ###
 
@@ -119,13 +104,18 @@ Authorization: Bearer {{accessToken}}
 ### 1. 연속 3일 일기 작성 (같은 area, 날짜는 연속이면 됨)
 ### 2. 각 일기를 분석하여 연속 체크 (area=red 파라미터 사용)
 ### 3. 3일째 일기 분석 시 showEmotionControlTip=true 확인
-### 4. 감정 조절 팁 코드 조회하여 적절한 메시지 확인
+### 4. emotionControlTipCode로 감정 조절 팁 메시지 조회
 ###
-### 🎯 개선: 오늘 날짜 체크 제거됨
+### 🎯 특징:
 ### - 과거/미래 어떤 날짜든 연속 패턴만 맞으면 팁 표시
 ### - 며칠치 모아서 작성해도 패턴 인식 가능
+### - 예상 결과:
+###   - 3~4일 연속 같은 영역 → emotionControlTipCode: "RED_3", "YELLOW_3" 등
+###   - 5일 이상 연속 같은 영역 → emotionControlTipCode: "RED_5", "YELLOW_5" 등
+### - emotionControlTipCode를 바로 사용하여 감정 조절 팁 조회 가능
+###   예: GET /v1/codes/EMOTION_CONTROL/RED_3
 
-### 1단계: 오늘-2일 일기 작성 및 분석 (예: 2025-12-24)
+### 1일차: 일기 작성 및 분석 (red 영역)
 POST http://localhost:8080/api/v1/diaries
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
@@ -135,97 +125,48 @@ Content-Type: application/json
   "content": "오늘은 정말 화가 났다. 모든 것이 뜻대로 되지 않아서 너무 답답하고 짜증이 난다."
 }
 
-### 오늘-2일 일기 분석 (테스트 모드 - red 영역 지정)
+### 1일차 분석 (테스트 모드 - red 영역 지정)
 ### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-### area=red 파라미터로 red 영역의 감정만 랜덤 선택
 POST http://localhost:8080/api/v1/diaries/148/analyze-test?area=red
 Authorization: Bearer {{accessToken}}
 
-### 2단계: 오늘-1일 일기 작성 및 분석 (예: 2025-12-25)
-POST http://localhost:8080/api/v1/diaries
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
+### 2일차: 일기 작성 및 분석 (red 영역)
+# POST http://localhost:8080/api/v1/diaries
+# Authorization: Bearer {{accessToken}}
+# Content-Type: application/json
+#
+# {
+#   "diaryDate": "2026-01-06",
+#   "content": "어제에 이어 오늘도 기분이 안 좋다. 계속 화가 나고 모든 게 싫다."
+# }
+#
+# ### 2일차 분석 - ⚠️ diaryId 변경 필요
+# POST http://localhost:8080/api/v1/diaries/XXX/analyze-test?area=red
+# Authorization: Bearer {{accessToken}}
 
-{
-  "diaryDate": "2026-01-02",
-  "content": "어제에 이어 오늘도 기분이 안 좋다. 계속 화가 나고 모든 게 싫다."
-}
+### 3일차: 일기 작성 및 분석 (red 영역)
+### ✅ 이 일기 분석 시 감정 조절 팁이 표시되어야 함
+# POST http://localhost:8080/api/v1/diaries
+# Authorization: Bearer {{accessToken}}
+# Content-Type: application/json
+#
+# {
+#   "diaryDate": "2026-01-07",
+#   "content": "3일째 계속 화가 난다. 이 감정을 어떻게 다스려야 할지 모르겠다."
+# }
+#
+# ### 3일차 분석 - ⚠️ diaryId 변경 필요
+# ### ✅ 예상 결과:
+# ### - showEmotionControlTip: true
+# ### - consecutiveSameAreaDays: 3
+# ### - repeatedEmotionArea: "red"
+# ### - emotionControlTipCode: "RED_3"
+# POST http://localhost:8080/api/v1/diaries/XXX/analyze-test?area=red
+# Authorization: Bearer {{accessToken}}
 
-### 오늘-1일 일기 분석 (테스트 모드 - red 영역 지정)
-### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/133/analyze-test?area=red
-Authorization: Bearer {{accessToken}}
+### 감정 조절 팁 코드 조회
+### Response에서 받은 emotionControlTipCode를 바로 사용
+# GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL/RED_3
+# Authorization: Bearer {{accessToken}}
 
-### 3단계: 오늘 일기 작성 및 분석 (예: 2025-12-26)
-### 🎯 이 일기 분석 시 감정 조절 팁이 표시되어야 함
-POST http://localhost:8080/api/v1/diaries
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "diaryDate": "2026-01-03",
-  "content": "3일째 계속 화가 난다. 이 감정을 어떻게 다스려야 할지 모르겠다."
-}
-
-### 오늘 일기 분석 (테스트 모드 - red 영역 지정)
-### ✅ 예상 결과:
-### - showEmotionControlTip: true
-### - consecutiveSameAreaDays: 3 (실제 연속 일수, 3일/4일/5일/6일... 등)
-### - repeatedEmotionArea: "red" (또는 연속된 area)
-### - emotionControlTipCode: "RED_3" (3~4일 연속 시) 또는 "RED_5" (5일 이상 연속 시)
-### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/134/analyze-test?area=red
-Authorization: Bearer {{accessToken}}
-
-### 4단계: 감정 조절 팁 코드 조회
-### 🎯 Response에서 받은 emotionControlTipCode를 바로 사용!
-### - emotionControlTipCode: "RED_3" → GET /codes/EMOTION_CONTROL/RED_3
-### - emotionControlTipCode: "YELLOW_5" → GET /codes/EMOTION_CONTROL/YELLOW_5
-### 프론트엔드에서 별도로 코드를 조합할 필요 없이 바로 사용 가능합니다.
-### (자세한 코드 조회는 code.http 참고)
-GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL
-Authorization: Bearer {{accessToken}}
-
-### 특정 감정 조절 팁 코드 조회 예시 (Red 영역 3일 연속)
-### emotionControlTipCode 값을 그대로 사용
-GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL/RED_3
-Authorization: Bearer {{accessToken}}
-
-### 5단계: 연속이 끊긴 경우 테스트
-### 다른 area의 일기를 작성하면 연속이 끊김
-POST http://localhost:8080/api/v1/diaries
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "diaryDate": "2025-12-27",
-  "content": "오늘은 기분이 좋다. 친구들과 즐거운 시간을 보냈다."
-}
-
-### 연속이 끊긴 일기 분석
-### ✅ 예상 결과:
-### - showEmotionControlTip: false
-### - consecutiveSameAreaDays: null
-### - repeatedEmotionArea: null
-### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
-POST http://localhost:8080/api/v1/diaries/104/analyze-test
-Authorization: Bearer {{accessToken}}
-
-###
-### 📌 테스트 체크리스트:
-### ✅ 3일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 3, emotionControlTipCode: "RED_3"
-### ✅ 4일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 4, emotionControlTipCode: "RED_3"
-### ✅ 5일 연속 같은 area → showEmotionControlTip: true, consecutiveSameAreaDays: 5, emotionControlTipCode: "RED_5"
-### ✅ 실제 연속 일수를 정확히 반환 (3, 4, 5, 6, 7... 등)
-### ✅ emotionControlTipCode를 바로 사용하여 감정 조절 팁 조회 가능
-### ✅ 연속이 끊긴 경우 → showEmotionControlTip: false
-### ✅ 과거 일기도 팁 표시 (날짜 무관, 연속 패턴 기준으로 판단)
-### ✅ 감정 조절 팁 코드 조회 → code_name에 적절한 메시지 확인
-###
-### 🎯 개선 사항:
-### - 오늘 날짜 체크 제거: 언제 일기를 쓰든 연속 패턴 인식
-### - 며칠치 모아서 작성해도 패턴 인식 가능
-### - 과거 일기 작성 시에도 "그때 이런 패턴이었구나" 인식 가능
-### - consecutiveSameAreaDays에 실제 연속 일수 정확히 반환 (3, 4, 5, 6, 7... 등)
-### - emotionControlTipCode 추가: 프론트엔드에서 바로 사용 가능한 코드 제공 (RED_3, YELLOW_5 등)
 ###
