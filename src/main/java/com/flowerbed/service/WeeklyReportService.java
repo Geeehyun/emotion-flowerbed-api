@@ -593,45 +593,67 @@ public class WeeklyReportService {
 
     /**
      * 읽음 상태별 리포트 목록 조회 (학생용)
-     * - 분석 완료된 리포트 포함
-     * - 분석 미완료지만 현재는 분석 가능한 리포트 포함
      *
      * @param userSn 사용자 SN
      * @param status "all", "read", "unread", "recent"
-     * @return 리포트 목록 (startDate 기준 내림차순, 분석 불가능한 미완료 리포트 제외)
+     * @param includeAnalyzable true: 분석 가능한 미완료 리포트 포함, false: 분석 완료된 것만
+     * @return 리포트 목록 (startDate 기준 내림차순)
      */
-    public List<WeeklyReport> getReportsByStatus(Long userSn, String status) {
+    public List<WeeklyReport> getReportsByStatus(Long userSn, String status, boolean includeAnalyzable) {
         List<WeeklyReport> allReports;
 
         if ("all".equalsIgnoreCase(status)) {
-            // 모든 리포트 조회 (분석 여부 무관)
-            allReports = weeklyReportRepository.findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(userSn);
+            // 모든 리포트 조회
+            if (includeAnalyzable) {
+                // 분석 여부 무관
+                allReports = weeklyReportRepository.findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(userSn);
+            } else {
+                // 분석 완료된 것만
+                return weeklyReportRepository.findByUserUserSnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn);
+            }
         } else if ("read".equalsIgnoreCase(status)) {
             // 읽은 리포트만 (분석 완료된 것만)
             return weeklyReportRepository.findByUserUserSnAndReadYnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, true);
         } else if ("unread".equalsIgnoreCase(status)) {
-            // 안 읽은 리포트만 (분석 여부 무관)
-            allReports = weeklyReportRepository.findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
+            // 안 읽은 리포트만
+            if (includeAnalyzable) {
+                // 분석 여부 무관
+                allReports = weeklyReportRepository.findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
+            } else {
+                // 분석 완료된 것만
+                allReports = weeklyReportRepository.findByUserUserSnAndReadYnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
+            }
         } else if ("recent".equalsIgnoreCase(status)) {
-            // 최근 3개월 데이터 조회 (분석 여부 무관)
+            // 최근 3개월 데이터 조회
             LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
-            allReports = weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
+            if (includeAnalyzable) {
+                // 분석 여부 무관
+                allReports = weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
+            } else {
+                // 분석 완료된 것만
+                allReports = weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
+            }
         } else {
             throw new IllegalArgumentException("잘못된 status 값입니다. (all, read, unread, recent 중 선택)");
         }
 
-        // 학생용 필터링: isAnalyzed=false && 현재 분석 불가능한 리포트 제외
-        return allReports.stream()
-                .filter(report -> {
-                    // 분석 완료된 리포트는 항상 포함
-                    if (report.getIsAnalyzed()) {
-                        return true;
-                    }
-                    // 분석 미완료 리포트는 현재 분석 가능한 경우만 포함
-                    int currentDiaryCount = getCurrentDiaryCount(userSn, report.getStartDate(), report.getEndDate());
-                    return currentDiaryCount >= 3;
-                })
-                .collect(Collectors.toList());
+        // includeAnalyzable=true인 경우: isAnalyzed=false && 현재 분석 불가능한 리포트 제외
+        if (includeAnalyzable) {
+            return allReports.stream()
+                    .filter(report -> {
+                        // 분석 완료된 리포트는 항상 포함
+                        if (report.getIsAnalyzed()) {
+                            return true;
+                        }
+                        // 분석 미완료 리포트는 현재 분석 가능한 경우만 포함
+                        int currentDiaryCount = getCurrentDiaryCount(userSn, report.getStartDate(), report.getEndDate());
+                        return currentDiaryCount >= 3;
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            // includeAnalyzable=false인 경우: 이미 분석 완료된 것만 조회했으므로 그대로 반환
+            return allReports;
+        }
     }
 
     /**

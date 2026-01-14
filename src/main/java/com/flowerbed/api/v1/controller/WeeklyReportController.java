@@ -57,16 +57,18 @@ public class WeeklyReportController {
 
     /**
      * 주간 리포트 리스트 조회 (필터링)
-     * GET /api/v1/weekly-reports/list?status=all|read|unread|recent
+     * GET /api/v1/weekly-reports/list?status=all&includeAnalyzable=true
      * @param status all(전체), read(읽음), unread(안읽음), recent(최근 3개월) - 기본값: all
+     * @param includeAnalyzable true: 분석 가능한 미완료 리포트 포함, false: 분석 완료된 것만 (기본값: false)
      * @return 리포트 목록 (startDate 기준 내림차순)
      */
     @GetMapping("/list")
     public ResponseEntity<List<WeeklyReportListItemResponse>> getWeeklyReportList(
-            @RequestParam(defaultValue = "all") String status
+            @RequestParam(defaultValue = "all") String status,
+            @RequestParam(defaultValue = "false") boolean includeAnalyzable
     ) {
         Long userSn = SecurityUtil.getCurrentUserSn();
-        List<WeeklyReport> reports = weeklyReportService.getReportsByStatus(userSn, status);
+        List<WeeklyReport> reports = weeklyReportService.getReportsByStatus(userSn, status, includeAnalyzable);
         List<WeeklyReportListItemResponse> response = reports.stream()
                 .map(report -> {
                     int currentCount = weeklyReportService.getCurrentDiaryCount(userSn, report.getStartDate(), report.getEndDate());
