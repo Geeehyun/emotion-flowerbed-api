@@ -62,6 +62,12 @@ public class User extends BaseAuditEntity {
     @Column(name = "risk_last_checked_date")
     private java.time.LocalDate riskLastCheckedDate;
 
+    @Column(name = "risk_target_diary_date")
+    private java.time.LocalDate riskTargetDiaryDate;
+
+    @Column(name = "risk_target_diary_sn")
+    private Long riskTargetDiarySn;
+
     @Column(name = "risk_updated_at")
     private java.time.LocalDateTime riskUpdatedAt;
 
@@ -92,13 +98,23 @@ public class User extends BaseAuditEntity {
 
     /**
      * 위험도 상태 업데이트
+     * @param riskLevel 위험도 레벨
+     * @param continuousArea 연속 감정 영역
+     * @param continuousDays 연속 일수
+     * @param reason 위험도 사유
+     * @param checkedDate 위험도 분석 실행 날짜 (LocalDate.now())
+     * @param targetDiaryDate 분석 대상 일기 날짜
+     * @param targetDiarySn 분석 대상 일기 SN
      */
-    public void updateRiskStatus(String riskLevel, String continuousArea, Integer continuousDays, String reason) {
+    public void updateRiskStatus(String riskLevel, String continuousArea, Integer continuousDays, String reason,
+                                 java.time.LocalDate checkedDate, java.time.LocalDate targetDiaryDate, Long targetDiarySn) {
         this.riskLevel = riskLevel;
         this.riskContinuousArea = continuousArea;
         this.riskContinuousDays = continuousDays;
         this.riskReason = reason;
-        this.riskLastCheckedDate = java.time.LocalDate.now();
+        this.riskLastCheckedDate = checkedDate;
+        this.riskTargetDiaryDate = targetDiaryDate;
+        this.riskTargetDiarySn = targetDiarySn;
         this.riskUpdatedAt = java.time.LocalDateTime.now();
     }
 

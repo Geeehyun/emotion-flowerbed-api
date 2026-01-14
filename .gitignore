@@ -48,6 +48,10 @@ application-local.yml
 application-prod.yml
 .claude/
 
+### Internal Docs ###
+docs/opt/claude-code-development-process.md
+tmpclaude-*
+
 ### Docker ###
 docker-compose.yml
 docker-compose.yml.example

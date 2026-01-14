@@ -37,6 +37,17 @@ Content-Type: application/json
 #   "content": "너무 힘들다. 아무것도 하기 싫고 살기 싫다. 진짜 죽고 싶다는 생각이 든다. 아무도 날 이해 못 해."
 # }
 
+### 미래 일기 작성 방지 테스트 (에러 예상: INVALID_INPUT)
+### 미래 날짜의 일기는 작성할 수 없습니다
+# POST http://localhost:8080/api/v1/diaries
+# Authorization: Bearer {{accessToken}}
+# Content-Type: application/json
+#
+# {
+#   "diaryDate": "2026-12-31",
+#   "content": "미래의 일기입니다. 이 일기는 작성되지 않아야 합니다."
+# }
+
 ###
 
 ### 일기 감정 분석 (실제 - LLM API 사용)
@@ -168,5 +179,122 @@ Authorization: Bearer {{accessToken}}
 ### Response에서 받은 emotionControlTipCode를 바로 사용
 # GET http://localhost:8080/api/v1/codes/EMOTION_CONTROL/RED_3
 # Authorization: Bearer {{accessToken}}
+
+
+### ========================================
+### 위험도 분석 기능 테스트 (최신 일기만 분석)
+### ========================================
+### 🎯 테스트 목적:
+### - 과거 일기를 작성해도 위험도 분석이 수행되지 않는지 확인
+### - 최신 일기일 경우에만 위험도 분석이 수행되는지 확인
+### - 위험도 분석 기준 일기 정보가 users 테이블에 저장되는지 확인
+###
+### 📋 테스트 시나리오:
+### 1. 2026-01-10 일기 작성 및 분석 (최신 일기) → 위험도 분석 수행됨
+###    - users.risk_target_diary_date = 2026-01-10
+###    - users.risk_target_diary_sn = 생성된 diary_id
+### 2. 2026-01-08 일기 작성 및 분석 (과거 일기) → 위험도 분석 건너뜀
+###    - users.risk_target_diary_date는 2026-01-10으로 유지
+### 3. 2026-01-12 일기 작성 및 분석 (최신 일기) → 위험도 분석 수행됨
+###    - users.risk_target_diary_date = 2026-01-12로 업데이트
+###
+### ✅ 검증 방법:
+### - 분석 로그에서 "과거 일기이므로 위험도 분석 생략" 메시지 확인
+### - DB에서 users.risk_target_diary_date, risk_target_diary_sn 값 확인
+### - student_risk_history 테이블에 target_diary_date, target_diary_sn 저장 확인
+
+### 1단계: 최신 일기 작성 (2026-01-10)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2026-10-17",
+  "content": "오늘은 친구와 즐거운 시간을 보냈다. 기분이 좋았고 행복했다."
+}
+
+### 1단계: 최신 일기 분석 (위험도 분석 수행됨)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+### 예상 결과: 위험도 분석 수행, users.risk_target_diary_date = 2026-01-10
+POST http://localhost:8080/api/v1/diaries/XXX/analyze-test?area=yellow
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 2단계: 과거 일기 작성 (2026-01-08)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2025-10-15",
+  "content": "이틀 전 일기를 뒤늦게 작성한다. 그날은 평범한 하루였다."
+}
+
+### 2단계: 과거 일기 분석 (위험도 분석 건너뜀)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+### 예상 결과:
+### - 로그에 "과거 일기이므로 위험도 분석 생략" 메시지
+### - users.risk_target_diary_date는 2026-01-10으로 유지
+### - LLM 프롬프트에 위험도 분석 섹션 제외 (토큰 절약)
+POST http://localhost:8080/api/v1/diaries/247/analyze
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 3단계: 새로운 최신 일기 작성 (2026-01-12)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2026-01-12",
+  "content": "오늘 시험에서 좋은 결과를 받았다. 정말 기쁘고 뿌듯하다!"
+}
+
+### 3단계: 새로운 최신 일기 분석 (위험도 분석 수행됨)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+### 예상 결과:
+### - 위험도 분석 수행됨
+### - users.risk_target_diary_date = 2026-01-12로 업데이트
+### - users.risk_target_diary_sn = 새로운 diary_id로 업데이트
+POST http://localhost:8080/api/v1/diaries/248/analyze
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 4단계: 위험 키워드가 포함된 최신 일기 작성 (위험도 분석 테스트)
+POST http://localhost:8080/api/v1/diaries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "diaryDate": "2026-01-13",
+  "content": "오늘 하루종일 혼자 있었다. 외로워서 힘들고, 아무도 나를 이해 못하는 것 같다. 무기력하고 지쳤다."
+}
+
+### 4단계: 위험 키워드 일기 분석 (실제 LLM 사용)
+### ⚠️ diaryId를 실제 생성된 ID로 변경 필요
+### 예상 결과:
+### - LLM이 위험 키워드 탐지 (혼자, 외로워, 무기력, 지쳤)
+### - users.risk_level = "CAUTION"으로 변경 가능
+### - student_risk_history에 이력 기록
+### - target_diary_date, target_diary_sn 저장 확인
+POST http://localhost:8080/api/v1/diaries/XXX/analyze
+Authorization: Bearer {{accessToken}}
+
+###
+
+### 📊 DB 확인 쿼리 (참고용)
+### SELECT user_sn, user_id, risk_level, risk_target_diary_date, risk_target_diary_sn,
+###        risk_last_checked_date, risk_continuous_area, risk_continuous_days, risk_reason
+### FROM users
+### WHERE user_type_cd = 'STUDENT';
+###
+### SELECT history_id, user_sn, previous_level, new_level, risk_type,
+###        target_diary_date, target_diary_sn, risk_reason, created_at
+### FROM student_risk_history
+### ORDER BY created_at DESC
+### LIMIT 10;
 
 ###

@@ -54,7 +54,7 @@ POST /api/v1/diaries
 
 | 필드 | 타입 | 필수 | 설명 | 제약 |
 |-----|------|------|------|------|
-| diaryDate | String | O | 일기 날짜 (YYYY-MM-DD) | - |
+| diaryDate | String | O | 일기 날짜 (YYYY-MM-DD) | 과거~오늘까지만 가능 (미래일기 작성 불가) |
 | content | String | O | 일기 내용 | 10자 이상, 5000자 이하 |
 
 #### 응답
@@ -84,6 +84,13 @@ POST /api/v1/diaries
 {
   "code": "DUPLICATE_DIARY_DATE",
   "message": "해당 날짜에 이미 일기가 존재합니다"
+}
+```
+
+```json
+{
+  "code": "INVALID_INPUT",
+  "message": "미래 날짜의 일기는 작성할 수 없습니다"
 }
 ```
 
@@ -402,12 +409,21 @@ GET /api/v1/weekly-reports/list?status={status}
     "startDate": "2025-12-30",
     "endDate": "2026-01-05",
     "diaryCount": 5,
+    "currentDiaryCount": 5,
+    "isAnalyzable": true,
     "isAnalyzed": true,
     "readYn": false,
     "createdAt": "2026-01-06T00:00:00"
   }
 ]
 ```
+
+**응답 필드 설명:**
+- `diaryCount`: 리포트 생성 당시 일기 개수
+- `currentDiaryCount`: 현재 시점 해당 주의 분석된 일기 개수
+- `isAnalyzable`: 현재 분석 가능 여부 (현재 시점 분석된 일기 3개 이상인 경우 `true`)
+  - ⚠️ 학생용 API는 `isAnalyzed=false && isAnalyzable=false`인 리포트는 목록에서 제외됨
+  - ⚠️ 과거에는 일기가 부족해 분석 불가했지만, 현재는 분석 가능한 리포트만 포함
 
 ---
 
@@ -708,6 +724,14 @@ GET /api/v1/flowers/all-emotions
 ---
 
 ## 버전 히스토리
+
+### v1.2.0 (2026-01-14)
+- 일기 작성 API에 미래일기 작성 방지 기능 추가
+  - `diaryDate`는 과거~오늘까지만 작성 가능
+  - 미래 날짜 입력 시 `INVALID_INPUT` 에러 반환
+- 위험도 분석 로직 개선
+  - 최신 일기일 경우에만 위험도 분석 수행
+  - 과거 일기 작성 시 위험도 분석 건너뜀 (프롬프트 토큰 절약)
 
 ### v1.1.0 (2026-01-11)
 - 일기 분석 API 응답에 `keywords` 필드 추가 (핵심 감정 관련 키워드 최대 3개)

@@ -94,6 +94,16 @@ public class StudentRiskHistoryResponse {
         private List<String> concernKeywords;
 
         /**
+         * 위험도 분석 기준 일기 날짜
+         */
+        private java.time.LocalDate targetDiaryDate;
+
+        /**
+         * 위험도 분석 기준 일기 SN
+         */
+        private Long targetDiarySn;
+
+        /**
          * 선생님 확인 여부
          */
         private Boolean isConfirmed;
@@ -131,6 +141,8 @@ public class StudentRiskHistoryResponse {
                     .continuousArea(history.getContinuousArea())
                     .continuousDays(history.getContinuousDays())
                     .concernKeywords(history.getConcernKeywords())
+                    .targetDiaryDate(history.getTargetDiaryDate())
+                    .targetDiarySn(history.getTargetDiarySn())
                     .isConfirmed(history.getIsConfirmed())
                     .confirmedBy(history.getConfirmedBy())
                     .confirmedAt(history.getConfirmedAt())

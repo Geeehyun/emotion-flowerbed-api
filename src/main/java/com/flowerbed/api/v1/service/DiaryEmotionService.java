@@ -113,15 +113,18 @@ public class DiaryEmotionService {
     /**
      * 일기 감정 분석 (LLM API 사용)
      * - 프롬프트 생성 → LLM 호출 → 응답 파싱/검증
+     *
+     * @param diaryContent 일기 내용
+     * @param needRiskAnalysis 위험도 분석 필요 여부 (최신 일기일 경우만 true)
      */
-    public DiaryEmotionResponse analyzeDiary(String diaryContent) {
+    public DiaryEmotionResponse analyzeDiary(String diaryContent, boolean needRiskAnalysis) {
 
         // 1. 일기 내용 기본 검증
         validateDiaryContent(diaryContent);
 
         // 2. 프롬프트 생성
-        String prompt = buildPrompt(diaryContent);
-        log.info("[DiaryEmotionService - analyzeDiary] prompt : {}", prompt);
+        String prompt = buildPrompt(diaryContent, needRiskAnalysis);
+        log.info("[DiaryEmotionService - analyzeDiary] needRiskAnalysis={}, prompt : {}", needRiskAnalysis, prompt);
 
         // 3. LLM API 호출
         String llmResponse = llmApiClient.call(prompt);
@@ -151,9 +154,36 @@ public class DiaryEmotionService {
 
     /**
      * LLM API 프롬프트 생성
+     *
+     * @param diaryContent 일기 내용
+     * @param needRiskAnalysis 위험도 분석 필요 여부
      */
-    private String buildPrompt(String diaryContent) {
-        return promptTemplate.replace("{DIARY_CONTENT}", diaryContent);
+    private String buildPrompt(String diaryContent, boolean needRiskAnalysis) {
+        String prompt = promptTemplate.replace("{DIARY_CONTENT}", diaryContent);
+
+        // 위험도 분석이 필요하지 않은 경우, 해당 부분 제거
+        if (!needRiskAnalysis) {
+            prompt = removeRiskAnalysisSection(prompt);
+        }
+
+        return prompt;
+    }
+
+    /**
+     * 프롬프트에서 위험도 분석 섹션 제거
+     * - [위험도 분석 규칙] 섹션 전체 제거
+     * - 응답 형식에서 riskLevel, riskReason, concernKeywords 필드 제거
+     */
+    private String removeRiskAnalysisSection(String prompt) {
+        // [위험도 분석 규칙] 섹션 제거 (섹션 시작부터 [응답 형식]까지)
+        prompt = prompt.replaceAll("\\[위험도 분석 규칙\\][\\s\\S]*?(?=\\[응답 형식\\])", "");
+
+        // 응답 형식에서 위험도 관련 필드 제거
+        prompt = prompt.replaceAll(",?\\s*\"riskLevel\":[^,\\n]*", "");
+        prompt = prompt.replaceAll(",?\\s*\"riskReason\":[^,\\n]*", "");
+        prompt = prompt.replaceAll(",?\\s*\"concernKeywords\":[^\\]]*\\][^,\\n]*", "");
+
+        return prompt;
     }
 
     /**

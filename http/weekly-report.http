@@ -160,6 +160,11 @@ Authorization: Bearer {{accessToken}}
 ### 📌 응답 필드 설명:
 ### - isAnalyzed: 분석 여부 (일기 3개 이상이면 true, 분석 실패 시 false)
 ### - readYn: 읽음 여부
+### - diaryCount: 리포트 생성 당시 일기 개수
+### - currentDiaryCount: 현재 시점 해당 주의 분석된 일기 개수
+### - isAnalyzable: 현재 분석 가능 여부 (현재 시점 분석된 일기 3개 이상인 경우 true)
+###   ⚠️ 학생용 API는 isAnalyzed=false && isAnalyzable=false인 리포트는 목록에서 제외됨
+###   ⚠️ 선생님용 API는 모든 리포트를 조회 가능 (isAnalyzable 무관)
 ### - studentReport: 학생용 주간 일기 분석
 ### - studentEncouragement: 학생용 감정 정원사의 편지
 ### - teacherReport: 선생님용 주간 일기 분석 (선생님 화면에서만 표시)

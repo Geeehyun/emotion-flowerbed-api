@@ -38,18 +38,20 @@ public class RiskAnalysisService {
     /**
      * 위험도 체크 및 업데이트 (LLM 분석 결과 포함)
      * - 일기 분석 완료 후 호출
+     * - 최신 일기일 경우만 위험도 분석 진행
      * - 최근 7일 일기를 조회하여 연속 영역 계산
      * - LLM 키워드 탐지 결과 반영
      * - 위험도 레벨 판정 및 업데이트
      *
      * @param userSn 학생 user_sn
-     * @param checkDate 체크 날짜 (보통 오늘)
+     * @param diaryDate 분석 대상 일기 날짜
+     * @param diarySn 분석 대상 일기 SN
      * @param llmRiskLevel LLM이 분석한 위험도 (normal, caution, danger)
      * @param llmRiskReason LLM이 분석한 위험도 사유
      * @param concernKeywords LLM이 탐지한 우려 키워드
      */
     @Transactional
-    public void checkAndUpdateRiskLevel(Long userSn, LocalDate checkDate,
+    public void checkAndUpdateRiskLevel(Long userSn, LocalDate diaryDate, Long diarySn,
                                        String llmRiskLevel, String llmRiskReason,
                                        List<String> concernKeywords) {
         User student = userRepository.findById(userSn)
@@ -61,10 +63,18 @@ public class RiskAnalysisService {
             return;
         }
 
-        // 1. 최근 7일 분석된 일기 조회
+        // 최신 일기일 경우만 위험도 분석 진행
+        // 기존 분석 기준 일기 날짜가 있고, 현재 일기 날짜가 더 과거이면 분석 생략
+        if (student.getRiskTargetDiaryDate() != null && diaryDate.isBefore(student.getRiskTargetDiaryDate())) {
+            log.debug("과거 일기이므로 위험도 분석 생략: userSn={}, diaryDate={}, riskTargetDiaryDate={}",
+                    userSn, diaryDate, student.getRiskTargetDiaryDate());
+            return;
+        }
+
+        // 1. 최근 7일 분석된 일기 조회 (분석 대상 일기 날짜 기준)
         List<Diary> recentDiaries = diaryRepository.findRecentAnalyzedDiaries(
                 userSn,
-                checkDate,
+                diaryDate,
                 PageRequest.of(0, 7)
         );
 
@@ -93,18 +103,19 @@ public class RiskAnalysisService {
         }
 
         // 5. 상태 변경 시에만 업데이트 및 이력 기록
+        LocalDate checkedDate = LocalDate.now();
         if (!newLevel.equals(currentLevel)) {
-            updateRiskStatus(student, newLevel, continuousInfo, reason);
-            saveRiskHistory(student, currentLevel, newLevel, continuousInfo, reason, concernKeywords);
+            updateRiskStatus(student, newLevel, continuousInfo, reason, checkedDate, diaryDate, diarySn);
+            saveRiskHistory(student, currentLevel, newLevel, continuousInfo, reason, concernKeywords, diaryDate, diarySn);
 
-            log.info("위험도 변경: userSn={}, {} → {}, reason={}",
-                    userSn, currentLevel, newLevel, reason);
+            log.info("위험도 변경: userSn={}, {} → {}, reason={}, diaryDate={}",
+                    userSn, currentLevel, newLevel, reason, diaryDate);
         } else {
             // 레벨은 같지만 연속 일수나 사유가 바뀔 수 있음
             student.updateRiskStatus(newLevel, continuousInfo.getArea(),
-                    continuousInfo.getDays(), reason);
-            log.debug("위험도 정보 갱신: userSn={}, level={}, days={}",
-                    userSn, newLevel, continuousInfo.getDays());
+                    continuousInfo.getDays(), reason, checkedDate, diaryDate, diarySn);
+            log.debug("위험도 정보 갱신: userSn={}, level={}, days={}, diaryDate={}",
+                    userSn, newLevel, continuousInfo.getDays(), diaryDate);
         }
     }
 
@@ -267,8 +278,10 @@ public class RiskAnalysisService {
      * 위험도 상태 업데이트
      */
     private void updateRiskStatus(User student, String newLevel,
-                                  ContinuousAreaInfo info, String reason) {
-        student.updateRiskStatus(newLevel, info.getArea(), info.getDays(), reason);
+                                  ContinuousAreaInfo info, String reason,
+                                  LocalDate checkedDate, LocalDate targetDiaryDate, Long targetDiarySn) {
+        student.updateRiskStatus(newLevel, info.getArea(), info.getDays(), reason,
+                checkedDate, targetDiaryDate, targetDiarySn);
 
         // DANGER에서 벗어났으면 해제 정보 초기화
         if (!"DANGER".equals(newLevel) && student.getDangerResolvedAt() != null) {
@@ -280,7 +293,8 @@ public class RiskAnalysisService {
      * 위험도 변화 이력 저장
      */
     private void saveRiskHistory(User student, String previousLevel, String newLevel,
-                                 ContinuousAreaInfo info, String reason, List<String> concernKeywords) {
+                                 ContinuousAreaInfo info, String reason, List<String> concernKeywords,
+                                 LocalDate targetDiaryDate, Long targetDiarySn) {
         String riskType = determineRiskType(info, newLevel, concernKeywords);
 
         // 자동 해제 여부 확인 (CAUTION/DANGER → NORMAL)
@@ -303,6 +317,8 @@ public class RiskAnalysisService {
                 .continuousArea(info.getArea())
                 .continuousDays(info.getDays())
                 .concernKeywords(concernKeywords)
+                .targetDiaryDate(targetDiaryDate)
+                .targetDiarySn(targetDiarySn)
                 .build();
 
         // 자동 해제인 경우 SYSTEM으로 처리

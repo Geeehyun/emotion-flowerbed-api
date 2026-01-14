@@ -592,25 +592,61 @@ public class WeeklyReportService {
     }
 
     /**
-     * 읽음 상태별 리포트 목록 조회
+     * 읽음 상태별 리포트 목록 조회 (학생용)
+     * - 분석 완료된 리포트 포함
+     * - 분석 미완료지만 현재는 분석 가능한 리포트 포함
+     *
      * @param userSn 사용자 SN
      * @param status "all", "read", "unread", "recent"
-     * @return 리포트 목록 (startDate 기준 내림차순)
+     * @return 리포트 목록 (startDate 기준 내림차순, 분석 불가능한 미완료 리포트 제외)
      */
     public List<WeeklyReport> getReportsByStatus(Long userSn, String status) {
+        List<WeeklyReport> allReports;
+
         if ("all".equalsIgnoreCase(status)) {
-            return weeklyReportRepository.findByUserUserSnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn);
+            // 모든 리포트 조회 (분석 여부 무관)
+            allReports = weeklyReportRepository.findByUserUserSnAndDeletedAtIsNullOrderByStartDateDesc(userSn);
         } else if ("read".equalsIgnoreCase(status)) {
+            // 읽은 리포트만 (분석 완료된 것만)
             return weeklyReportRepository.findByUserUserSnAndReadYnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, true);
         } else if ("unread".equalsIgnoreCase(status)) {
-            return weeklyReportRepository.findByUserUserSnAndReadYnAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
+            // 안 읽은 리포트만 (분석 여부 무관)
+            allReports = weeklyReportRepository.findByUserUserSnAndReadYnAndDeletedAtIsNullOrderByStartDateDesc(userSn, false);
         } else if ("recent".equalsIgnoreCase(status)) {
-            // 최근 3개월 데이터 조회 (오늘 기준 3개월 전)
+            // 최근 3개월 데이터 조회 (분석 여부 무관)
             LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3);
-            return weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndIsAnalyzedTrueAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
+            allReports = weeklyReportRepository.findByUserUserSnAndStartDateGreaterThanEqualAndDeletedAtIsNullOrderByStartDateDesc(userSn, threeMonthsAgo);
         } else {
             throw new IllegalArgumentException("잘못된 status 값입니다. (all, read, unread, recent 중 선택)");
         }
+
+        // 학생용 필터링: isAnalyzed=false && 현재 분석 불가능한 리포트 제외
+        return allReports.stream()
+                .filter(report -> {
+                    // 분석 완료된 리포트는 항상 포함
+                    if (report.getIsAnalyzed()) {
+                        return true;
+                    }
+                    // 분석 미완료 리포트는 현재 분석 가능한 경우만 포함
+                    int currentDiaryCount = getCurrentDiaryCount(userSn, report.getStartDate(), report.getEndDate());
+                    return currentDiaryCount >= 3;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 현재 시점 해당 주의 분석된 일기 개수 조회
+     *
+     * @param userSn 사용자 SN
+     * @param startDate 시작일
+     * @param endDate 종료일
+     * @return 분석된 일기 개수
+     */
+    public int getCurrentDiaryCount(Long userSn, LocalDate startDate, LocalDate endDate) {
+        List<Diary> diaries = diaryRepository.findByUserSnAndDateBetween(userSn, startDate, endDate);
+        return (int) diaries.stream()
+                .filter(Diary::getIsAnalyzed)
+                .count();
     }
 
     /**

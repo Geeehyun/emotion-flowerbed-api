@@ -223,6 +223,9 @@ Authorization: Bearer {accessToken}
       "riskReason": "7일 연속 red 영역 감정 (강한 감정). 강도 높은 감정이 지속되어 주의가 필요합니다.",
       "riskContinuousArea": "red",
       "riskContinuousDays": 7,
+      "riskLastCheckedDate": "2026-01-06",
+      "riskTargetDiaryDate": "2026-01-05",
+      "riskTargetDiarySn": 152,
       "riskUpdatedAt": "2026-01-06T10:30:00",
       "dangerResolvedBy": null,
       "dangerResolvedAt": null,
@@ -235,6 +238,9 @@ Authorization: Bearer {accessToken}
       "riskReason": "7일 연속 yellow 영역 감정 (활기찬 감정)",
       "riskContinuousArea": "yellow",
       "riskContinuousDays": 7,
+      "riskLastCheckedDate": "2026-01-05",
+      "riskTargetDiaryDate": "2026-01-04",
+      "riskTargetDiarySn": 148,
       "riskUpdatedAt": "2026-01-05T14:20:00",
       "dangerResolvedBy": null,
       "dangerResolvedAt": null,
@@ -263,6 +269,9 @@ Authorization: Bearer {accessToken}
 | riskReason | String | 위험도 판정 사유 |
 | riskContinuousArea | String | 연속된 감정 영역 (red/yellow/blue/green) |
 | riskContinuousDays | Integer | 연속 일수 |
+| riskLastCheckedDate | String | 위험도 분석 실행 날짜 (YYYY-MM-DD) |
+| riskTargetDiaryDate | String | 위험도 분석 대상 일기 날짜 (YYYY-MM-DD) |
+| riskTargetDiarySn | Long | 위험도 분석 대상 일기 SN (해당 일기 조회 시 사용 가능) |
 | riskUpdatedAt | String | 위험도 갱신 시각 (ISO 8601) |
 | dangerResolvedBy | Long | DANGER 해제한 선생님 user_sn (해제 안 됐으면 null) |
 | dangerResolvedAt | String | DANGER 해제 시각 (해제 안 됐으면 null) |
@@ -377,6 +386,8 @@ Authorization: Bearer {accessToken}
       "continuousArea": "red",
       "continuousDays": 7,
       "concernKeywords": [],
+      "targetDiaryDate": "2026-01-05",
+      "targetDiarySn": 152,
       "isConfirmed": false,
       "confirmedBy": null,
       "confirmedAt": null,
@@ -392,6 +403,8 @@ Authorization: Bearer {accessToken}
       "continuousArea": "red",
       "continuousDays": 7,
       "concernKeywords": [],
+      "targetDiaryDate": "2025-12-29",
+      "targetDiarySn": 140,
       "isConfirmed": true,
       "confirmedBy": 100,
       "confirmedAt": "2026-01-05T15:00:00",
@@ -423,6 +436,8 @@ Authorization: Bearer {accessToken}
 | continuousArea | String | 연속된 감정 영역 (red/yellow/blue/green) |
 | continuousDays | Integer | 연속 일수 |
 | concernKeywords | Array<String> | 탐지된 우려 키워드 목록 |
+| targetDiaryDate | String | 위험도 분석 기준 일기 날짜 (YYYY-MM-DD) |
+| targetDiarySn | Long | 위험도 분석 기준 일기 SN (해당 일기 조회 시 사용 가능) |
 | isConfirmed | Boolean | 선생님 확인 여부 |
 | confirmedBy | Long | 확인한 선생님 user_sn |
 | confirmedAt | String | 확인 시각 (ISO 8601) |
@@ -461,6 +476,8 @@ Authorization: Bearer {accessToken}
     "startDate": "2025-12-30",
     "endDate": "2026-01-05",
     "diaryCount": 5,
+    "currentDiaryCount": 5,
+    "isAnalyzable": true,
     "isAnalyzed": true,
     "readYn": true,
     "createdAt": "2026-01-06T00:00:00"
@@ -470,6 +487,8 @@ Authorization: Bearer {accessToken}
     "startDate": "2025-12-23",
     "endDate": "2025-12-29",
     "diaryCount": 2,
+    "currentDiaryCount": 4,
+    "isAnalyzable": true,
     "isAnalyzed": false,
     "readYn": false,
     "createdAt": "2025-12-30T00:00:00"
@@ -483,14 +502,17 @@ Authorization: Bearer {accessToken}
 | reportId | Long | 리포트 ID |
 | startDate | String | 시작 날짜 (월요일, yyyy-MM-dd) |
 | endDate | String | 종료 날짜 (일요일, yyyy-MM-dd) |
-| diaryCount | Integer | 해당 주의 일기 개수 |
+| diaryCount | Integer | 리포트 생성 당시 일기 개수 |
+| currentDiaryCount | Integer | 현재 시점 해당 주의 분석된 일기 개수 |
+| isAnalyzable | Boolean | 현재 분석 가능 여부 (현재 시점 분석된 일기 3개 이상인 경우 true) |
 | isAnalyzed | Boolean | 분석 완료 여부 (일기 3개 이상일 때만 true) |
 | readYn | Boolean | 읽음 여부 |
 | createdAt | String | 생성 시각 (ISO 8601) |
 
 ### 참고사항
 - 최근순으로 정렬되어 반환
-- 분석 완료/미완료 모두 포함
+- 분석 완료/미완료 모두 포함 (선생님은 모든 리포트 조회 가능)
+- `currentDiaryCount`와 `isAnalyzable`을 통해 현재 시점에서 분석 가능한지 확인 가능
 
 ---
 
@@ -978,6 +1000,16 @@ Authorization: Bearer {accessToken}
 ---
 
 ## 버전 히스토리
+
+### v1.3.0 (2026-01-14)
+- 위험 학생 리스트 조회 API 응답에 위험도 분석 관련 필드 추가
+  - `riskLastCheckedDate`: 위험도 분석 실행 날짜
+  - `riskTargetDiaryDate`: 위험도 분석 대상 일기 날짜
+  - `riskTargetDiarySn`: 위험도 분석 대상 일기 SN
+- 학생별 위험도 변화 이력 조회 API 응답에 기준 일기 정보 추가
+  - `targetDiaryDate`: 위험도 분석 기준 일기 날짜
+  - `targetDiarySn`: 위험도 분석 기준 일기 SN
+- 선생님이 위험 학생의 해당 일기를 직접 조회할 수 있도록 개선
 
 ### v1.2.0 (2026-01-11)
 - 주간 리포트 API 응답에 `mindGardeningTip` 필드를 배열로 변경 (2~3개)

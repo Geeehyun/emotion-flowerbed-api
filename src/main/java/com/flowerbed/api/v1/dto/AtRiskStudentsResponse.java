@@ -79,6 +79,21 @@ public class AtRiskStudentsResponse {
         private Integer riskContinuousDays;
 
         /**
+         * 위험도 분석 실행 날짜 (LocalDate.now())
+         */
+        private java.time.LocalDate riskLastCheckedDate;
+
+        /**
+         * 위험도 분석 대상 일기 날짜
+         */
+        private java.time.LocalDate riskTargetDiaryDate;
+
+        /**
+         * 위험도 분석 대상 일기 SN
+         */
+        private Long riskTargetDiarySn;
+
+        /**
          * 위험도 갱신 시각
          */
         private LocalDateTime riskUpdatedAt;
@@ -109,6 +124,9 @@ public class AtRiskStudentsResponse {
                     .riskReason(user.getRiskReason())
                     .riskContinuousArea(user.getRiskContinuousArea())
                     .riskContinuousDays(user.getRiskContinuousDays())
+                    .riskLastCheckedDate(user.getRiskLastCheckedDate())
+                    .riskTargetDiaryDate(user.getRiskTargetDiaryDate())
+                    .riskTargetDiarySn(user.getRiskTargetDiarySn())
                     .riskUpdatedAt(user.getRiskUpdatedAt())
                     .dangerResolvedBy(user.getDangerResolvedBy())
                     .dangerResolvedAt(user.getDangerResolvedAt())

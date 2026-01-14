@@ -68,7 +68,10 @@ public class WeeklyReportController {
         Long userSn = SecurityUtil.getCurrentUserSn();
         List<WeeklyReport> reports = weeklyReportService.getReportsByStatus(userSn, status);
         List<WeeklyReportListItemResponse> response = reports.stream()
-                .map(WeeklyReportListItemResponse::from)
+                .map(report -> {
+                    int currentCount = weeklyReportService.getCurrentDiaryCount(userSn, report.getStartDate(), report.getEndDate());
+                    return WeeklyReportListItemResponse.from(report, currentCount);
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }

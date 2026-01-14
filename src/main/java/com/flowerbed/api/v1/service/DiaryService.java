@@ -52,6 +52,9 @@ public class DiaryService {
         // 일기 내용 유효성 검사
         validateDiaryContent(request.getContent());
 
+        // 미래 일기 작성 방지 (오늘까지만 작성 가능)
+        validateDiaryDate(request.getDiaryDate());
+
         // 사용자 조회
         User user = userRepository.findById(userSn)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -95,8 +98,11 @@ public class DiaryService {
             throw new BusinessException(ErrorCode.DIARY_NOT_FOUND);
         }
 
+        // 위험도 분석 필요 여부 판단 (최신 일기인 경우만 true)
+        boolean needRiskAnalysis = isLatestDiary(diary);
+
         // 감정 분석 수행
-        DiaryEmotionResponse emotionResponse = emotionService.analyzeDiary(diary.getContent());
+        DiaryEmotionResponse emotionResponse = emotionService.analyzeDiary(diary.getContent(), needRiskAnalysis);
 
         // 분석 결과 저장 (color, emotionNameKr 포함)
         List<Diary.EmotionPercent> emotionsJson = emotionResponse.getEmotions().stream()
@@ -146,6 +152,7 @@ public class DiaryService {
         riskAnalysisService.checkAndUpdateRiskLevel(
                 userId,
                 diary.getDiaryDate(),
+                diary.getDiaryId(),
                 emotionResponse.getRiskLevel(),
                 emotionResponse.getRiskReason(),
                 emotionResponse.getConcernKeywords()
@@ -215,6 +222,7 @@ public class DiaryService {
         riskAnalysisService.checkAndUpdateRiskLevel(
                 userId,
                 diary.getDiaryDate(),
+                diary.getDiaryId(),
                 null,
                 null,
                 null
@@ -333,6 +341,18 @@ public class DiaryService {
         if (content.length() > 5000) {
             throw new BusinessException(ErrorCode.INVALID_DIARY_CONTENT,
                     "일기 내용이 너무 깁니다. 최대 5000자까지 가능합니다");
+        }
+    }
+
+    /**
+     * 일기 날짜 유효성 검사
+     * - 미래 날짜는 작성 불가 (오늘까지만 가능)
+     */
+    private void validateDiaryDate(LocalDate diaryDate) {
+        LocalDate today = LocalDate.now();
+        if (diaryDate.isAfter(today)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT,
+                    "미래 날짜의 일기는 작성할 수 없습니다");
         }
     }
 
@@ -606,6 +626,27 @@ public class DiaryService {
 
         Emotion emotion = emotionCacheService.getEmotion(emotionCode);
         return emotion != null ? emotion.getArea() : null;
+    }
+
+    /**
+     * 최신 일기인지 판단
+     * - 사용자의 riskTargetDiaryDate가 없거나
+     * - 현재 일기 날짜가 riskTargetDiaryDate보다 크거나 같으면 true
+     *
+     * @param diary 일기
+     * @return 최신 일기 여부
+     */
+    private boolean isLatestDiary(Diary diary) {
+        User user = diary.getUser();
+        LocalDate riskTargetDate = user.getRiskTargetDiaryDate();
+
+        // 기존 분석 기준일이 없으면 최신 일기로 간주
+        if (riskTargetDate == null) {
+            return true;
+        }
+
+        // 현재 일기 날짜가 기존 분석 기준일보다 크거나 같으면 최신 일기
+        return !diary.getDiaryDate().isBefore(riskTargetDate);
     }
 
     /**

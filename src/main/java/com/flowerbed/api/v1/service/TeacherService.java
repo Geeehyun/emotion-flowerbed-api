@@ -40,6 +40,7 @@ public class TeacherService {
     private final EmotionCacheService emotionCacheService;
     private final StudentRiskHistoryRepository riskHistoryRepository;
     private final WeeklyReportRepository weeklyReportRepository;
+    private final com.flowerbed.service.WeeklyReportService weeklyReportService;
 
     /**
      * 내 학생 목록 조회
@@ -315,8 +316,9 @@ public class TeacherService {
         // 4-1. 해제 정보 설정 (기록용)
         student.resolveDanger(teacher.getUserSn(), memo);
 
-        // 4-2. 즉시 위험도를 NORMAL로 변경
-        student.updateRiskStatus("NORMAL", null, 0, null);
+        // 4-2. 즉시 위험도를 NORMAL로 변경 (수동 해제이므로 기준 일기 정보는 null)
+        student.updateRiskStatus("NORMAL", null, 0, null,
+                java.time.LocalDate.now(), null, null);
 
         // 4-3. 이력 기록
         StudentRiskHistory history = StudentRiskHistory.builder()
@@ -328,6 +330,8 @@ public class TeacherService {
                 .continuousArea(previousArea)
                 .continuousDays(previousDays)
                 .concernKeywords(null)
+                .targetDiaryDate(null)
+                .targetDiarySn(null)
                 .build();
 
         // 선생님이 해제한 것이므로 즉시 확인 처리
@@ -536,9 +540,12 @@ public class TeacherService {
                 reports.stream().filter(WeeklyReport::getIsAnalyzed).count(),
                 reports.stream().filter(r -> !r.getIsAnalyzed()).count());
 
-        // 4. WeeklyReportListItemResponse로 변환
+        // 4. WeeklyReportListItemResponse로 변환 (현재 일기 개수 포함)
         return reports.stream()
-                .map(WeeklyReportListItemResponse::from)
+                .map(report -> {
+                    int currentCount = weeklyReportService.getCurrentDiaryCount(studentUserSn, report.getStartDate(), report.getEndDate());
+                    return WeeklyReportListItemResponse.from(report, currentCount);
+                })
                 .collect(Collectors.toList());
     }
 

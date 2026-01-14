@@ -63,7 +63,20 @@ Content-Type: application/json
 ###   - totalCount: 전체 위험 학생 수
 ###   - dangerCount: DANGER 학생 수
 ###   - cautionCount: CAUTION 학생 수
-###   - students: 위험 학생 목록 (userSn, name, riskLevel, riskReason, riskContinuousArea, riskContinuousDays, riskUpdatedAt, dangerResolvedBy, dangerResolvedAt, dangerResolveMemo)
+###   - students: 위험 학생 목록
+###     - userSn: 학생 일련번호
+###     - name: 학생 이름
+###     - riskLevel: 위험도 레벨 (CAUTION, DANGER)
+###     - riskReason: 위험도 판정 사유
+###     - riskContinuousArea: 연속된 감정 영역 (red, yellow, blue, green)
+###     - riskContinuousDays: 연속 일수
+###     - riskLastCheckedDate: 위험도 분석 실행 날짜
+###     - riskTargetDiaryDate: 위험도 분석 대상 일기 날짜
+###     - riskTargetDiarySn: 위험도 분석 대상 일기 SN (일기 조회 시 사용 가능)
+###     - riskUpdatedAt: 위험도 갱신 시각
+###     - dangerResolvedBy: DANGER 해제한 선생님 user_sn
+###     - dangerResolvedAt: DANGER 해제 시각
+###     - dangerResolveMemo: DANGER 해제 사유
 
 ### 전체 조회 (level 미지정 또는 level=ALL)
 GET http://localhost:8080/api/v1/teachers/students/at-risk
@@ -88,9 +101,21 @@ Authorization: Bearer {{accessToken}}
 ###   - name: 학생 이름
 ###   - totalCount: 전체 이력 개수
 ###   - histories: 위험도 변화 이력 목록
-###     - historyId, previousLevel, newLevel, riskType, riskReason
-###     - continuousArea, continuousDays, concernKeywords
-###     - isConfirmed, confirmedBy, confirmedAt, teacherMemo, createdAt
+###     - historyId: 이력 ID
+###     - previousLevel: 이전 위험도 레벨
+###     - newLevel: 새 위험도 레벨
+###     - riskType: 위험 유형 (KEYWORD_DETECTED, CONTINUOUS_RED_BLUE, CONTINUOUS_SAME_AREA, RESOLVED)
+###     - riskReason: 위험도 판정 사유
+###     - continuousArea: 연속된 감정 영역
+###     - continuousDays: 연속 일수
+###     - concernKeywords: 탐지된 우려 키워드 목록
+###     - targetDiaryDate: 위험도 분석 기준 일기 날짜
+###     - targetDiarySn: 위험도 분석 기준 일기 SN (일기 조회 시 사용 가능)
+###     - isConfirmed: 선생님 확인 여부
+###     - confirmedBy: 확인한 선생님 user_sn
+###     - confirmedAt: 확인 시각
+###     - teacherMemo: 선생님 메모
+###     - createdAt: 이력 생성 시각
 ### ⚠️ studentUserSn을 실제 학생 ID로 변경 필요
 GET http://localhost:8080/api/v1/teachers/students/2/risk-history
 Authorization: Bearer {{accessToken}}
@@ -106,7 +131,9 @@ Authorization: Bearer {{accessToken}}
 ###   - reportId: 리포트 ID
 ###   - startDate: 시작 날짜 (월요일)
 ###   - endDate: 종료 날짜 (일요일)
-###   - diaryCount: 해당 주의 일기 개수
+###   - diaryCount: 리포트 생성 당시 일기 개수
+###   - currentDiaryCount: 현재 시점 해당 주의 분석된 일기 개수
+###   - isAnalyzable: 현재 분석 가능 여부 (현재 시점 분석된 일기 3개 이상인 경우 true)
 ###   - isAnalyzed: 분석 완료 여부 (true/false)
 ###   - readYn: 읽음 여부
 ###   - createdAt: 생성 시각

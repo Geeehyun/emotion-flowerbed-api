@@ -53,6 +53,12 @@ public class StudentRiskHistory {
     @Column(name = "concern_keywords", columnDefinition = "LONGTEXT")
     private List<String> concernKeywords;
 
+    @Column(name = "target_diary_date")
+    private java.time.LocalDate targetDiaryDate;
+
+    @Column(name = "target_diary_sn")
+    private Long targetDiarySn;
+
     @Column(name = "is_confirmed")
     private Boolean isConfirmed = false;
 
@@ -72,7 +78,8 @@ public class StudentRiskHistory {
     public StudentRiskHistory(User user, String previousLevel, String newLevel,
                               String riskType, String riskReason,
                               String continuousArea, Integer continuousDays,
-                              List<String> concernKeywords) {
+                              List<String> concernKeywords,
+                              java.time.LocalDate targetDiaryDate, Long targetDiarySn) {
         this.user = user;
         this.previousLevel = previousLevel;
         this.newLevel = newLevel;
@@ -81,6 +88,8 @@ public class StudentRiskHistory {
         this.continuousArea = continuousArea;
         this.continuousDays = continuousDays;
         this.concernKeywords = concernKeywords;
+        this.targetDiaryDate = targetDiaryDate;
+        this.targetDiarySn = targetDiarySn;
         this.isConfirmed = false;
         this.createdAt = LocalDateTime.now();
     }
