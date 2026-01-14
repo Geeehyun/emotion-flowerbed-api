@@ -193,16 +193,4 @@ public class WeeklyReportController {
         weeklyReportService.markNotificationSentByUser(reportId, userSn);
         return ResponseEntity.ok().build();
     }
-
-    // ========================================
-    // TODO: 선생님용 API (프론트 화면 준비 후 구현)
-    // ========================================
-    // GET /api/v1/teachers/students/{studentSn}/weekly-reports/list
-    // - 선생님이 담당 학생의 주간 리포트 목록 조회
-    // - teacherReport, teacherTalkTip 포함
-    //
-    // GET /api/v1/teachers/students/{studentSn}/weekly-reports/{reportId}
-    // - 선생님이 담당 학생의 주간 리포트 상세 조회
-    // - teacherReport, teacherTalkTip 포함
-    // ========================================
 }
