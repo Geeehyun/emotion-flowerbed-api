@@ -1,0 +1,126 @@
+erDiagram
+    USERS ||--o{ DIARIES : "작성"
+    USERS ||--o{ WEEKLY_REPORTS : "소유"
+    USERS ||--o{ STUDENT_RISK_HISTORY : "이력"
+    DIARIES }o--|| EMOTIONS : "참조"
+    CODE_GROUPS ||--o{ CODES : "포함"
+    USERS }o--|| CODES : "사용자유형"
+
+    USERS {
+        bigint user_sn PK "회원 일련번호"
+        varchar user_id UK "로그인 ID"
+        varchar password "BCrypt 암호화"
+        varchar name "이름"
+        varchar user_type_cd FK "사용자 유형"
+        varchar school_code "학교 코드"
+        varchar school_nm "학교명"
+        varchar class_code "반 코드"
+        varchar emotion_control_cd "감정조절코드"
+        varchar risk_level "위험도 NORMAL/CAUTION/DANGER"
+        varchar risk_continuous_area "연속 감정 영역"
+        int risk_continuous_days "연속 일수"
+        text risk_reason "위험도 사유"
+        bigint danger_resolved_by "DANGER 해제자"
+        datetime danger_resolved_at "해제 일시"
+        text danger_resolve_memo "해제 메모"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "Soft Delete"
+    }
+
+    DIARIES {
+        bigint diary_id PK "일기 ID"
+        bigint user_sn FK "작성자"
+        date diary_date UK "일기 날짜"
+        text content "일기 내용"
+        text summary "AI 요약"
+        varchar core_emotion_code FK "대표 감정"
+        text emotion_reason "감정 선택 이유"
+        varchar flower_name "꽃 이름"
+        text flower_meaning "꽃말"
+        json emotions_json "전체 감정 배열"
+        text keywords "키워드 쉼표구분"
+        boolean is_analyzed "분석 완료 여부"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "Soft Delete"
+    }
+
+    EMOTIONS {
+        varchar emotion_code PK "감정 코드"
+        varchar emotion_name_kr "감정명 한글"
+        varchar emotion_name_en "감정명 영문"
+        varchar flower_name_kr "꽃 이름 한글"
+        varchar flower_name_en "꽃 이름 영문"
+        text flower_meaning "꽃말"
+        varchar flower_color "꽃 색상"
+        text flower_color_codes "색상 코드"
+        text flower_origin "꽃 유래"
+        text flower_fragrance "향기"
+        text flower_fun_fact "재미있는 사실"
+        varchar image_file_3d "3D 이미지"
+        varchar image_file_realistic "사실적 이미지"
+        varchar area "감정 영역 red/yellow/green/blue"
+        varchar color "감정 색상 HEX"
+        float x "무드미터 X좌표"
+        float y "무드미터 Y좌표"
+        int display_order "표시 순서"
+        datetime created_at
+        datetime updated_at
+    }
+
+    WEEKLY_REPORTS {
+        bigint report_id PK "리포트 ID"
+        bigint user_sn FK "학생"
+        date start_date "시작일 월요일"
+        date end_date "종료일 일요일"
+        int diary_count "일기 개수"
+        text student_report "학생용 분석"
+        text student_encouragement "격려 메시지"
+        text teacher_report "선생님용 분석"
+        json teacher_talk_tip "대화 팁 배열"
+        json mind_gardening_tip "마음가꾸기 팁 배열"
+        json emotion_stats "감정 통계 배열"
+        json weekly_diary_details "주간 일기 상세"
+        json highlights "하이라이트 대표꽃등"
+        text week_keywords "주간 키워드"
+        boolean is_analyzed "분석 완료 여부"
+        boolean read_yn "읽음 여부"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "Soft Delete"
+    }
+
+    STUDENT_RISK_HISTORY {
+        bigint history_id PK "이력 ID"
+        bigint user_sn FK "학생"
+        varchar prev_risk_level "이전 위험도"
+        varchar new_risk_level "새 위험도"
+        text changed_reason "변경 사유"
+        datetime changed_at "변경 일시"
+        datetime created_at
+        datetime updated_at
+    }
+
+    CODE_GROUPS {
+        varchar group_code PK "그룹 코드"
+        varchar group_name "그룹명"
+        text description "설명"
+        datetime created_at
+        datetime updated_at
+    }
+
+    CODES {
+        bigint code_sn PK "코드 일련번호"
+        varchar group_code FK "그룹 코드"
+        varchar code "코드"
+        varchar code_name "코드명"
+        text description "설명"
+        varchar extra_value1 "확장값1"
+        varchar extra_value2 "확장값2"
+        varchar extra_value3 "확장값3"
+        int display_order "표시 순서"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "Soft Delete"
+    }
