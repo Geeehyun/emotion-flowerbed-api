@@ -944,6 +944,22 @@ Authorization: Bearer {accessToken}
 | unanalyzed | Integer | O | 일기 작성했지만 분석 안 됨 |
 | none | Integer | O | 일기 미작성 |
 
+### 담당 학생이 없는 경우 응답
+담당 학생이 없는 경우에도 에러가 아닌 빈 응답을 반환합니다.
+```json
+{
+  "yearMonth": "2026-01",
+  "totalStudents": 0,
+  "areaKeywords": {
+    "red": [],
+    "yellow": [],
+    "blue": [],
+    "green": []
+  },
+  "dailyDistribution": []
+}
+```
+
 ### 에러 응답
 ```json
 {
@@ -961,23 +977,17 @@ Authorization: Bearer {accessToken}
 
 ```json
 {
-  "code": "NO_STUDENTS_FOUND",
-  "message": "담당 학생이 없습니다"
-}
-```
-
-```json
-{
   "code": "BAD_REQUEST",
   "message": "yearMonth 형식이 올바르지 않습니다 (YYYY-MM)"
 }
 ```
 
 ### 참고사항
-1. **성능 최적화**: 해당 월의 모든 일기를 1번의 쿼리로 조회 후 메모리에서 처리
-2. **영역 합계**: 각 날짜별 영역별 학생 수의 합은 `totalStudents`와 동일
-3. **월 전체 조회**: 해당 월의 1일부터 마지막 날까지 모든 날짜 포함
-4. **캐싱**: 감정/꽃 마스터 데이터는 Redis 캐싱으로 성능 최적화됨
+1. **담당 학생 없음**: 담당 학생이 없는 경우 `totalStudents=0`, 빈 배열로 정상 응답 반환
+2. **성능 최적화**: 해당 월의 모든 일기를 1번의 쿼리로 조회 후 메모리에서 처리
+3. **영역 합계**: 각 날짜별 영역별 학생 수의 합은 `totalStudents`와 동일
+4. **월 전체 조회**: 해당 월의 1일부터 마지막 날까지 모든 날짜 포함
+5. **캐싱**: 감정/꽃 마스터 데이터는 Redis 캐싱으로 성능 최적화됨
 
 ---
 
@@ -1000,6 +1010,11 @@ Authorization: Bearer {accessToken}
 ---
 
 ## 버전 히스토리
+
+### v1.4.0 (2026-01-29)
+- 학급 월별 감정 분포 조회 API 개선
+  - 담당 학생이 없는 경우 에러 대신 빈 응답 반환
+  - `totalStudents=0`, 빈 배열로 정상 응답
 
 ### v1.3.0 (2026-01-14)
 - 위험 학생 리스트 조회 API 응답에 위험도 분석 관련 필드 추가

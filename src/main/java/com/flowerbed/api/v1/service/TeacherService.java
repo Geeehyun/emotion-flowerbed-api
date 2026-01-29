@@ -744,9 +744,19 @@ public class TeacherService {
                 "STUDENT"
         );
 
+        // 담당 학생이 없는 경우 빈 응답 반환
         if (students.isEmpty()) {
-            throw new BusinessException(ErrorCode.NO_STUDENTS_FOUND,
-                    "담당 학생이 없습니다");
+            return MonthlyEmotionDistributionResponse.builder()
+                    .yearMonth(yearMonth)
+                    .totalStudents(0)
+                    .areaKeywords(MonthlyEmotionDistributionResponse.AreaKeywords.builder()
+                            .red(List.of())
+                            .yellow(List.of())
+                            .blue(List.of())
+                            .green(List.of())
+                            .build())
+                    .dailyDistribution(List.of())
+                    .build();
         }
 
         List<Long> studentSnList = students.stream()
