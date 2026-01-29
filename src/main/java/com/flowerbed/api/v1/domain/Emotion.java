@@ -21,6 +21,9 @@ public class Emotion extends BaseAuditEntity {
     @Column(name = "emotion_name_en", nullable = false, length = 20)
     private String emotionNameEn;
 
+    @Column(name = "emotion_description", columnDefinition = "TEXT")
+    private String emotionDescription;  // 감정 설명 (정의, 상황 예시, 대처법 포함)
+
     @Column(name = "flower_name_kr", nullable = false, length = 50)
     private String flowerNameKr;
 
