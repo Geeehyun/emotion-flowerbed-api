@@ -1,12 +1,54 @@
 ### 인증 API (Auth)
 ### Base URL: http://localhost:8080/api
 
+### ===========================================
+### 회원가입 및 ID 중복 조회
+### ===========================================
+
+### ID 중복 조회 (사용 가능한 ID)
+GET http://localhost:8080/api/v1/auth/check-duplicate?userId=newuser123
+
+### ID 중복 조회 (이미 사용 중인 ID)
+GET http://localhost:8080/api/v1/auth/check-duplicate?userId=wkdwl578
+
+### 회원가입 - 학생
+POST http://localhost:8080/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "userId": "newstudent1",
+  "password": "1234",
+  "name": "김학생",
+  "userTypeCd": "STUDENT",
+  "schoolCode": "1111",
+  "schoolNm": "예시초등학교",
+  "classCode": "301"
+}
+
+### 회원가입 - 선생님
+POST http://localhost:8080/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "userId": "newteacher1",
+  "password": "1234",
+  "name": "박선생",
+  "userTypeCd": "TEACHER",
+  "schoolCode": "1111",
+  "schoolNm": "예시초등학교",
+  "classCode": "301"
+}
+
+### ===========================================
+### 로그인 / 로그아웃 / 토큰 갱신
+### ===========================================
+
 ### 로그인
 POST http://localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "userId": "student1",
+  "userId": "wkdwl578",
   "password": "1234"
 }
 

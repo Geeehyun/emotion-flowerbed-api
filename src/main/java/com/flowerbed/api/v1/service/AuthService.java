@@ -1,8 +1,11 @@
 package com.flowerbed.api.v1.service;
 
 import com.flowerbed.api.v1.domain.User;
+import com.flowerbed.api.v1.dto.DuplicateCheckResponse;
 import com.flowerbed.api.v1.dto.LoginRequest;
 import com.flowerbed.api.v1.dto.LoginResponse;
+import com.flowerbed.api.v1.dto.SignUpRequest;
+import com.flowerbed.api.v1.dto.SignUpResponse;
 import com.flowerbed.api.v1.repository.UserRepository;
 import com.flowerbed.exception.business.BusinessException;
 import com.flowerbed.exception.ErrorCode;
@@ -30,6 +33,59 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
     private final PasswordEncoder passwordEncoder;
+
+    /**
+     * 회원가입
+     * - userId 중복 체크
+     * - 비밀번호 암호화
+     * - 사용자 생성
+     */
+    @Transactional
+    public SignUpResponse signUp(SignUpRequest request) {
+        // 1. userId 중복 체크
+        if (userRepository.existsByUserId(request.getUserId())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_USER_ID, "이미 사용 중인 아이디입니다");
+        }
+
+        // 2. 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+
+        // 3. 사용자 생성
+        User user = new User(
+                request.getUserId(),
+                encodedPassword,
+                request.getName(),
+                request.getUserTypeCd(),
+                request.getSchoolCode(),
+                request.getSchoolNm(),
+                request.getClassCode()
+        );
+
+        User savedUser = userRepository.save(user);
+
+        log.info("User signed up: userId={}, userTypeCd={}", savedUser.getUserId(), savedUser.getUserTypeCd());
+
+        // 4. 응답 생성
+        return SignUpResponse.builder()
+                .userSn(savedUser.getUserSn())
+                .userId(savedUser.getUserId())
+                .name(savedUser.getName())
+                .userTypeCd(savedUser.getUserTypeCd())
+                .build();
+    }
+
+    /**
+     * ID 중복 조회
+     * - userId 존재 여부 확인
+     */
+    public DuplicateCheckResponse checkDuplicateUserId(String userId) {
+        boolean isDuplicate = userRepository.existsByUserId(userId);
+
+        return DuplicateCheckResponse.builder()
+                .userId(userId)
+                .isDuplicate(isDuplicate)
+                .build();
+    }
 
     /**
      * 로그인

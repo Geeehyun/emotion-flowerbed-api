@@ -1,8 +1,11 @@
 package com.flowerbed.api.v1.controller;
 
+import com.flowerbed.api.v1.dto.DuplicateCheckResponse;
 import com.flowerbed.api.v1.dto.LoginRequest;
 import com.flowerbed.api.v1.dto.LoginResponse;
 import com.flowerbed.api.v1.dto.RefreshRequest;
+import com.flowerbed.api.v1.dto.SignUpRequest;
+import com.flowerbed.api.v1.dto.SignUpResponse;
 import com.flowerbed.api.v1.service.AuthService;
 import com.flowerbed.security.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,9 +25,11 @@ import java.util.Map;
  * JWT 기반 인증을 사용하며, RefreshToken은 Redis에 저장됩니다.
  *
  * API 종류:
- * 1. POST /v1/auth/login - 로그인
- * 2. POST /v1/auth/logout - 로그아웃
- * 3. POST /v1/auth/refresh - Access Token 갱신
+ * 1. POST /v1/auth/signup - 회원가입
+ * 2. GET /v1/auth/check-duplicate - ID 중복 조회
+ * 3. POST /v1/auth/login - 로그인
+ * 4. POST /v1/auth/logout - 로그아웃
+ * 5. POST /v1/auth/refresh - Access Token 갱신
  */
 @Tag(name = "Auth", description = "인증 API")
 @Slf4j
@@ -34,6 +39,57 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+
+    /**
+     * 회원가입
+     *
+     * 새로운 사용자를 등록합니다.
+     * - 학생(STUDENT) 또는 선생님(TEACHER) 구분
+     * - 학교, 반 정보 필수
+     *
+     * @param request 회원가입 요청
+     * @return SignUpResponse (생성된 사용자 정보)
+     *
+     * 사용 예시:
+     * ```
+     * POST /v1/auth/signup
+     * {
+     *   "userId": "student1",
+     *   "password": "1234",
+     *   "name": "홍길동",
+     *   "userTypeCd": "STUDENT",
+     *   "schoolCode": "1111",
+     *   "schoolNm": "예시초등학교",
+     *   "classCode": "301"
+     * }
+     * ```
+     */
+    @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다")
+    @PostMapping("/signup")
+    public ResponseEntity<SignUpResponse> signUp(@Valid @RequestBody SignUpRequest request) {
+        SignUpResponse response = authService.signUp(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * ID 중복 조회
+     *
+     * 입력한 ID의 사용 가능 여부를 확인합니다.
+     *
+     * @param userId 확인할 ID
+     * @return DuplicateCheckResponse (중복 여부)
+     *
+     * 사용 예시:
+     * ```
+     * GET /v1/auth/check-duplicate?userId=student1
+     * ```
+     */
+    @Operation(summary = "ID 중복 조회", description = "입력한 ID의 사용 가능 여부를 확인합니다")
+    @GetMapping("/check-duplicate")
+    public ResponseEntity<DuplicateCheckResponse> checkDuplicate(@RequestParam String userId) {
+        DuplicateCheckResponse response = authService.checkDuplicateUserId(userId);
+        return ResponseEntity.ok(response);
+    }
 
     /**
      * 로그인

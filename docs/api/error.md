@@ -45,6 +45,7 @@ API 호출 시 발생할 수 있는 모든 에러에 대한 명세입니다.
 | 코드 | 메시지 | 설명 |
 |-----|--------|------|
 | INVALID_INPUT | 입력 값이 올바르지 않습니다 | 필수 파라미터 누락, 형식 오류, 검증 실패 |
+| DUPLICATE_USER_ID | 이미 사용 중인 아이디입니다 | 회원가입 시 중복된 ID 사용 시도 |
 | INVALID_DIARY_CONTENT | 일기 내용이 분석 불가능합니다 | 일기 내용이 10자 미만이거나 5000자 초과 |
 | DUPLICATE_DIARY_DATE | 해당 날짜에 이미 일기가 존재합니다 | 같은 날짜에 중복 일기 작성 시도 |
 | NO_SCHOOL_INFO | 학교 정보가 올바르지 않습니다. | 학교 코드 또는 반 코드 미설정 |
@@ -350,7 +351,32 @@ API 호출 시 발생할 수 있는 모든 에러에 대한 명세입니다.
 
 **해결 방법:**
 - 올바른 사용자 ID 입력
-- 회원 가입 필요 (해당 기능이 있는 경우)
+- 회원가입 필요 (`/v1/auth/signup`)
+
+---
+
+### DUPLICATE_USER_ID
+
+**HTTP Status:** 400 Bad Request
+
+**발생 상황:**
+- 회원가입 시 이미 존재하는 ID 사용 시도
+
+**예시:**
+```json
+{
+  "timestamp": "2026-01-29T12:34:56",
+  "status": 400,
+  "error": "Bad Request",
+  "code": "DUPLICATE_USER_ID",
+  "message": "이미 사용 중인 아이디입니다",
+  "path": "/api/v1/auth/signup"
+}
+```
+
+**해결 방법:**
+- ID 중복 조회 API로 사전 확인 (`/v1/auth/check-duplicate`)
+- 다른 ID 사용
 
 ---
 
@@ -458,6 +484,9 @@ if (error.code === 'LLM_ANALYSIS_FAILED') {
 ---
 
 ## 버전 히스토리
+
+### v1.1.0 (2026-01-29)
+- DUPLICATE_USER_ID 에러 코드 추가
 
 ### v1.0.0 (2026-01-12)
 - 초기 버전 작성

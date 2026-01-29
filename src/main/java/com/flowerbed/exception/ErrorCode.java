@@ -14,6 +14,7 @@ public enum ErrorCode {
 
     // 400 Bad Request
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "입력 값이 올바르지 않습니다"),
+    DUPLICATE_USER_ID(HttpStatus.BAD_REQUEST, "DUPLICATE_USER_ID", "이미 사용 중인 아이디입니다"),
     INVALID_DIARY_CONTENT(HttpStatus.BAD_REQUEST, "INVALID_DIARY_CONTENT", "일기 내용이 분석 불가능합니다"),
     DUPLICATE_DIARY_DATE(HttpStatus.BAD_REQUEST, "DUPLICATE_DIARY_DATE", "해당 날짜에 이미 일기가 존재합니다"),
     NO_SCHOOL_INFO(HttpStatus.BAD_REQUEST, "DUPLICATE_DIARY_DATE", "학교 정보가 올바르지 않습니다."),

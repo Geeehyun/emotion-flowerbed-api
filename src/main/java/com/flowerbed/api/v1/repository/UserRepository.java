@@ -17,6 +17,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUserId(String userId);
 
     /**
+     * userId(로그인 ID) 중복 여부 확인
+     */
+    boolean existsByUserId(String userId);
+
+    /**
      * 학교 코드, 반 코드, 사용자 타입으로 학생 목록 조회
      * - 선생님이 자신의 학생들을 조회할 때 사용
      * - 이름 오름차순 정렬

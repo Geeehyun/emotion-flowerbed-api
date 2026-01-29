@@ -97,6 +97,20 @@ public class User extends BaseAuditEntity {
     }
 
     /**
+     * 회원가입용 생성자
+     */
+    public User(String userId, String password, String name, String userTypeCd,
+                String schoolCode, String schoolNm, String classCode) {
+        this.userId = userId;
+        this.password = password;
+        this.name = name;
+        this.userTypeCd = userTypeCd;
+        this.schoolCode = schoolCode;
+        this.schoolNm = schoolNm;
+        this.classCode = classCode;
+    }
+
+    /**
      * 위험도 상태 업데이트
      * @param riskLevel 위험도 레벨
      * @param continuousArea 연속 감정 영역

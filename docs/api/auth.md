@@ -17,13 +17,191 @@
 ---
 
 ## 목차
-1. [로그인](#1-로그인)
-2. [로그아웃](#2-로그아웃)
-3. [토큰 갱신](#3-토큰-갱신)
+1. [회원가입](#1-회원가입)
+2. [ID 중복 조회](#2-id-중복-조회)
+3. [로그인](#3-로그인)
+4. [로그아웃](#4-로그아웃)
+5. [토큰 갱신](#5-토큰-갱신)
 
 ---
 
-## 1. 로그인
+## 1. 회원가입
+
+### 기본 정보
+```
+POST /v1/auth/signup
+```
+
+새로운 사용자를 등록합니다. 학생(STUDENT) 또는 선생님(TEACHER)으로 구분하여 가입합니다.
+
+**권한:** 인증 불필요 (공개 API)
+
+### 요청
+#### Request Body
+```json
+{
+  "userId": "student1",
+  "password": "1234",
+  "name": "홍길동",
+  "userTypeCd": "STUDENT",
+  "schoolCode": "1111",
+  "schoolNm": "예시초등학교",
+  "classCode": "301"
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 | 예시 |
+|-----|------|------|------|------|
+| userId | String | O | 로그인 ID | student1 |
+| password | String | O | 비밀번호 | 1234 |
+| name | String | O | 이름 | 홍길동 |
+| userTypeCd | String | O | 사용자 유형 코드 (STUDENT/TEACHER) | STUDENT |
+| schoolCode | String | O | 학교 코드 | 1111 |
+| schoolNm | String | O | 학교명 | 예시초등학교 |
+| classCode | String | O | 학급 코드 | 301 |
+
+### 응답
+#### Success Response (200 OK)
+```json
+{
+  "userSn": 1,
+  "userId": "student1",
+  "name": "홍길동",
+  "userTypeCd": "STUDENT"
+}
+```
+
+#### Response Fields
+| 필드 | 타입 | 필수 | 설명 |
+|-----|------|------|------|
+| userSn | Long | O | 생성된 사용자 일련번호 |
+| userId | String | O | 로그인 ID |
+| name | String | O | 이름 |
+| userTypeCd | String | O | 사용자 유형 코드 (STUDENT/TEACHER) |
+
+### 에러 응답
+#### ID 중복 (400)
+```json
+{
+  "timestamp": "2026-01-29T12:34:56",
+  "status": 400,
+  "error": "Bad Request",
+  "code": "DUPLICATE_USER_ID",
+  "message": "이미 사용 중인 아이디입니다",
+  "path": "/api/v1/auth/signup"
+}
+```
+
+#### 입력 값 검증 실패 (400)
+```json
+{
+  "timestamp": "2026-01-29T12:34:56",
+  "status": 400,
+  "error": "Bad Request",
+  "code": "INVALID_INPUT",
+  "message": "아이디를 입력해주세요",
+  "path": "/api/v1/auth/signup"
+}
+```
+
+#### 사용자 유형 검증 실패 (400)
+```json
+{
+  "timestamp": "2026-01-29T12:34:56",
+  "status": 400,
+  "error": "Bad Request",
+  "code": "INVALID_INPUT",
+  "message": "사용자 유형은 STUDENT 또는 TEACHER만 가능합니다",
+  "path": "/api/v1/auth/signup"
+}
+```
+
+### 비즈니스 로직
+1. userId 중복 체크
+2. 비밀번호 BCrypt 암호화
+3. 사용자 정보 저장
+4. 응답 반환
+
+### 사용 예시
+```http
+POST /api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "userId": "student1",
+  "password": "1234",
+  "name": "홍길동",
+  "userTypeCd": "STUDENT",
+  "schoolCode": "1111",
+  "schoolNm": "예시초등학교",
+  "classCode": "301"
+}
+```
+
+---
+
+## 2. ID 중복 조회
+
+### 기본 정보
+```
+GET /v1/auth/check-duplicate
+```
+
+입력한 ID의 사용 가능 여부를 확인합니다.
+
+**권한:** 인증 불필요 (공개 API)
+
+### 요청
+#### Query Parameters
+| 파라미터 | 타입 | 필수 | 설명 | 예시 |
+|---------|------|------|------|------|
+| userId | String | O | 확인할 ID | student1 |
+
+#### Request Example
+```http
+GET /api/v1/auth/check-duplicate?userId=student1
+```
+
+### 응답
+#### Success Response (200 OK)
+```json
+{
+  "userId": "student1",
+  "isDuplicate": false
+}
+```
+
+#### Response Fields
+| 필드 | 타입 | 필수 | 설명 |
+|-----|------|------|------|
+| userId | String | O | 조회한 ID |
+| isDuplicate | Boolean | O | 중복 여부 (true: 중복, false: 사용 가능) |
+
+### 사용 예시
+```http
+GET /api/v1/auth/check-duplicate?userId=newuser123
+```
+
+### 응답 예시
+#### 사용 가능한 ID
+```json
+{
+  "userId": "newuser123",
+  "isDuplicate": false
+}
+```
+
+#### 이미 사용 중인 ID
+```json
+{
+  "userId": "student1",
+  "isDuplicate": true
+}
+```
+
+---
+
+## 3. 로그인
 
 ### 기본 정보
 ```
@@ -134,7 +312,7 @@ Content-Type: application/json
 
 ---
 
-## 2. 로그아웃
+## 4. 로그아웃
 
 ### 기본 정보
 ```
@@ -191,7 +369,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 3. 토큰 갱신
+## 5. 토큰 갱신
 
 ### 기본 정보
 ```
@@ -318,6 +496,7 @@ Content-Type: application/json
 | HTTP Status | 코드 | 메시지 | 설명 |
 |-------------|------|--------|------|
 | 400 | INVALID_INPUT | 입력 값이 올바르지 않습니다 | 요청 파라미터 검증 실패 |
+| 400 | DUPLICATE_USER_ID | 이미 사용 중인 아이디입니다 | 회원가입 시 ID 중복 |
 | 401 | INVALID_TOKEN | 유효하지 않은 토큰 입니다. | 토큰이 유효하지 않거나 만료됨 |
 | 401 | INVALID_PASSWORD | 비밀번호가 일치하지 않습니다 | 비밀번호 불일치 |
 | 404 | USER_NOT_FOUND | 사용자를 찾을 수 없습니다 | 존재하지 않는 사용자 ID |
@@ -374,6 +553,11 @@ Content-Type: application/json
 ---
 
 ## 버전 히스토리
+
+### v1.1.0 (2026-01-29)
+- 회원가입 API 추가
+- ID 중복 조회 API 추가
+- DUPLICATE_USER_ID 에러 코드 추가
 
 ### v1.0.0 (2026-01-12)
 - 초기 버전 작성
