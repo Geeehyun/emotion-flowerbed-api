@@ -29,6 +29,15 @@ public class UserSettings {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private String deletedBy;
+
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "user_sn")
