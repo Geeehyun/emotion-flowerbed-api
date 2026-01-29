@@ -1,12 +1,14 @@
 package com.flowerbed.api.v1.service;
 
 import com.flowerbed.api.v1.domain.User;
+import com.flowerbed.api.v1.domain.UserSettings;
 import com.flowerbed.api.v1.dto.DuplicateCheckResponse;
 import com.flowerbed.api.v1.dto.LoginRequest;
 import com.flowerbed.api.v1.dto.LoginResponse;
 import com.flowerbed.api.v1.dto.SignUpRequest;
 import com.flowerbed.api.v1.dto.SignUpResponse;
 import com.flowerbed.api.v1.repository.UserRepository;
+import com.flowerbed.api.v1.repository.UserSettingsRepository;
 import com.flowerbed.exception.business.BusinessException;
 import com.flowerbed.exception.ErrorCode;
 import com.flowerbed.security.JwtUtil;
@@ -30,6 +32,7 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
     private final PasswordEncoder passwordEncoder;
@@ -63,9 +66,13 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
+        // 4. 사용자 설정 생성 (기본값: theme_color=yellow, theme_garden_bg=default)
+        UserSettings userSettings = UserSettings.createDefault(savedUser);
+        userSettingsRepository.save(userSettings);
+
         log.info("User signed up: userId={}, userTypeCd={}", savedUser.getUserId(), savedUser.getUserTypeCd());
 
-        // 4. 응답 생성
+        // 5. 응답 생성
         return SignUpResponse.builder()
                 .userSn(savedUser.getUserSn())
                 .userId(savedUser.getUserId())
