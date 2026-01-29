@@ -402,11 +402,12 @@ public class WeeklyReportService {
 
         // 프롬프트 생성
         String prompt = promptTemplate.replace("{DIARY_CONTENT}", diaryContents);
-        log.info("[WeeklyReportService - callLlmForAnalysis] prompt : {}", prompt);
+        log.debug("[WeeklyReportService - callLlmForAnalysis] prompt : {}", prompt);
 
         // LLM API 호출
         try {
             String llmResponse = llmApiClient.call(prompt);
+            log.debug("[WeeklyReportService - callLlmForAnalysis] llmResponse : {}", llmResponse);
             return parseAnalysisResponse(llmResponse);
         } catch (Exception e) {
             log.error("Failed to call LLM API for weekly report analysis", e);

@@ -14,21 +14,34 @@ Authorization: Bearer {{accessToken}}
 GET http://localhost:8080/api/v1/weekly-reports/new/exists
 Authorization: Bearer {{accessToken}}
 
-### 주간 리포트 리스트 조회 - 전체
+### 주간 리포트 리스트 조회 - 전체 (분석 완료된 것만)
 GET http://localhost:8080/api/v1/weekly-reports/list?status=all
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 전체 (분석 가능한 미완료 포함)
+### includeAnalyzable=true: isAnalyzed=false && isAnalyzable=true인 리포트도 포함
+GET http://localhost:8080/api/v1/weekly-reports/list?status=all&includeAnalyzable=true
 Authorization: Bearer {{accessToken}}
 
 ### 주간 리포트 리스트 조회 - 읽음
 GET http://localhost:8080/api/v1/weekly-reports/list?status=read
 Authorization: Bearer {{accessToken}}
 
-### 주간 리포트 리스트 조회 - 안읽음
+### 주간 리포트 리스트 조회 - 안읽음 (분석 완료된 것만)
 GET http://localhost:8080/api/v1/weekly-reports/list?status=unread
 Authorization: Bearer {{accessToken}}
 
-### 주간 리포트 리스트 조회 - 최근 3개월
+### 주간 리포트 리스트 조회 - 안읽음 (분석 가능한 미완료 포함)
+GET http://localhost:8080/api/v1/weekly-reports/list?status=unread&includeAnalyzable=true
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 최근 3개월 (분석 완료된 것만)
 ### 현재 날짜 기준 3개월 이내의 리포트만 조회 (startDate 기준 내림차순)
 GET http://localhost:8080/api/v1/weekly-reports/list?status=recent
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 리스트 조회 - 최근 3개월 (분석 가능한 미완료 포함)
+GET http://localhost:8080/api/v1/weekly-reports/list?status=recent&includeAnalyzable=true
 Authorization: Bearer {{accessToken}}
 
 ### 주간 리포트 상세 조회
