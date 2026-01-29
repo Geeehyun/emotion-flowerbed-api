@@ -24,6 +24,7 @@ public class AllEmotionsResponse {
         private String emotionCode;
         private String emotionNameKr;
         private String emotionNameEn;
+        private String emotionDescription;  // 감정 설명 (정의, 상황 예시, 대처법)
         private String flowerNameKr;
         private String flowerNameEn;
         private String flowerMeaning;
