@@ -157,6 +157,7 @@ Authorization: Bearer {accessToken}
     "emotionCode": "E001",
     "emotionNameKr": "기쁨",
     "emotionNameEn": "Joy",
+    "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
     "flowerNameKr": "해바라기",
     "flowerNameEn": "Sunflower",
     "flowerMeaning": "긍정적인 에너지와 희망",
@@ -274,6 +275,7 @@ Authorization: Bearer {accessToken}
       ],
       "flowerDetail": {
         "emotionNameKr": "기쁨",
+        "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
         "flowerNameKr": "해바라기",
         "imageFile3d": "sunflower_3d.png"
       }
@@ -596,6 +598,7 @@ GET /api/v1/flowers/my-emotions
       "flowerDetail": {
         "emotionCode": "E001",
         "emotionNameKr": "기쁨",
+        "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
         "flowerNameKr": "해바라기",
         "flowerColor": "노란색",
         "flowerOrigin": "북아메리카",
@@ -634,6 +637,7 @@ GET /api/v1/flowers/all-emotions
       "emotionCode": "E001",
       "emotionNameKr": "기쁨",
       "emotionNameEn": "Joy",
+      "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
       "flowerNameKr": "해바라기",
       "flowerNameEn": "Sunflower",
       "flowerMeaning": "긍정적인 에너지",
@@ -695,6 +699,7 @@ GET /api/v1/flowers/all-emotions
 | emotionCode | String | 감정 코드 |
 | emotionNameKr | String | 감정 이름 (한글) |
 | emotionNameEn | String | 감정 이름 (영문) |
+| emotionDescription | String | 감정 설명 (정의, 상황 예시, 대처법) |
 | flowerNameKr | String | 꽃 이름 (한글) |
 | flowerNameEn | String | 꽃 이름 (영문) |
 | flowerMeaning | String | 꽃말 |
@@ -724,6 +729,10 @@ GET /api/v1/flowers/all-emotions
 ---
 
 ## 버전 히스토리
+
+### v1.3.0 (2026-01-29)
+- FlowerDetail 응답에 `emotionDescription` 필드 추가
+  - 감정 설명 (정의, 상황 예시, 대처법 포함)
 
 ### v1.2.0 (2026-01-14)
 - 일기 작성 API에 미래일기 작성 방지 기능 추가
