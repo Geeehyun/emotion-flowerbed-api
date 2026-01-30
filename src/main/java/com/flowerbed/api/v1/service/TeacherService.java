@@ -10,6 +10,7 @@ import com.flowerbed.api.v1.repository.DiaryRepository;
 import com.flowerbed.api.v1.repository.FlowerRepository;
 import com.flowerbed.api.v1.repository.StudentRiskHistoryRepository;
 import com.flowerbed.api.v1.repository.UserRepository;
+import com.flowerbed.api.v1.repository.UserSettingsRepository;
 import com.flowerbed.api.v1.repository.WeeklyReportRepository;
 import com.flowerbed.exception.ErrorCode;
 import com.flowerbed.exception.business.BusinessException;
@@ -40,6 +41,7 @@ public class TeacherService {
     private final EmotionCacheService emotionCacheService;
     private final StudentRiskHistoryRepository riskHistoryRepository;
     private final WeeklyReportRepository weeklyReportRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final com.flowerbed.service.WeeklyReportService weeklyReportService;
 
     /**
@@ -640,10 +642,15 @@ public class TeacherService {
                 .map(this::convertToListItem)
                 .toList();
 
+        // 6. 학생 테마 설정 조회
+        var settings = userSettingsRepository.findByUserSn(studentUserSn).orElse(null);
+
         return TeacherMonthlyDiariesResponse.builder()
                 .yearMonth(yearMonth)
                 .emotions(items)
                 .totalCount(items.size())
+                .themeColor(settings != null ? settings.getThemeColor() : null)
+                .themeGardenBg(settings != null ? settings.getThemeGardenBg() : null)
                 .build();
     }
 
@@ -658,9 +665,10 @@ public class TeacherService {
                     .map(e -> {
                         String color = e.getColor();
                         String emotionNameKr = e.getEmotionNameKr();
+                        String emotionDescription = e.getEmotionDescription();
 
                         // null이면 DB 조회해서 채움 (기존 데이터 대응)
-                        if (color == null || emotionNameKr == null) {
+                        if (color == null || emotionNameKr == null || emotionDescription == null) {
                             Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
                             if (emotion != null) {
                                 if (color == null) {
@@ -669,11 +677,15 @@ public class TeacherService {
                                 if (emotionNameKr == null) {
                                     emotionNameKr = emotion.getEmotionNameKr();
                                 }
+                                if (emotionDescription == null) {
+                                    emotionDescription = emotion.getEmotionDescription();
+                                }
                             }
                         }
 
                         EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
                         ep.setEmotionNameKr(emotionNameKr);
+                        ep.setEmotionDescription(emotionDescription);
                         return ep;
                     })
                     .collect(Collectors.toList());

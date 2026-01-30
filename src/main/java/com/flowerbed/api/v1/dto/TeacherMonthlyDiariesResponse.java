@@ -18,6 +18,10 @@ public class TeacherMonthlyDiariesResponse {
     private List<EmotionListItem> emotions;
     private Integer totalCount;
 
+    // 학생 테마 설정
+    private String themeColor;
+    private String themeGardenBg;
+
     @Getter
     @Builder
     @NoArgsConstructor

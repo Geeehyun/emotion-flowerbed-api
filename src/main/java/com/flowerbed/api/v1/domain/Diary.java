@@ -107,6 +107,7 @@ public class Diary extends BaseAuditEntity {
         private Integer percent;
         private String color;
         private String emotionNameKr;
+        private String emotionDescription;
 
         public EmotionPercent(String emotion, Integer percent) {
             this.emotion = emotion;
@@ -124,6 +125,14 @@ public class Diary extends BaseAuditEntity {
             this.percent = percent;
             this.color = color;
             this.emotionNameKr = emotionNameKr;
+        }
+
+        public EmotionPercent(String emotion, Integer percent, String color, String emotionNameKr, String emotionDescription) {
+            this.emotion = emotion;
+            this.percent = percent;
+            this.color = color;
+            this.emotionNameKr = emotionNameKr;
+            this.emotionDescription = emotionDescription;
         }
     }
 }
