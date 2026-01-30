@@ -720,6 +720,8 @@ Authorization: Bearer {accessToken}
 {
   "yearMonth": "2025-12",
   "totalCount": 15,
+  "themeColor": "yellow",
+  "themeGardenBg": "default",
   "emotions": [
     {
       "id": 123,
@@ -731,19 +733,22 @@ Authorization: Bearer {accessToken}
           "emotion": "E001",
           "percent": 60,
           "color": "#FFD700",
-          "emotionNameKr": "기쁨"
+          "emotionNameKr": "기쁨",
+          "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다."
         },
         {
           "emotion": "E002",
           "percent": 30,
           "color": "#FF6B6B",
-          "emotionNameKr": "설렘"
+          "emotionNameKr": "설렘",
+          "emotionDescription": "설렘은 기대되는 일이 있을 때 느끼는 두근거리는 감정입니다."
         },
         {
           "emotion": "E003",
           "percent": 10,
           "color": "#4ECDC4",
-          "emotionNameKr": "평온"
+          "emotionNameKr": "평온",
+          "emotionDescription": "평온은 마음이 차분하고 안정된 상태의 감정입니다."
         }
       ],
       "coreEmotionDetail": {
@@ -776,6 +781,8 @@ Authorization: Bearer {accessToken}
 |-----|------|------|------|
 | yearMonth | String | O | 조회한 년월 (YYYY-MM) |
 | totalCount | Integer | O | 해당 월 일기 총 개수 |
+| themeColor | String | △ | 학생 테마 색상 (설정 없으면 null) |
+| themeGardenBg | String | △ | 학생 정원 배경 테마 (설정 없으면 null) |
 | emotions | Array | O | 일기 감정 목록 (날짜 내림차순) |
 
 **emotions[] (EmotionListItem)**
@@ -795,6 +802,7 @@ Authorization: Bearer {accessToken}
 | percent | Integer | O | 감정 비율 (0-100) |
 | color | String | O | 감정 색상 (HEX, 예: #FFD700) |
 | emotionNameKr | String | O | 감정 이름 (한글) |
+| emotionDescription | String | O | 감정 설명 (정의, 상황 예시, 대처법) |
 
 **emotions[].coreEmotionDetail (EmotionDetail)**
 | 필드 | 타입 | 필수 | 설명 |
@@ -1012,6 +1020,11 @@ Authorization: Bearer {accessToken}
 ---
 
 ## 버전 히스토리
+
+### v1.5.0 (2026-01-30)
+- 학생 월별 감정 조회 API 개선
+  - 응답에 학생 테마 설정 추가 (`themeColor`, `themeGardenBg`)
+  - `emotions[].emotions[]`에 `emotionDescription` 필드 추가 (감정 설명)
 
 ### v1.4.0 (2026-01-29)
 - 학급 월별 감정 분포 조회 API 개선

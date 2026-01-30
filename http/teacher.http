@@ -171,8 +171,11 @@ Authorization: Bearer {{accessToken}}
 ### Response:
 ###   - yearMonth: 조회한 년월
 ###   - totalCount: 해당 월 일기 총 개수
+###   - themeColor: 학생 테마 색상 (설정 없으면 null)
+###   - themeGardenBg: 학생 정원 배경 테마 (설정 없으면 null)
 ###   - emotions: 일기 감정 목록 (날짜 내림차순)
 ###     - isAnalyzed=false일 때 감정 정보는 null
+###     - emotions[].emotionDescription: 감정 설명 (DB에서 동적 조회)
 GET http://localhost:8080/api/v1/teachers/students/1/monthly-emotions?yearMonth=2025-12
 Authorization: Bearer {{accessToken}}
 
