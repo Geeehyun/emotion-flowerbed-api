@@ -23,6 +23,9 @@ public enum ErrorCode {
     // 403 Forbidden
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없는 사용자입니다."),
 
+    // 429 Too Many Requests
+    WEEKLY_REPORT_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "WEEKLY_REPORT_LIMIT_EXCEEDED", "일일 주간 리포트 발행 횟수를 초과했습니다"),
+
     // 404 Not Found
     DIARY_NOT_FOUND(HttpStatus.NOT_FOUND, "DIARY_NOT_FOUND", "일기를 찾을 수 없습니다"),
     DIARY_NOT_ANALYZED(HttpStatus.NOT_FOUND, "DIARY_NOT_ANALYZED", "일기가 아직 분석되지 않았습니다"),

@@ -25,6 +25,8 @@ Authorization: Bearer {accessToken}
 ### 주간 리포트 API (`/api/v1/weekly-reports`)
 - [주간 리포트 조회](#주간-리포트-api)
 - [읽음 상태 관리](#주간-리포트-읽음-상태-관리)
+- [발행 가능 주 목록 조회](#6-발행-가능-주-목록-조회)
+- [주간 리포트 발행 신청](#7-주간-리포트-발행-신청)
 
 ### 감정/꽃 정보 API (`/api/v1/flowers`)
 - [나의 감정 통계](#감정꽃-정보-api)
@@ -566,30 +568,95 @@ PUT /api/v1/weekly-reports/{reportId}/notification-sent
 
 ---
 
-### 7. 주간 리포트 수동 생성 (학생용)
+### 7. 발행 가능 주 목록 조회
+
+#### 기본 정보
+```
+GET /api/v1/weekly-reports/generable
+```
+
+학생이 주간 리포트를 발행할 수 있는 주 목록과 발행 횟수 정보를 조회합니다.
+
+**권한:** STUDENT 타입 필수
+
+#### 조건
+- 분석된 일기가 3개 이상인 주
+- 아직 주간 리포트가 생성되지 않은 주
+- 현재 진행 중인 주 제외 (완료된 주만)
+
+#### 응답
+```json
+{
+  "dailyLimit": 1,
+  "usedCount": 0,
+  "remainingCount": 1,
+  "weeks": [
+    {
+      "startDate": "2026-01-20",
+      "endDate": "2026-01-26",
+      "diaryCount": 5
+    },
+    {
+      "startDate": "2026-01-13",
+      "endDate": "2026-01-19",
+      "diaryCount": 4
+    }
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+|-----|------|------|
+| dailyLimit | Integer | 일일 발행 가능 횟수 |
+| usedCount | Integer | 오늘 발행한 횟수 |
+| remainingCount | Integer | 남은 발행 가능 횟수 |
+| weeks | Array | 발행 가능한 주 목록 (최근 순) |
+| weeks[].startDate | String | 주 시작일 (월요일) |
+| weeks[].endDate | String | 주 종료일 (일요일) |
+| weeks[].diaryCount | Integer | 해당 주의 분석된 일기 개수 |
+
+---
+
+### 8. 주간 리포트 발행 신청
 
 #### 기본 정보
 ```
 POST /api/v1/weekly-reports/generate?startDate={date}&endDate={date}
 ```
 
-학생이 수동으로 자신의 주간 리포트를 생성합니다.
+학생이 특정 주의 주간 리포트 발행을 신청합니다.
 
 **권한:** STUDENT 타입 필수
 
+**발행 횟수 제한:** 일 1회 (초과 시 429 에러)
+
 #### 요청
 ```http
-POST /api/v1/weekly-reports/generate?startDate=2025-12-30&endDate=2026-01-05
+POST /api/v1/weekly-reports/generate?startDate=2026-01-20&endDate=2026-01-26
 Authorization: Bearer {accessToken}
 ```
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| startDate | String | O | 주 시작일 (월요일, YYYY-MM-DD) |
+| endDate | String | O | 주 종료일 (일요일, YYYY-MM-DD) |
 
 #### 응답
 주간 리포트 상세 조회와 동일한 구조
 
 #### 에러 응답
+##### 일기 부족 (400)
 ```json
 {
   "message": "일기가 3개 미만이어서 주간 리포트를 생성할 수 없습니다."
+}
+```
+
+##### 발행 횟수 초과 (429)
+```json
+{
+  "code": "WEEKLY_REPORT_LIMIT_EXCEEDED",
+  "message": "일일 주간 리포트 발행 횟수를 초과했습니다"
 }
 ```
 
@@ -839,6 +906,11 @@ Content-Type: application/json
   - 전체 감정 조회 API는 활성화된 감정만 반환
   - AI 분석 시 활성화된 감정만 사용
   - 비활성화된 감정은 기존 일기 데이터에서는 그대로 표시
+
+### v1.5.0 (2026-01-30)
+- 주간 리포트 발행 신청 기능 추가
+  - GET /api/v1/weekly-reports/generable (발행 가능 주 목록 조회)
+  - POST /api/v1/weekly-reports/generate (발행 신청 - 일일 1회 제한)
 
 ### v1.4.0 (2026-01-29)
 - 사용자 설정 API 추가 (학생 전용)

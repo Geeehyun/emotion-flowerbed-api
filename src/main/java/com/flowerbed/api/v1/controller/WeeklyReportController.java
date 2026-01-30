@@ -1,10 +1,15 @@
 package com.flowerbed.api.v1.controller;
 
 import com.flowerbed.api.v1.domain.WeeklyReport;
+import com.flowerbed.api.v1.dto.GenerableWeekResponse;
+import com.flowerbed.api.v1.dto.GenerableWeeksResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportDetailResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportListItemResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportStatusResponse;
 import com.flowerbed.api.v1.service.EmotionCacheService;
+import com.flowerbed.api.v1.service.RedisService;
+import com.flowerbed.exception.ErrorCode;
+import com.flowerbed.exception.business.BusinessException;
 import com.flowerbed.security.SecurityUtil;
 import com.flowerbed.service.WeeklyReportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +39,7 @@ public class WeeklyReportController {
 
     private final WeeklyReportService weeklyReportService;
     private final EmotionCacheService emotionCacheService;
+    private final RedisService redisService;
 
     /**
      * 안 읽은 리포트 존재 여부 확인
@@ -107,30 +113,80 @@ public class WeeklyReportController {
     }
 
     /**
+     * 발행 가능한 주 목록 조회 (학생 전용)
+     * GET /api/v1/weekly-reports/generable
+     *
+     * 조건:
+     * - 분석된 일기가 3개 이상인 주
+     * - 아직 주간 리포트가 생성되지 않은 주
+     * - 현재 진행 중인 주 제외 (완료된 주만)
+     *
+     * @return 발행 가능한 주 목록 + 발행 횟수 정보
+     */
+    @Operation(summary = "발행 가능한 주 목록 조회", description = "학생이 주간 리포트를 발행할 수 있는 주 목록과 발행 횟수 정보를 조회합니다.")
+    @GetMapping("/generable")
+    public ResponseEntity<GenerableWeeksResponse> getGenerableWeeks() {
+        // 학생 권한 체크
+        SecurityUtil.requireStudent();
+
+        Long userSn = SecurityUtil.getCurrentUserSn();
+        List<LocalDate[]> generableWeeks = weeklyReportService.getGenerableWeeks(userSn);
+
+        List<GenerableWeekResponse> weeks = generableWeeks.stream()
+                .map(week -> GenerableWeekResponse.of(
+                        week[0],  // startDate
+                        week[1],  // endDate
+                        (int) week[2].toEpochDay()  // diaryCount
+                ))
+                .collect(Collectors.toList());
+
+        // 발행 횟수 정보 조회
+        int dailyLimit = RedisService.DAILY_WEEKLY_REPORT_LIMIT;
+        int usedCount = redisService.getWeeklyReportGenerateCount(userSn);
+
+        return ResponseEntity.ok(GenerableWeeksResponse.of(dailyLimit, usedCount, weeks));
+    }
+
+    /**
      * 수동으로 주간 리포트 생성 - 단일 사용자 (학생 전용)
      * POST /api/v1/weekly-reports/generate?startDate=2025-01-06&endDate=2025-01-12
      *
      * ⚠️ 학생 권한 필수 (userTypeCd = 'STUDENT')
      * - 선생님, 관리자는 주간 리포트를 생성할 수 없습니다.
+     * - 일일 발행 횟수 제한: {@link RedisService#DAILY_WEEKLY_REPORT_LIMIT}
      *
      * 사용 시나리오:
      * - 학생이 수동으로 자신의 주간 리포트 생성
-     * - 테스트용
      */
+    @Operation(summary = "주간 리포트 발행 신청", description = "학생이 특정 주의 주간 리포트 발행을 신청합니다. 일일 발행 횟수 제한이 있습니다.")
     @PostMapping("/generate")
     public ResponseEntity<WeeklyReportDetailResponse> generateWeeklyReport(
+            @Parameter(description = "주 시작일 (월요일)", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "주 종료일 (일요일)", required = true)
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         // 학생 권한 체크
         SecurityUtil.requireStudent();
 
         Long userSn = SecurityUtil.getCurrentUserSn();
+
+        // 일일 발행 횟수 제한 체크
+        if (!redisService.canGenerateWeeklyReport(userSn)) {
+            log.warn("일일 주간 리포트 발행 횟수 초과: userSn={}", userSn);
+            throw new BusinessException(ErrorCode.WEEKLY_REPORT_LIMIT_EXCEEDED);
+        }
+
         WeeklyReport report = weeklyReportService.generateReport(userSn, startDate, endDate);
 
         if (report == null) {
             throw new IllegalArgumentException("일기가 3개 미만이어서 주간 리포트를 생성할 수 없습니다.");
         }
+
+        // 발행 성공 시 횟수 증가
+        redisService.incrementWeeklyReportGenerateCount(userSn);
+        log.info("주간 리포트 발행 완료: userSn={}, reportId={}, 남은 횟수={}",
+                userSn, report.getReportId(), redisService.getRemainingWeeklyReportGenerateCount(userSn));
 
         return ResponseEntity.ok(WeeklyReportDetailResponse.from(report, emotionCacheService));
     }

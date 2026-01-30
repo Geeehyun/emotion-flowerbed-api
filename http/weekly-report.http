@@ -63,6 +63,23 @@ Authorization: Bearer {{accessToken}}
 
 
 ### ========================================
+### 주간 리포트 발행 신청 API (학생 전용)
+### ========================================
+
+### 발행 가능한 주 목록 조회
+### 조건: 분석된 일기 3개 이상 && 주간 리포트 미생성 && 완료된 주
+### 응답: dailyLimit, usedCount, remainingCount, weeks[] (최근 순)
+GET http://localhost:8080/api/v1/weekly-reports/generable
+Authorization: Bearer {{accessToken}}
+
+### 주간 리포트 발행 신청
+### ⚠️ 일일 발행 횟수 제한: 1회 (초과 시 429 에러)
+### ⚠️ 발행 가능한 주만 신청 가능 (GET /generable로 확인)
+POST http://localhost:8080/api/v1/weekly-reports/generate?startDate=2026-01-20&endDate=2026-01-26
+Authorization: Bearer {{accessToken}}
+
+
+### ========================================
 ### 테스트용 API
 ### ========================================
 

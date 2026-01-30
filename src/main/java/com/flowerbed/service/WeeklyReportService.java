@@ -1110,4 +1110,70 @@ public class WeeklyReportService {
             case SUNDAY -> "일요일";
         };
     }
+
+    // ======================== 발행 가능한 주 조회 ========================
+
+    /**
+     * 발행 가능한 주 목록 조회
+     * - 아직 주간 리포트가 생성되지 않은 주
+     * - 분석된 일기가 3개 이상인 주
+     * - 현재 진행 중인 주 제외 (완료된 주만)
+     * - 최근 순 정렬
+     *
+     * @param userSn 사용자 일련번호
+     * @return 발행 가능한 주 목록
+     */
+    public List<LocalDate[]> getGenerableWeeks(Long userSn) {
+        // 사용자의 모든 분석된 일기 조회
+        List<Diary> analyzedDiaries = diaryRepository.findByUserUserSnAndIsAnalyzed(userSn, true);
+
+        if (analyzedDiaries.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 일기 날짜 기준 가장 이른 날짜와 오늘 날짜
+        LocalDate earliestDate = analyzedDiaries.stream()
+                .map(Diary::getDiaryDate)
+                .min(LocalDate::compareTo)
+                .orElse(LocalDate.now());
+
+        LocalDate today = LocalDate.now();
+
+        // 현재 진행 중인 주의 시작일 (이번 주 월요일)
+        LocalDate currentWeekStart = today.with(java.time.DayOfWeek.MONDAY);
+
+        // 가장 이른 일기 날짜가 속한 주의 월요일
+        LocalDate weekStart = earliestDate.with(java.time.DayOfWeek.MONDAY);
+
+        List<LocalDate[]> generableWeeks = new ArrayList<>();
+
+        // 주 단위로 순회 (과거 → 현재, 단 현재 주는 제외)
+        while (weekStart.isBefore(currentWeekStart)) {
+            LocalDate weekEnd = weekStart.plusDays(6);  // 일요일
+
+            // 이미 리포트가 생성되어 있는지 확인
+            boolean reportExists = weeklyReportRepository.existsByUserUserSnAndStartDateAndDeletedAtIsNull(userSn, weekStart);
+
+            if (!reportExists) {
+                // 해당 주의 분석된 일기 개수 조회
+                final LocalDate finalWeekStart = weekStart;
+                final LocalDate finalWeekEnd = weekEnd;
+                long diaryCount = analyzedDiaries.stream()
+                        .filter(d -> !d.getDiaryDate().isBefore(finalWeekStart) && !d.getDiaryDate().isAfter(finalWeekEnd))
+                        .count();
+
+                // 일기 3개 이상인 경우만 발행 가능
+                if (diaryCount >= 3) {
+                    generableWeeks.add(new LocalDate[]{weekStart, weekEnd, LocalDate.ofEpochDay(diaryCount)});
+                }
+            }
+
+            weekStart = weekStart.plusWeeks(1);
+        }
+
+        // 최근 순 정렬 (startDate 내림차순)
+        generableWeeks.sort((a, b) -> b[0].compareTo(a[0]));
+
+        return generableWeeks;
+    }
 }
