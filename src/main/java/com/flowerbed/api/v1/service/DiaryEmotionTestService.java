@@ -33,26 +33,27 @@ public class DiaryEmotionTestService {
     private Map<String, List<String>> emotionCodesByArea;
 
     /**
-     * 서비스 초기화 시 DB에서 전체 감정 코드 조회하여 캐싱
+     * 서비스 초기화 시 DB에서 활성화된 감정 코드 조회하여 캐싱
      */
     @PostConstruct
     public void init() {
-        List<Emotion> allEmotions = flowerRepository.findAll();
+        // 활성화된 감정만 조회
+        List<Emotion> activeEmotions = flowerRepository.findAllByIsActiveTrueOrderByDisplayOrderAsc();
 
-        // 전체 감정 코드 리스트
-        allEmotionCodes = allEmotions.stream()
+        // 활성화된 감정 코드 리스트
+        allEmotionCodes = activeEmotions.stream()
                 .map(Emotion::getEmotionCode)
                 .collect(Collectors.toList());
 
-        // area별 감정 코드 맵
-        emotionCodesByArea = allEmotions.stream()
+        // area별 감정 코드 맵 (활성화된 감정만)
+        emotionCodesByArea = activeEmotions.stream()
                 .filter(e -> e.getArea() != null)
                 .collect(Collectors.groupingBy(
                         Emotion::getArea,
                         Collectors.mapping(Emotion::getEmotionCode, Collectors.toList())
                 ));
 
-        log.info("Loaded {} emotion codes from database for test service", allEmotionCodes.size());
+        log.info("Loaded {} active emotion codes from database for test service", allEmotionCodes.size());
         log.info("Emotion codes by area: {}", emotionCodesByArea.keySet());
     }
 

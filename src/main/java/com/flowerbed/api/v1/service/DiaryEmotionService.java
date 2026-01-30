@@ -47,7 +47,7 @@ public class DiaryEmotionService {
     /**
      * 서비스 초기화
      * 1. 프롬프트 템플릿 파일 로드
-     * 2. DB에서 감정 정보 조회
+     * 2. DB에서 활성화된 감정 정보 조회
      * 3. 프롬프트에 감정 정보 주입
      */
     @PostConstruct
@@ -57,19 +57,19 @@ public class DiaryEmotionService {
             ClassPathResource resource = new ClassPathResource("prompts/emotion-analysis-prompt.txt");
             promptTemplateRaw = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
 
-            // 2. DB에서 감정 정보 조회
-            List<Emotion> emotions = flowerRepository.findAllByOrderByDisplayOrderAsc();
-            validEmotions = emotions.stream()
+            // 2. DB에서 활성화된 감정 정보만 조회 (AI 분석용)
+            List<Emotion> activeEmotions = flowerRepository.findAllByIsActiveTrueOrderByDisplayOrderAsc();
+            validEmotions = activeEmotions.stream()
                     .map(Emotion::getEmotionCode)
                     .collect(Collectors.toSet());
 
-            // 3. 감정-꽃 매칭표 생성 (영역별로 그룹핑)
-            String emotionMappings = buildEmotionMappings(emotions);
+            // 3. 감정-꽃 매칭표 생성 (영역별로 그룹핑) - 활성화된 감정만
+            String emotionMappings = buildEmotionMappings(activeEmotions);
 
             // 4. 프롬프트에 주입
             promptTemplate = promptTemplateRaw.replace("{EMOTION_MAPPINGS}", emotionMappings);
 
-            log.info("DiaryEmotionService 초기화 완료: {} 개 감정 로드", validEmotions.size());
+            log.info("DiaryEmotionService 초기화 완료: {} 개 활성화된 감정 로드", validEmotions.size());
 
         } catch (IOException e) {
             throw new RuntimeException("감정 분석 프롬프트 초기화 실패", e);

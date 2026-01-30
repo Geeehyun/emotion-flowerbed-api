@@ -30,6 +30,10 @@ Authorization: Bearer {accessToken}
 - [나의 감정 통계](#감정꽃-정보-api)
 - [전체 감정 정보](#전체-감정-꽃-정보-조회)
 
+### 사용자 설정 API (`/api/v1/students/settings`)
+- [내 설정 조회](#사용자-설정-api)
+- [설정 수정](#설정-수정)
+
 ---
 
 ## 일기 API
@@ -114,6 +118,8 @@ POST /api/v1/diaries/{diaryId}/analyze
 
 작성된 일기를 AI로 분석하여 감정 정보를 추출합니다.
 
+> **참고:** AI 분석 시 활성화된 감정만 사용됩니다. 비활성화된 감정은 분석 대상에서 제외됩니다.
+
 ##### 요청
 ```http
 POST /api/v1/diaries/123/analyze
@@ -138,19 +144,28 @@ Authorization: Bearer {accessToken}
       "emotion": "E001",
       "percent": 60,
       "color": "#FFD700",
-      "emotionNameKr": "기쁨"
+      "emotionNameKr": "기쁨",
+      "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
+      "imageFile3d": "sunflower_3d.png",
+      "area": "YELLOW"
     },
     {
       "emotion": "E002",
       "percent": 30,
       "color": "#FF6B6B",
-      "emotionNameKr": "설렘"
+      "emotionNameKr": "설렘",
+      "emotionDescription": "설렘은 기대되는 일이 있을 때 느끼는 두근거리는 감정입니다.",
+      "imageFile3d": "tulip_3d.png",
+      "area": "YELLOW"
     },
     {
       "emotion": "E003",
       "percent": 10,
       "color": "#4ECDC4",
-      "emotionNameKr": "평온"
+      "emotionNameKr": "평온",
+      "emotionDescription": "평온은 마음이 차분하고 안정된 상태의 감정입니다.",
+      "imageFile3d": "lily_3d.png",
+      "area": "GREEN"
     }
   ],
   "flowerDetail": {
@@ -188,6 +203,8 @@ AI API를 호출하지 않고 랜덤으로 감정 분석 결과를 생성합니�
 - API 호출 비용 없음
 - 빠른 테스트 가능
 - area 지정으로 특정 감정 영역 테스트 가능
+
+> **참고:** 테스트 분석도 활성화된 감정만 사용됩니다.
 
 ---
 
@@ -270,7 +287,10 @@ Authorization: Bearer {accessToken}
           "emotion": "E001",
           "percent": 60,
           "color": "#FFD700",
-          "emotionNameKr": "기쁨"
+          "emotionNameKr": "기쁨",
+          "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
+          "imageFile3d": "sunflower_3d.png",
+          "area": "YELLOW"
         }
       ],
       "flowerDetail": {
@@ -468,6 +488,7 @@ GET /api/v1/weekly-reports/{reportId}
       "diaryDate": "2025-12-30",
       "coreEmotion": "E001",
       "emotionNameKr": "기쁨",
+      "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
       "flowerNameKr": "해바라기",
       "flowerMeaning": "긍정적인 에너지",
       "imageFile3d": "sunflower_3d.png"
@@ -625,9 +646,11 @@ GET /api/v1/flowers/my-emotions
 GET /api/v1/flowers/all-emotions
 ```
 
-시스템에 등록된 모든 감정-꽃 매핑 정보를 조회합니다.
+시스템에 등록된 **활성화된** 감정-꽃 매핑 정보를 조회합니다.
 
 **권한:** 인증 불필요 (공개 마스터 데이터)
+
+> **참고:** 비활성화된 감정은 목록에서 제외됩니다. 비활성화된 감정은 과거에 사용되던 감정으로, 기존 일기 데이터에는 표시되지만 새로운 AI 분석에서는 사용되지 않습니다.
 
 #### 응답
 ```json
@@ -692,6 +715,9 @@ GET /api/v1/flowers/all-emotions
 | percent | Integer | 비율 (0-100) |
 | color | String | 색상 (HEX) |
 | emotionNameKr | String | 감정 이름 (한글) |
+| emotionDescription | String | 감정 설명 (정의, 상황 예시, 대처법) |
+| imageFile3d | String | 3D 이미지 파일명 |
+| area | String | 감정 영역 (RED/YELLOW/BLUE/GREEN) |
 
 ### FlowerDetail
 | 필드 | 타입 | 설명 |
@@ -728,7 +754,97 @@ GET /api/v1/flowers/all-emotions
 
 ---
 
+## 사용자 설정 API
+
+> **참고:** 사용자 설정은 학생(STUDENT) 전용 기능입니다. 회원가입 시 학생인 경우에만 기본 설정이 생성됩니다.
+
+### 1. 내 설정 조회
+
+#### 기본 정보
+```
+GET /api/v1/students/settings
+```
+
+현재 로그인한 학생의 설정 정보를 조회합니다.
+
+#### 요청
+```http
+GET /api/v1/students/settings
+Authorization: Bearer {accessToken}
+```
+
+#### 응답
+```json
+{
+  "themeColor": "yellow",
+  "themeGardenBg": "default"
+}
+```
+
+| 필드 | 타입 | 설명 |
+|-----|------|------|
+| themeColor | String | 테마 색상 |
+| themeGardenBg | String | 정원 배경 테마 |
+
+---
+
+### 2. 설정 수정
+
+#### 기본 정보
+```
+PUT /api/v1/students/settings
+```
+
+현재 로그인한 사용자의 설정 정보를 수정합니다.
+
+#### 요청
+```http
+PUT /api/v1/students/settings
+Authorization: Bearer {accessToken}
+Content-Type: application/json
+
+{
+  "themeColor": "blue",
+  "themeGardenBg": "spring"
+}
+```
+
+| 필드 | 타입 | 필수 | 설명 | 제약 |
+|-----|------|------|------|------|
+| themeColor | String | X | 테마 색상 | 최대 20자 |
+| themeGardenBg | String | X | 정원 배경 테마 | 최대 50자 |
+
+#### 응답
+```json
+{
+  "themeColor": "blue",
+  "themeGardenBg": "spring"
+}
+```
+
+**참고:** 로그인 시에도 설정 정보가 응답에 포함됩니다. 자세한 내용은 [인증 API 명세](./auth.md)를 참조하세요.
+
+---
+
 ## 버전 히스토리
+
+### v1.6.0 (2026-01-29)
+- EmotionPercent 응답에 감정 상세 정보 추가
+  - `emotionDescription`: 감정 설명
+  - `imageFile3d`: 3D 이미지 파일명
+  - `area`: 감정 영역
+
+### v1.5.0 (2026-01-29)
+- 감정 활성화/비활성화 기능 추가
+  - 전체 감정 조회 API는 활성화된 감정만 반환
+  - AI 분석 시 활성화된 감정만 사용
+  - 비활성화된 감정은 기존 일기 데이터에서는 그대로 표시
+
+### v1.4.0 (2026-01-29)
+- 사용자 설정 API 추가 (학생 전용)
+  - GET /api/v1/students/settings (내 설정 조회)
+  - PUT /api/v1/students/settings (설정 수정)
+  - 회원가입 시 학생인 경우에만 기본 설정 생성
 
 ### v1.3.0 (2026-01-29)
 - FlowerDetail 응답에 `emotionDescription` 필드 추가

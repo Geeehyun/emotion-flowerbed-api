@@ -4,6 +4,7 @@ import com.flowerbed.api.v1.domain.WeeklyReport;
 import com.flowerbed.api.v1.dto.WeeklyReportDetailResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportListItemResponse;
 import com.flowerbed.api.v1.dto.WeeklyReportStatusResponse;
+import com.flowerbed.api.v1.service.EmotionCacheService;
 import com.flowerbed.security.SecurityUtil;
 import com.flowerbed.service.WeeklyReportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 public class WeeklyReportController {
 
     private final WeeklyReportService weeklyReportService;
+    private final EmotionCacheService emotionCacheService;
 
     /**
      * 안 읽은 리포트 존재 여부 확인
@@ -88,7 +90,7 @@ public class WeeklyReportController {
     ) {
         Long userSn = SecurityUtil.getCurrentUserSn();
         WeeklyReport report = weeklyReportService.getReportDetail(reportId, userSn);
-        return ResponseEntity.ok(WeeklyReportDetailResponse.from(report));
+        return ResponseEntity.ok(WeeklyReportDetailResponse.from(report, emotionCacheService));
     }
 
     /**
@@ -130,7 +132,7 @@ public class WeeklyReportController {
             throw new IllegalArgumentException("일기가 3개 미만이어서 주간 리포트를 생성할 수 없습니다.");
         }
 
-        return ResponseEntity.ok(WeeklyReportDetailResponse.from(report));
+        return ResponseEntity.ok(WeeklyReportDetailResponse.from(report, emotionCacheService));
     }
 
     /**

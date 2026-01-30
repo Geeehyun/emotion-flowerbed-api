@@ -583,6 +583,7 @@ Authorization: Bearer {accessToken}
       "diaryDate": "2025-12-30",
       "coreEmotion": "E001",
       "emotionNameKr": "기쁨",
+      "emotionDescription": "기쁨은 원하는 것을 얻거나 좋은 일이 생겼을 때 느끼는 긍정적인 감정입니다.",
       "flowerNameKr": "해바라기",
       "flowerMeaning": "긍정적인 에너지",
       "imageFile3d": "sunflower_3d.png"
@@ -656,6 +657,7 @@ Authorization: Bearer {accessToken}
 | diaryDate | String | 일기 날짜 |
 | coreEmotion | String | 핵심 감정 코드 |
 | emotionNameKr | String | 감정 이름 (한글) |
+| emotionDescription | String | 감정 설명 (정의, 상황 예시, 대처법) |
 | flowerNameKr | String | 꽃 이름 (한글) |
 | flowerMeaning | String | 꽃말/의미 |
 | imageFile3d | String | 3D 이미지 파일명 |

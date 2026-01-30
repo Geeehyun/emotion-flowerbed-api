@@ -23,10 +23,10 @@ public class UserSettings {
     @Column(name = "theme_garden_bg", length = 50)
     private String themeGardenBg;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "created_by", updatable = false)
+    @Column(name = "created_by", nullable = false, updatable = false)
     private String createdBy;
 
     @Column(name = "updated_at")
@@ -50,6 +50,7 @@ public class UserSettings {
         settings.themeColor = "yellow";
         settings.themeGardenBg = "default";
         settings.createdAt = LocalDateTime.now();
+        settings.createdBy = user.getUserId();
         settings.updatedAt = LocalDateTime.now();
         return settings;
     }

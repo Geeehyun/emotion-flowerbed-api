@@ -22,6 +22,7 @@
 3. [로그인](#3-로그인)
 4. [로그아웃](#4-로그아웃)
 5. [토큰 갱신](#5-토큰-갱신)
+6. [내 정보 조회](#6-내-정보-조회)
 
 ---
 
@@ -238,7 +239,9 @@ POST /v1/auth/login
   "userTypeCd": "STUDENT",
   "schoolCode": "1111",
   "schoolNm": "예시초등학교",
-  "classCode": "301"
+  "classCode": "301",
+  "themeColor": "yellow",
+  "themeGardenBg": "default"
 }
 ```
 
@@ -254,6 +257,8 @@ POST /v1/auth/login
 | schoolCode | String | △ | 학교 코드 (학생/선생님만) |
 | schoolNm | String | △ | 학교명 (학생/선생님만) |
 | classCode | String | △ | 학급 코드 (학생/선생님만) |
+| themeColor | String | △ | 테마 색상 (학생만) |
+| themeGardenBg | String | △ | 정원 배경 테마 (학생만) |
 
 ### 에러 응답
 #### 사용자를 찾을 수 없음 (404)
@@ -461,6 +466,84 @@ Content-Type: application/json
 
 ---
 
+## 6. 내 정보 조회
+
+### 기본 정보
+```
+GET /v1/users/me
+```
+
+현재 로그인한 사용자의 정보를 조회합니다. 로그인 응답과 동일한 사용자 정보를 반환합니다 (토큰 제외).
+
+**권한:** 인증 필요 (모든 사용자)
+
+### 요청
+#### Headers
+```
+Authorization: Bearer {accessToken}
+```
+
+#### Request Example
+```http
+GET /api/v1/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### 응답
+#### Success Response (200 OK)
+```json
+{
+  "userSn": 1,
+  "userId": "student1",
+  "name": "홍길동",
+  "userTypeCd": "STUDENT",
+  "schoolCode": "1111",
+  "schoolNm": "예시초등학교",
+  "classCode": "301",
+  "themeColor": "yellow",
+  "themeGardenBg": "default"
+}
+```
+
+#### Response Fields
+| 필드 | 타입 | 필수 | 설명 |
+|-----|------|------|------|
+| userSn | Long | O | 사용자 일련번호 |
+| userId | String | O | 로그인 ID |
+| name | String | O | 이름 |
+| userTypeCd | String | O | 사용자 유형 코드 (STUDENT/TEACHER) |
+| schoolCode | String | △ | 학교 코드 |
+| schoolNm | String | △ | 학교명 |
+| classCode | String | △ | 학급 코드 |
+| themeColor | String | △ | 테마 색상 (학생만) |
+| themeGardenBg | String | △ | 정원 배경 테마 (학생만) |
+
+### 에러 응답
+#### 유효하지 않은 토큰 (401)
+```json
+{
+  "timestamp": "2026-01-29T12:34:56",
+  "status": 401,
+  "error": "Unauthorized",
+  "code": "INVALID_TOKEN",
+  "message": "유효하지 않은 토큰 입니다.",
+  "path": "/api/v1/users/me"
+}
+```
+
+### 사용 예시
+```http
+GET /api/v1/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### 참고사항
+- 로그인 응답과 동일한 정보를 반환 (accessToken, refreshToken 제외)
+- 토큰 갱신 후 사용자 정보 동기화 시 사용
+- 학생인 경우에만 themeColor, themeGardenBg 반환
+
+---
+
 ## 공통 응답 형식
 
 ### 성공 응답
@@ -553,6 +636,15 @@ Content-Type: application/json
 ---
 
 ## 버전 히스토리
+
+### v1.3.0 (2026-01-29)
+- 내 정보 조회 API 추가 (`GET /v1/users/me`)
+  - 로그인 응답과 동일한 사용자 정보 반환 (토큰 제외)
+
+### v1.2.0 (2026-01-29)
+- 로그인 응답에 사용자 설정 필드 추가 (`themeColor`, `themeGardenBg`)
+  - 학생(STUDENT)인 경우에만 설정 정보 포함
+  - 선생님(TEACHER)인 경우 `null` 반환
 
 ### v1.1.0 (2026-01-29)
 - 회원가입 API 추가

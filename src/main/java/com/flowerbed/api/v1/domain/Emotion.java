@@ -72,6 +72,9 @@ public class Emotion extends BaseAuditEntity {
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;  // 활성화 여부 (비활성화된 감정은 AI 분석에서 제외)
+
     public Emotion(String emotionCode, String emotionNameKr, String emotionNameEn,
                   String flowerNameKr, String flowerMeaning,
                   String imageFile3d, String imageFileRealistic,

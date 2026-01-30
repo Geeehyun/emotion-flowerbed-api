@@ -599,7 +599,7 @@ public class TeacherService {
                 teacher.getUserId(), student.getUserId(), reportId, report.getIsAnalyzed());
 
         // 6. TeacherWeeklyReportDetailResponse로 변환
-        return TeacherWeeklyReportDetailResponse.from(report);
+        return TeacherWeeklyReportDetailResponse.from(report, emotionCacheService);
     }
 
     public TeacherMonthlyDiariesResponse getStudentMonthlyEmotions(Long studentUserSn, String yearMonth) {

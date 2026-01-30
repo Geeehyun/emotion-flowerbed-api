@@ -371,24 +371,34 @@ public class DiaryService {
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
                     .map(e -> {
+                        // 감정 정보 조회 (캐시 사용)
+                        Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
+
                         String color = e.getColor();
                         String emotionNameKr = e.getEmotionNameKr();
+                        String emotionDescription = null;
+                        String imageFile3d = null;
+                        String area = null;
 
-                        // null이면 DB 조회해서 채움 (기존 데이터 대응)
-                        if (color == null || emotionNameKr == null) {
-                            Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
-                            if (emotion != null) {
-                                if (color == null) {
-                                    color = emotion.getColor();
-                                }
-                                if (emotionNameKr == null) {
-                                    emotionNameKr = emotion.getEmotionNameKr();
-                                }
+                        if (emotion != null) {
+                            // null이면 DB 조회 결과로 채움 (기존 데이터 대응)
+                            if (color == null) {
+                                color = emotion.getColor();
                             }
+                            if (emotionNameKr == null) {
+                                emotionNameKr = emotion.getEmotionNameKr();
+                            }
+                            // 감정 설명, 이미지, 영역 정보
+                            emotionDescription = emotion.getEmotionDescription();
+                            imageFile3d = emotion.getImageFile3d();
+                            area = emotion.getArea();
                         }
 
                         EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
                         ep.setEmotionNameKr(emotionNameKr);
+                        ep.setEmotionDescription(emotionDescription);
+                        ep.setImageFile3d(imageFile3d);
+                        ep.setArea(area);
                         return ep;
                     })
                     .collect(Collectors.toList());
@@ -475,24 +485,34 @@ public class DiaryService {
         if (diary.getEmotionsJson() != null) {
             emotions = diary.getEmotionsJson().stream()
                     .map(e -> {
+                        // 감정 정보 조회 (캐시 사용)
+                        Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
+
                         String color = e.getColor();
                         String emotionNameKr = e.getEmotionNameKr();
+                        String emotionDescription = null;
+                        String imageFile3d = null;
+                        String area = null;
 
-                        // null이면 DB 조회해서 채움 (기존 데이터 대응)
-                        if (color == null || emotionNameKr == null) {
-                            Emotion emotion = emotionCacheService.getEmotion(e.getEmotion());
-                            if (emotion != null) {
-                                if (color == null) {
-                                    color = emotion.getColor();
-                                }
-                                if (emotionNameKr == null) {
-                                    emotionNameKr = emotion.getEmotionNameKr();
-                                }
+                        if (emotion != null) {
+                            // null이면 DB 조회 결과로 채움 (기존 데이터 대응)
+                            if (color == null) {
+                                color = emotion.getColor();
                             }
+                            if (emotionNameKr == null) {
+                                emotionNameKr = emotion.getEmotionNameKr();
+                            }
+                            // 감정 설명, 이미지, 영역 정보
+                            emotionDescription = emotion.getEmotionDescription();
+                            imageFile3d = emotion.getImageFile3d();
+                            area = emotion.getArea();
                         }
 
                         EmotionPercent ep = new EmotionPercent(e.getEmotion(), e.getPercent(), color);
                         ep.setEmotionNameKr(emotionNameKr);
+                        ep.setEmotionDescription(emotionDescription);
+                        ep.setImageFile3d(imageFile3d);
+                        ep.setArea(area);
                         return ep;
                     })
                     .collect(Collectors.toList());

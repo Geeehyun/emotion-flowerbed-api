@@ -20,4 +20,9 @@ public interface FlowerRepository extends JpaRepository<Emotion, String> {
      * display_order 순서로 모든 감정 조회
      */
     List<Emotion> findAllByOrderByDisplayOrderAsc();
+
+    /**
+     * 활성화된 감정만 display_order 순서로 조회
+     */
+    List<Emotion> findAllByIsActiveTrueOrderByDisplayOrderAsc();
 }

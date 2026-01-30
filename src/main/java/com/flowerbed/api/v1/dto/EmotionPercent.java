@@ -35,6 +35,21 @@ public class EmotionPercent {
     private String emotionNameKr;
 
     /**
+     * 감정 설명 (정의, 상황 예시, 대처법 포함)
+     */
+    private String emotionDescription;
+
+    /**
+     * 3D 이미지 파일명
+     */
+    private String imageFile3d;
+
+    /**
+     * 감정 영역 (RED/YELLOW/BLUE/GREEN)
+     */
+    private String area;
+
+    /**
      * color 없이 생성하는 생성자 (하위 호환성)
      */
     public EmotionPercent(String emotion, Integer percent) {

@@ -1,0 +1,40 @@
+### 사용자 설정 API (User Settings)
+### Base URL: http://localhost:8080/api
+
+### ===========================================
+### 사용자 설정 조회/수정
+### ===========================================
+
+### 내 설정 조회
+GET http://localhost:8080/api/v1/students/settings
+Authorization: Bearer {{accessToken}}
+
+### 설정 수정 (테마 색상, 정원 배경)
+PUT http://localhost:8080/api/v1/students/settings
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "themeColor": "blue",
+  "themeGardenBg": "spring"
+}
+
+### 설정 수정 (테마 색상만)
+PUT http://localhost:8080/api/v1/students/settings
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "themeColor": "pink",
+  "themeGardenBg": "default"
+}
+
+### 설정 수정 (정원 배경만)
+PUT http://localhost:8080/api/v1/students/settings
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "themeColor": "yellow",
+  "themeGardenBg": "winter"
+}

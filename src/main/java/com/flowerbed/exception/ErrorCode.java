@@ -31,6 +31,7 @@ public enum ErrorCode {
     NO_STUDENTS_FOUND(HttpStatus.NOT_FOUND, "NO_STUDENTS_FOUND", "담당 학생이 없습니다"),
     FLOWER_NOT_FOUND(HttpStatus.NOT_FOUND, "FLOWER_NOT_FOUND", "꽃 정보를 찾을 수 없습니다"),
     CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "CODE_NOT_FOUND", "코드 정보를 찾을 수 없습니다"),
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "CODE_NOT_FOUND", "사용자 설정을 찾을 수 없습니다"),
 
     // 500 Internal Server Error
     LLM_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "LLM_ANALYSIS_FAILED", "AI 감정 분석에 실패했습니다"),

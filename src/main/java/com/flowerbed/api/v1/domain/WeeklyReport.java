@@ -1,5 +1,6 @@
 package com.flowerbed.api.v1.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -139,28 +140,22 @@ public class WeeklyReport extends BaseAuditEntity {
     /**
      * 주간 일기 상세 정보를 JSON으로 저장하기 위한 내부 클래스
      * - 날짜별 일기의 감정 정보 (프론트에서 날짜별 조회용)
+     * - 저장: diaryId, diaryDate, coreEmotion 3개만 저장
+     * - 조회: EmotionCacheService를 통해 감정 정보 동적 조회
      */
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @JsonIgnoreProperties(ignoreUnknown = true)  // 기존 JSON의 추가 필드 무시 (하위 호환성)
     public static class DiaryDetail {
         private Long diaryId;  // 일기 ID
         private LocalDate diaryDate;  // 일기 날짜
         private String coreEmotion;  // 핵심 감정 코드
-        private String emotionNameKr;  // 감정 한글 이름
-        private String flowerNameKr;  // 꽃 한글 이름
-        private String flowerMeaning;  // 꽃말
-        private String imageFile3d;  // 3D 이미지 파일명
 
         @Builder
-        public DiaryDetail(Long diaryId, LocalDate diaryDate, String coreEmotion,
-                          String emotionNameKr, String flowerNameKr, String flowerMeaning, String imageFile3d) {
+        public DiaryDetail(Long diaryId, LocalDate diaryDate, String coreEmotion) {
             this.diaryId = diaryId;
             this.diaryDate = diaryDate;
             this.coreEmotion = coreEmotion;
-            this.emotionNameKr = emotionNameKr;
-            this.flowerNameKr = flowerNameKr;
-            this.flowerMeaning = flowerMeaning;
-            this.imageFile3d = imageFile3d;
         }
     }
 

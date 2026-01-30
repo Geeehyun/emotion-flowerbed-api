@@ -118,11 +118,11 @@ public class FlowerService {
 
     /**
      * 전체 감정-꽃 매핑 정보 조회
-     * - emotions 테이블 전체 조회
+     * - 활성화된 감정만 조회
      * - display_order 순으로 정렬
      */
     public AllEmotionsResponse getAllEmotions() {
-        List<Emotion> emotions = flowerRepository.findAll(Sort.by(Sort.Direction.ASC, "displayOrder"));
+        List<Emotion> emotions = flowerRepository.findAllByIsActiveTrueOrderByDisplayOrderAsc();
 
         List<AllEmotionsResponse.EmotionItem> items = emotions.stream()
                 .map(emotion -> AllEmotionsResponse.EmotionItem.builder()

@@ -1,6 +1,8 @@
 package com.flowerbed.api.v1.dto;
 
+import com.flowerbed.api.v1.domain.Emotion;
 import com.flowerbed.api.v1.domain.WeeklyReport;
+import com.flowerbed.api.v1.service.EmotionCacheService;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -67,6 +69,7 @@ public class TeacherWeeklyReportDetailResponse {
         private LocalDate diaryDate;
         private String coreEmotion;
         private String emotionNameKr;
+        private String emotionDescription;
         private String flowerNameKr;
         private String flowerMeaning;
         private String imageFile3d;
@@ -124,8 +127,9 @@ public class TeacherWeeklyReportDetailResponse {
 
     /**
      * Entity -> Response DTO 변환 (선생님용)
+     * - weeklyDiaryDetails의 감정 정보는 EmotionCacheService를 통해 동적 조회
      */
-    public static TeacherWeeklyReportDetailResponse from(WeeklyReport report) {
+    public static TeacherWeeklyReportDetailResponse from(WeeklyReport report, EmotionCacheService emotionCacheService) {
         List<EmotionStatDto> emotionStats = null;
         if (report.getEmotionStats() != null) {
             emotionStats = report.getEmotionStats().stream()
@@ -142,15 +146,21 @@ public class TeacherWeeklyReportDetailResponse {
         List<DiaryDetailDto> diaryDetails = null;
         if (report.getWeeklyDiaryDetails() != null) {
             diaryDetails = report.getWeeklyDiaryDetails().stream()
-                    .map(detail -> DiaryDetailDto.builder()
-                            .diaryId(detail.getDiaryId())
-                            .diaryDate(detail.getDiaryDate())
-                            .coreEmotion(detail.getCoreEmotion())
-                            .emotionNameKr(detail.getEmotionNameKr())
-                            .flowerNameKr(detail.getFlowerNameKr())
-                            .flowerMeaning(detail.getFlowerMeaning())
-                            .imageFile3d(detail.getImageFile3d())
-                            .build())
+                    .map(detail -> {
+                        String emotionCode = detail.getCoreEmotion();
+                        Emotion emotion = emotionCacheService.getEmotion(emotionCode);
+
+                        return DiaryDetailDto.builder()
+                                .diaryId(detail.getDiaryId())
+                                .diaryDate(detail.getDiaryDate())
+                                .coreEmotion(emotionCode)
+                                .emotionNameKr(emotion != null ? emotion.getEmotionNameKr() : emotionCode)
+                                .emotionDescription(emotion != null ? emotion.getEmotionDescription() : null)
+                                .flowerNameKr(emotion != null ? emotion.getFlowerNameKr() : null)
+                                .flowerMeaning(emotion != null ? emotion.getFlowerMeaning() : null)
+                                .imageFile3d(emotion != null ? emotion.getImageFile3d() : null)
+                                .build();
+                    })
                     .collect(Collectors.toList());
         }
 

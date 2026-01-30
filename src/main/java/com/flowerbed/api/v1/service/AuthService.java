@@ -66,9 +66,11 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // 4. 사용자 설정 생성 (기본값: theme_color=yellow, theme_garden_bg=default)
-        UserSettings userSettings = UserSettings.createDefault(savedUser);
-        userSettingsRepository.save(userSettings);
+        // 4. 학생인 경우에만 사용자 설정 생성 (기본값: theme_color=yellow, theme_garden_bg=default)
+        if ("STUDENT".equals(request.getUserTypeCd())) {
+            UserSettings userSettings = UserSettings.createDefault(savedUser);
+            userSettingsRepository.save(userSettings);
+        }
 
         log.info("User signed up: userId={}, userTypeCd={}", savedUser.getUserId(), savedUser.getUserTypeCd());
 
@@ -121,9 +123,16 @@ public class AuthService {
         // 4. RefreshToken을 Redis에 저장
         redisService.saveRefreshToken(user.getUserId(), refreshToken);
 
+        // 5. 학생인 경우에만 사용자 설정 조회
+        UserSettings userSettings = null;
+        if ("STUDENT".equals(user.getUserTypeCd())) {
+            userSettings = userSettingsRepository.findByUserSn(user.getUserSn())
+                    .orElse(null);
+        }
+
         log.info("User logged in: userId={}", user.getUserId());
 
-        // 5. 응답 생성
+        // 6. 응답 생성
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -134,6 +143,8 @@ public class AuthService {
                 .schoolCode(user.getSchoolCode())
                 .schoolNm(user.getSchoolNm())
                 .classCode(user.getClassCode())
+                .themeColor(userSettings != null ? userSettings.getThemeColor() : null)
+                .themeGardenBg(userSettings != null ? userSettings.getThemeGardenBg() : null)
                 .build();
     }
 

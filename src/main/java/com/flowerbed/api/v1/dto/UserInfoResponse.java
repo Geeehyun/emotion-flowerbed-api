@@ -7,20 +7,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 로그인 응답 DTO
+ * 사용자 정보 응답 DTO
  */
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "로그인 응답")
-public class LoginResponse {
-
-    @Schema(description = "Access Token (1일 유효)", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-    private String accessToken;
-
-    @Schema(description = "Refresh Token (1년 유효)", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-    private String refreshToken;
+@Schema(description = "사용자 정보 응답")
+public class UserInfoResponse {
 
     @Schema(description = "사용자 일련번호", example = "1")
     private Long userSn;
@@ -43,9 +37,9 @@ public class LoginResponse {
     @Schema(description = "학급 코드", example = "301")
     private String classCode;
 
-    @Schema(description = "테마 색상", example = "yellow")
+    @Schema(description = "테마 색상 (학생만)", example = "yellow")
     private String themeColor;
 
-    @Schema(description = "정원 배경 테마", example = "default")
+    @Schema(description = "정원 배경 테마 (학생만)", example = "default")
     private String themeGardenBg;
 }

@@ -306,22 +306,11 @@ public class WeeklyReportService {
     private List<WeeklyReport.DiaryDetail> buildWeeklyDiaryDetails(List<Diary> diaries) {
         return diaries.stream()
                 .sorted((a, b) -> a.getDiaryDate().compareTo(b.getDiaryDate()))  // 날짜 오름차순
-                .map(diary -> {
-                    String emotionCode = diary.getCoreEmotionCode();
-
-                    // DB에서 감정 정보 조회 (캐싱)
-                    Emotion emotion = emotionCacheService.getEmotion(emotionCode);
-
-                    return WeeklyReport.DiaryDetail.builder()
-                            .diaryId(diary.getDiaryId())
-                            .diaryDate(diary.getDiaryDate())
-                            .coreEmotion(emotionCode)
-                            .emotionNameKr(emotion != null ? emotion.getEmotionNameKr() : emotionCode)
-                            .flowerNameKr(emotion != null ? emotion.getFlowerNameKr() : null)
-                            .flowerMeaning(emotion != null ? emotion.getFlowerMeaning() : null)
-                            .imageFile3d(emotion != null ? emotion.getImageFile3d() : null)
-                            .build();
-                })
+                .map(diary -> WeeklyReport.DiaryDetail.builder()
+                        .diaryId(diary.getDiaryId())
+                        .diaryDate(diary.getDiaryDate())
+                        .coreEmotion(diary.getCoreEmotionCode())
+                        .build())
                 .collect(Collectors.toList());
     }
 
