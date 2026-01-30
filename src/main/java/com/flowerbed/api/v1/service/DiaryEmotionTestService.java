@@ -93,7 +93,7 @@ public class DiaryEmotionTestService {
         Emotion emotion = flowerRepository.findById(coreEmotionCode)
                 .orElseThrow(() -> new IllegalStateException("감정 코드를 찾을 수 없습니다: " + coreEmotionCode));
 
-        // 7. Response 생성 (coreEmotion은 영어 코드로 반환)
+        // 7. Response 생성 (coreEmotion은 영어 코드로 반환, 꽃 정보는 DiaryService에서 DB 조회)
         DiaryEmotionResponse response = new DiaryEmotionResponse();
         response.setSummary(summary);
         response.setEmotions(emotions);
@@ -101,8 +101,6 @@ public class DiaryEmotionTestService {
         response.setReason(area != null
                 ? "테스트 모드: " + area + " 영역에서 랜덤으로 생성된 감정 분석 결과입니다"
                 : "테스트 모드: 랜덤으로 생성된 감정 분석 결과입니다");
-        response.setFlower(emotion.getFlowerNameKr());
-        response.setFloriography(emotion.getFlowerMeaning());
 
         return response;
     }

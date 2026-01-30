@@ -24,8 +24,6 @@ public class DiaryEmotionResponse {
     private List<EmotionPercent> emotions;
     private String coreEmotion;
     private String reason;
-    private String flower;
-    private String floriography;
     private List<String> keywords;  // 핵심 감정 관련 키워드 (최대 3개)
 
     // 위험도 분석 (2단계 - 키워드 탐지)

@@ -63,7 +63,7 @@ public class DiaryEmotionService {
                     .map(Emotion::getEmotionCode)
                     .collect(Collectors.toSet());
 
-            // 3. 감정-꽃 매칭표 생성 (영역별로 그룹핑) - 활성화된 감정만
+            // 3. 감정 정보표 생성 (영역별로 그룹핑) - 활성화된 감정만
             String emotionMappings = buildEmotionMappings(activeEmotions);
 
             // 4. 프롬프트에 주입
@@ -77,7 +77,8 @@ public class DiaryEmotionService {
     }
 
     /**
-     * DB 감정 정보를 바탕으로 감정-꽃 매칭표 텍스트 생성
+     * DB 감정 정보를 바탕으로 감정 정보표 텍스트 생성
+     * - 꽃 정보 제외, 감정 설명 포함
      */
     private String buildEmotionMappings(List<Emotion> emotions) {
         StringBuilder sb = new StringBuilder();
@@ -98,11 +99,18 @@ public class DiaryEmotionService {
             if (!areaEmotions.isEmpty()) {
                 sb.append("\n").append(areaName).append("\n");
                 for (Emotion emotion : areaEmotions) {
-                    sb.append(String.format("- %s (%s): %s / %s\n",
-                            emotion.getEmotionCode(),
-                            emotion.getEmotionNameKr(),
-                            emotion.getFlowerNameKr(),
-                            emotion.getFlowerMeaning()));
+                    // 감정 설명이 있으면 포함, 없으면 생략
+                    String description = emotion.getEmotionDescription();
+                    if (description != null && !description.isEmpty()) {
+                        sb.append(String.format("- %s (%s): %s\n",
+                                emotion.getEmotionCode(),
+                                emotion.getEmotionNameKr(),
+                                description));
+                    } else {
+                        sb.append(String.format("- %s (%s)\n",
+                                emotion.getEmotionCode(),
+                                emotion.getEmotionNameKr()));
+                    }
                 }
             }
         }
@@ -208,7 +216,7 @@ public class DiaryEmotionService {
                 return getDefaultResponse();
             }
 
-            if (response.getFlower() == null || response.getSummary() == null) {
+            if (response.getSummary() == null) {
                 log.error("Missing required fields in LLM response");
                 return getDefaultResponse();
             }
@@ -230,8 +238,6 @@ public class DiaryEmotionService {
         DiaryEmotionResponse response = new DiaryEmotionResponse();
         response.setSummary("일기 분석에 실패했지만 괜찮아요. 오늘도 수고하셨습니다.");
         response.setCoreEmotion("PEACE");
-        response.setFlower("은방울꽃");
-        response.setFloriography("행복의 재림");
         response.setReason("감정 분석에 실패하여 기본값으로 설정되었습니다.");
 
         EmotionPercent emotion = new EmotionPercent("PEACE", 100);

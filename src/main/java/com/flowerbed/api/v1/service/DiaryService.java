@@ -117,9 +117,9 @@ public class DiaryService {
 
         // 감정 코드 검증 (DB에 존재하는 감정 코드인지 확인)
         String emotionCode = emotionResponse.getCoreEmotion();
-        boolean emotionExists = emotionCacheService.getEmotion(emotionCode) != null;
+        Emotion emotion = emotionCacheService.getEmotion(emotionCode);
 
-        if(!emotionExists) {
+        if(emotion == null) {
             log.error("Invalid emotion code from LLM: diaryId={}, coreEmotionCode={}",
                     diaryId, emotionCode);
             return null;
@@ -132,12 +132,13 @@ public class DiaryService {
             keywords = String.join(",", emotionResponse.getKeywords());
         }
 
+        // 꽃 정보는 DB에서 조회 (LLM 응답에서 제거됨)
         diary.updateAnalysis(
                 emotionResponse.getSummary(),
                 emotionCode,
                 emotionResponse.getReason(),
-                emotionResponse.getFlower(),
-                emotionResponse.getFloriography(),
+                emotion.getFlowerNameKr(),
+                emotion.getFlowerMeaning(),
                 emotionsJson,
                 keywords
         );
@@ -201,12 +202,17 @@ public class DiaryService {
             keywords = String.join(",", emotionResponse.getKeywords());
         }
 
+        // 꽃 정보는 DB에서 조회
+        Emotion coreEmotion = emotionCacheService.getEmotion(emotionCode);
+        String flowerName = coreEmotion != null ? coreEmotion.getFlowerNameKr() : null;
+        String flowerMeaning = coreEmotion != null ? coreEmotion.getFlowerMeaning() : null;
+
         diary.updateAnalysis(
                 emotionResponse.getSummary(),
                 emotionCode,
                 emotionResponse.getReason(),
-                emotionResponse.getFlower(),
-                emotionResponse.getFloriography(),
+                flowerName,
+                flowerMeaning,
                 emotionsJson,
                 keywords
         );
